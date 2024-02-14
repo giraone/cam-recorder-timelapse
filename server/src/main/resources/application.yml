@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: file-storage
+    name: cam-recorder
 
 logging:
   level:

@@ -37,6 +37,9 @@ public class FileController {
     private static final String ATTR_SUCCESS = "success";
     private static final String ATTR_SIZE = "size";
     private static final String ATTR_ERROR = "error";
+    private static final String ATTR_RESTART = "restart";
+    private static final boolean RESTART = true;
+
 
     @SuppressWarnings("unused")
     @PostMapping(value = "files/images/{filename}", consumes = {MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE})
@@ -53,7 +56,11 @@ public class FileController {
             channel = AsynchronousFileChannel.open(file.toPath(), CREATE, WRITE);
         } catch (IOException e) {
             LOGGER.warn("Cannot open file to write to \"{}\"!", file.getAbsolutePath(), e);
-            return Mono.just(ResponseEntity.badRequest().body(Map.of(ATTR_SUCCESS, false, ATTR_ERROR, "Cannot store file!")));
+            return Mono.just(ResponseEntity.badRequest().body(Map.of(
+                ATTR_SUCCESS, false,
+                ATTR_ERROR, "Cannot store file!",
+                ATTR_RESTART, RESTART
+            )));
         }
         AtomicLong writtenBytes = new AtomicLong(0L);
         return FluxUtil.writeFile(content, channel)
@@ -68,7 +75,8 @@ public class FileController {
             })
             .thenReturn(ResponseEntity.ok(Map.of(
                 ATTR_SUCCESS, true,
-                ATTR_SIZE, contentLength.orElse("-1").transform(Long::parseLong)
+                ATTR_SIZE, contentLength.orElse("-1").transform(Long::parseLong),
+                ATTR_RESTART, RESTART
             )));
     }
 

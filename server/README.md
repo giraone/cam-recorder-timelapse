@@ -15,7 +15,7 @@ mvn package
 ./run.sh
 ```
 
-## Usage
+## Usage of file upload and download
 
 Upload a JPEG image
 
@@ -42,3 +42,11 @@ curl --request GET \
 ```
 
 This should return the file.
+
+## Usage of fetch camera settings
+
+```bash
+curl --request GET \
+  --silent \
+  http://localhost:8080/camera/settings
+```

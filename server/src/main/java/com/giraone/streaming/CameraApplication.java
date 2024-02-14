@@ -12,12 +12,12 @@ import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 
 @SpringBootApplication
-public class FileStorageApplication {
+public class CameraApplication {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(FileStorageApplication.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(CameraApplication.class);
 
     public static void main(String[] args) {
-        SpringApplication app = new SpringApplication(FileStorageApplication.class);
+        SpringApplication app = new SpringApplication(CameraApplication.class);
         Environment env = app.run(args).getEnvironment();
         logApplicationStartup(env);
     }
