@@ -1,2 +1,4 @@
-# cam-recorder-timelapse
-Client and Server for an ESP32-CAM Recorder solution
+# Client and Server for recording ESP32 camera images
+
+- [client](client/README.md)
+- [server](server/README.md)

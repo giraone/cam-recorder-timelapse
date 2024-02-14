@@ -1,0 +1,20 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: file-storage
+
+logging:
+  level:
+    ROOT: INFO
+    com.giraone.streaming: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # health,prometheus is needed; the others are for troubleshooting
+        include: 'health,metrics,prometheus,loggers'
+
+
