@@ -21,6 +21,7 @@ import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.NoSuchFileException;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
@@ -38,8 +39,9 @@ public class FileController {
     private static final String ATTR_SIZE = "size";
     private static final String ATTR_ERROR = "error";
     private static final String ATTR_RESTART = "restart";
-    private static final boolean RESTART = true;
+    private static final int RESTART_EVERY_PHOTO = 10;
 
+    private final AtomicInteger photosStored = new AtomicInteger(0);
 
     @SuppressWarnings("unused")
     @PostMapping(value = "files/images/{filename}", consumes = {MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE})
@@ -59,16 +61,27 @@ public class FileController {
             return Mono.just(ResponseEntity.badRequest().body(Map.of(
                 ATTR_SUCCESS, false,
                 ATTR_ERROR, "Cannot store file!",
-                ATTR_RESTART, RESTART
+                ATTR_RESTART, true
             )));
         }
-        AtomicLong writtenBytes = new AtomicLong(0L);
+        final AtomicLong writtenBytes = new AtomicLong(0L);
+        final int newNumberStored = photosStored.getAndIncrement();
+        final boolean restartNow;
+        if (newNumberStored >= (RESTART_EVERY_PHOTO - 1)) {
+            restartNow = true;
+            photosStored.set(0);
+        } else {
+            restartNow = false;
+        }
         return FluxUtil.writeFile(content, channel)
             .doOnSuccess(voidIgnore -> {
                 try {
                     channel.close();
                     writtenBytes.set(file.length());
-                    LOGGER.warn("File \"{}\" with {} bytes written.", file.getAbsolutePath(), writtenBytes.get());
+                    LOGGER.info("File ({}) \"{}\" with {} bytes written.",newNumberStored, file.getName(), writtenBytes.get());
+                    if (restartNow) {
+                        LOGGER.info("Forcing restart after {} photos.", RESTART_EVERY_PHOTO);
+                    }
                 } catch (IOException e) {
                     LOGGER.warn("Cannot close file \"{}\"!", file.getAbsolutePath(), e);
                 }
@@ -76,7 +89,7 @@ public class FileController {
             .thenReturn(ResponseEntity.ok(Map.of(
                 ATTR_SUCCESS, true,
                 ATTR_SIZE, contentLength.orElse("-1").transform(Long::parseLong),
-                ATTR_RESTART, RESTART
+                ATTR_RESTART, restartNow
             )));
     }
 

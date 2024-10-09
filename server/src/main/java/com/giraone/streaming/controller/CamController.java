@@ -27,9 +27,11 @@ public class CamController {
     private Map<String,Object> getSettings() {
         Map<String,Object> ret = new HashMap<>();
 
+        ret.put("loopDelaySeconds", 5);
+
         ret.put("clockFrequencyHz", 16000000);
         ret.put("frameSize", Resolution.FRAMESIZE_UXGA.intValue);
-        ret.put("jpegQuality", 10); // 0 - 63 (smaller is better)
+        ret.put("jpegQuality", 10); // 0 - 63 (smaller is less compression and better)
 
         ret.put("backPixelCorrect", false);
         ret.put("whitePixelCorrect", false);
@@ -53,10 +55,10 @@ public class CamController {
 
         ret.put("exposureCtrlSensor", true);
         ret.put("exposureCtrlDsp", false);
-        ret.put("autoExposureLevel", Level.M.intValue);
-        ret.put("autoExposureValue", 400); // 0 - 1024
+        ret.put("autoExposureLevel", Level.L.intValue);
+        ret.put("autoExposureValue", 1000); // 0 - 1024
         ret.put("autoExposureGainControl", true);
-        ret.put("autoExposureGainValue", 10); // 0 - 30
+        ret.put("autoExposureGainValue", 25); // 0 - 30
         ret.put("autoExposureGainCeiling", 2); // 0=2x, 1=4x, 2=8x, 3=16x, 4=32x, 5=64x, 6=128x
 
         return ret;
