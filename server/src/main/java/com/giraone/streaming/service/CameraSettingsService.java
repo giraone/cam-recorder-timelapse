@@ -1,30 +1,15 @@
-package com.giraone.streaming.controller;
+package com.giraone.streaming.service;
 
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@SuppressWarnings("unused")
-@RestController
-public class CamController {
+@Service
+public class CameraSettingsService {
 
-    @SuppressWarnings("unused")
-    @GetMapping(value = "camera/settings", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<Map<String, Object>> fetchSettings() {
-
-        Map<String, Object> settings = getSettings();
-        return ResponseEntity
-            .ok(settings);
-    }
-
-    //------------------------------------------------------------------------------------------------------------------
-
-    private Map<String, Object> getSettings() {
+    public Map<String, Object> getSettings() {
         Map<String, Object> ret = new HashMap<>();
 
         ret.put("loopDelaySeconds", 5);

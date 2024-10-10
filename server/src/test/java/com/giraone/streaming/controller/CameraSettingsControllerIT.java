@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @TestMethodOrder(MethodOrderer.MethodName.class)
 @AutoConfigureWebTestClient
-class CamControllerIT {
+class CameraSettingsControllerIT {
 
     private static final ParameterizedTypeReference<Map<String, Object>> MAP = new ParameterizedTypeReference<>() {
     };
