@@ -15,17 +15,17 @@ public class CamController {
 
     @SuppressWarnings("unused")
     @GetMapping(value = "camera/settings", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<Map<String,Object>> fetchSettings() {
+    ResponseEntity<Map<String, Object>> fetchSettings() {
 
-        Map<String,Object> settings = getSettings();
+        Map<String, Object> settings = getSettings();
         return ResponseEntity
             .ok(settings);
     }
 
     //------------------------------------------------------------------------------------------------------------------
 
-    private Map<String,Object> getSettings() {
-        Map<String,Object> ret = new HashMap<>();
+    private Map<String, Object> getSettings() {
+        Map<String, Object> ret = new HashMap<>();
 
         ret.put("loopDelaySeconds", 5);
 
@@ -65,6 +65,7 @@ public class CamController {
     }
 
     private static final AtomicInteger RESOLUTION_COUNTER = new AtomicInteger();
+
     enum Resolution {
         FRAMESIZE_96X96,    // 96x96
         FRAMESIZE_QQVGA,    // 160x120
@@ -82,6 +83,7 @@ public class CamController {
         FRAMESIZE_UXGA;     // 1600x1200
 
         private final int intValue;
+
         Resolution() {
             this.intValue = RESOLUTION_COUNTER.getAndIncrement();
         }
@@ -91,6 +93,7 @@ public class CamController {
         XS(-2), S(-1), M(0), L(1), XL(2);
 
         private final int intValue;
+
         Level(int intValue) {
             this.intValue = intValue;
         }
@@ -100,6 +103,7 @@ public class CamController {
         None(0), Negative(1), Grayscale(2), Red(3), Green(4), Blue(5), Sepia(6);
 
         private final int intValue;
+
         SpecialEffect(int intValue) {
             this.intValue = intValue;
         }
@@ -109,6 +113,7 @@ public class CamController {
         Auto(0), Sunny(1), Cloudy(2), Office(3), Home(4);
 
         private final int intValue;
+
         WhiteBalanceMode(int intValue) {
             this.intValue = intValue;
         }

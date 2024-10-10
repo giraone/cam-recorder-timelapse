@@ -60,7 +60,8 @@ class FileControllerIT {
                 .expectBody(MAP)
                 .value(value -> assertThat(value).containsExactlyInAnyOrderEntriesOf(Map.of(
                     "success", true,
-                    "size", -1
+                    "size", -1,
+                    "restart", false
                 )));
         }
         File uploadedFile = new File(FileController.FILE_BASE, FILENAME);
@@ -86,5 +87,24 @@ class FileControllerIT {
         // Now delete the uploaded file
         File uploadedFile = new File(FileController.FILE_BASE, FILENAME);
         assertThat(uploadedFile.delete()).isTrue();
+    }
+
+    @Test
+    void test3listFiles() {
+
+        // act/assert
+        webTestClient.get().uri("/files/images")
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isOk()
+            .expectHeader().contentType(MediaType.APPLICATION_JSON) // Normally not necessary
+            .expectBody()
+            .jsonPath("$.[0].fileName").isEqualTo("0000-ferrari.jpg")
+            .jsonPath("$.[0].sizeInBytes").isEqualTo(237365L)
+            //.jsonPath("$.[0].mediaType").isEqualTo("image/jpeg")
+            .jsonPath("$.[1].fileName").isEqualTo("0001-porsche.jpg")
+            .jsonPath("$.[1].sizeInBytes").isEqualTo(339894L)
+            //.jsonPath("$.[1].mediaType").isEqualTo("image/jpeg")
+        ;
     }
 }
