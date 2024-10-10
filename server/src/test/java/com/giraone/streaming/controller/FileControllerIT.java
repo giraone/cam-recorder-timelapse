@@ -93,7 +93,7 @@ class FileControllerIT {
     void test3listFiles() {
 
         // act/assert
-        webTestClient.get().uri("/files/images")
+        webTestClient.get().uri("/files/infos?filter=0")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk()
@@ -101,10 +101,10 @@ class FileControllerIT {
             .expectBody()
             .jsonPath("$.[0].fileName").isEqualTo("0000-ferrari.jpg")
             .jsonPath("$.[0].sizeInBytes").isEqualTo(237365L)
-            //.jsonPath("$.[0].mediaType").isEqualTo("image/jpeg")
+            .jsonPath("$.[0].mediaType").isEqualTo("image/jpeg")
             .jsonPath("$.[1].fileName").isEqualTo("0001-porsche.jpg")
             .jsonPath("$.[1].sizeInBytes").isEqualTo(339894L)
-            //.jsonPath("$.[1].mediaType").isEqualTo("image/jpeg")
+            .jsonPath("$.[1].mediaType").isEqualTo("image/jpeg")
         ;
     }
 }
