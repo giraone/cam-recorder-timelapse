@@ -1,4 +1,4 @@
-package com.giraone.streaming.service;
+package com.giraone.streaming.service.model;
 
 import reactor.core.publisher.Flux;
 

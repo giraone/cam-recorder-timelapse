@@ -18,7 +18,7 @@ public class CameraSettingsService {
         ret.put("frameSize", Resolution.FRAMESIZE_UXGA.intValue);
         ret.put("jpegQuality", 10); // 0 - 63 (smaller is less compression and better)
 
-        ret.put("backPixelCorrect", false);
+        ret.put("blackPixelCorrect", false);
         ret.put("whitePixelCorrect", false);
         ret.put("gammaCorrect", true);
         ret.put("lensCorrect", true);

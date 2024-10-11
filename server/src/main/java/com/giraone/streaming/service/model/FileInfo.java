@@ -1,4 +1,4 @@
-package com.giraone.streaming.service;
+package com.giraone.streaming.service.model;
 
 import org.springframework.http.MediaType;
 
@@ -6,12 +6,12 @@ import java.io.File;
 
 public record FileInfo(String fileName, long sizeInBytes, String mediaType) {
 
-    static FileInfo fromFile(File file) {
+    public static FileInfo fromFile(File file) {
         final String fileName = file.getName();
         return new FileInfo(file.getName(), file.length(), mediaTypeFromFileName(fileName));
     }
 
-    private static String mediaTypeFromFileName(String filename) {
+    public static String mediaTypeFromFileName(String filename) {
 
         if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) {
             return MediaType.IMAGE_JPEG_VALUE;

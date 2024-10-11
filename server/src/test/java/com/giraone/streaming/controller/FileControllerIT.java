@@ -25,6 +25,8 @@ import java.nio.channels.AsynchronousFileChannel;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.giraone.streaming.service.FileService.FILE_BASE;
+import static com.giraone.streaming.service.FileService.FILE_THUMBS;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.WRITE;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -64,8 +66,11 @@ class FileControllerIT {
                     "restart", false
                 )));
         }
-        File uploadedFile = new File(FileController.FILE_BASE, FILENAME);
+        File uploadedFile = new File(FILE_BASE, FILENAME);
         assertThat(uploadedFile).exists().hasSize(EXPECTED_FILE_SIZE);
+        File thumbFile = new File(FILE_THUMBS, FILENAME);
+        assertThat(thumbFile).exists();
+        assertThat(thumbFile.length()).isGreaterThan(100L);
     }
 
     @Test
@@ -85,7 +90,7 @@ class FileControllerIT {
         FluxUtil.writeFile(content, channel).block();
         assertThat(downloadedFile).exists().hasSize(EXPECTED_FILE_SIZE);
         // Now delete the uploaded file
-        File uploadedFile = new File(FileController.FILE_BASE, FILENAME);
+        File uploadedFile = new File(FILE_BASE, FILENAME);
         assertThat(uploadedFile.delete()).isTrue();
     }
 

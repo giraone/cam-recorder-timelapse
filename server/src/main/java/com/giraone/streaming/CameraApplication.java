@@ -1,17 +1,22 @@
 package com.giraone.streaming;
 
+import com.giraone.streaming.config.ApplicationProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.core.env.Environment;
 import org.springframework.util.StringUtils;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryUsage;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 
 @SpringBootApplication
+@EnableConfigurationProperties({ApplicationProperties.class})
 public class CameraApplication {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(CameraApplication.class);
@@ -39,6 +44,10 @@ public class CameraApplication {
         } catch (UnknownHostException e) {
             LOGGER.warn("The host name could not be determined, using `localhost` as fallback");
         }
+
+        MemoryUsage memoryUsage = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
+        long xmx = memoryUsage.getMax() / 1024 / 1024;
+        long xms = memoryUsage.getInit() / 1024 / 1024;
         LOGGER.info("""
                 ----------------------------------------------------------
                 ~~~ Application '{}' is running! Access URLs:
@@ -46,6 +55,7 @@ public class CameraApplication {
                 ~~~ - External:   {}://{}:{}{}
                 ~~~ Java version:      {} / {}
                 ~~~ Processors:        {}
+                ~~~ Memory (xms/xmx):  {} MB / {} MB
                 ~~~ Profile(s):        {}
                 ~~~ Default charset:   {}
                 ~~~ File encoding:     {}
@@ -60,6 +70,7 @@ public class CameraApplication {
             contextPath,
             System.getProperty("java.version"), System.getProperty("java.vm.name"),
             Runtime.getRuntime().availableProcessors(),
+            xms, xmx,
             env.getActiveProfiles(),
             Charset.defaultCharset().displayName(),
             System.getProperty("file.encoding")
