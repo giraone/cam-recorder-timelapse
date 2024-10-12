@@ -1,0 +1,44 @@
+[*]
+max_line_length = 150
+ij_formatter_tags_enabled = true
+ij_visual_guides = 120
+
+[*.java]
+ij_java_class_count_to_use_import_on_demand = 100
+ij_java_doc_align_exception_comments = false
+ij_java_doc_align_param_comments = false
+ij_java_keep_first_column_comment = false
+ij_continuation_indent_size = 4
+ij_java_doc_add_blank_line_after_description = false
+
+
+[{*.jhm,*.xslt,*.xul,*.tagx,*.rng,*.xsl,*.xsd,*.jspx,*.ant,*.xml,*.tld,*.fxml,*.jrxml,*.jnlp,*.wsdl,*.pom}]
+indent_size = 2
+tab_width = 2
+ij_continuation_indent_size = 2
+ij_xml_block_comment_at_first_column = true
+ij_xml_keep_indents_on_empty_lines = false
+ij_xml_line_comment_at_first_column = true
+
+[*.md]
+max_line_length = off
+trim_trailing_whitespace = false
+
+# Frontend configs
+[*.{js,jsx,ts,tsx,vue}]
+ij_typescript_spaces_within_imports = true
+quote_type = single
+ij_typescript_use_double_quotes = false
+ij_typescript_force_quote_style = true
+ij_typescript_spaces_within_object_literal_braces = true
+
+[{*.html,*.shtm,*.sht,*.shtml,*.htm}]
+tab_width = 2
+ij_continuation_indent_size = 2
+
+[.profile]
+indent_style = space
+indent_size = 2
+insert_final_newline = false
+end_of_line = lf
+charset = utf-8

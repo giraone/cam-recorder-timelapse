@@ -1,57 +1,71 @@
 package com.giraone.streaming.service;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.giraone.streaming.controller.FileController;
+import com.giraone.streaming.service.model.CameraSettings;
+import com.giraone.streaming.util.ObjectMapperBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
 
 @Service
 public class CameraSettingsService {
 
-    public Map<String, Object> getSettings() {
-        Map<String, Object> ret = new HashMap<>();
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileController.class);
 
-        ret.put("loopDelaySeconds", 5);
+    public static final File SETTINGS_FILE = new File("camera-settings.json");
 
-        ret.put("clockFrequencyHz", 16000000);
-        ret.put("frameSize", Resolution.FRAMESIZE_UXGA.intValue);
-        ret.put("jpegQuality", 10); // 0 - 63 (smaller is less compression and better)
+    private static final ObjectMapper objectMapper = ObjectMapperBuilder.build();
 
-        ret.put("blackPixelCorrect", false);
-        ret.put("whitePixelCorrect", false);
-        ret.put("gammaCorrect", true);
-        ret.put("lensCorrect", true);
+    private CameraSettings settings = new CameraSettings();
 
-        ret.put("horizontalMirror", false);
-        ret.put("verticalFlip", false);
-
-        ret.put("brightness", Level.M.intValue);
-        ret.put("contrast", Level.M.intValue);
-        ret.put("sharpness", Level.M.intValue);
-        ret.put("saturation", Level.M.intValue);
-        ret.put("denoise", Level.M.intValue);
-
-        ret.put("specialEffect", SpecialEffect.None.intValue);
-
-        ret.put("autoWhitebalance", true);
-        ret.put("autoWhitebalanceGain", true);
-        ret.put("whitebalanceMode", WhiteBalanceMode.Auto.intValue);
-
-        ret.put("exposureCtrlSensor", true);
-        ret.put("exposureCtrlDsp", false);
-        ret.put("autoExposureLevel", Level.L.intValue);
-        ret.put("autoExposureValue", 1000); // 0 - 1024
-        ret.put("autoExposureGainControl", true);
-        ret.put("autoExposureGainValue", 25); // 0 - 30
-        ret.put("autoExposureGainCeiling", 2); // 0=2x, 1=4x, 2=8x, 3=16x, 4=32x, 5=64x, 6=128x
-
-        return ret;
+    public CameraSettingsService() {
+        
+        if (SETTINGS_FILE.exists()) {
+            try {
+                this.settings = loadSetting(SETTINGS_FILE);
+            } catch (Exception exc) {
+                LOGGER.warn("Cannot load camera settings JSON file \"{}\"!", SETTINGS_FILE, exc);
+            }
+        }
     }
 
-    private static final AtomicInteger RESOLUTION_COUNTER = new AtomicInteger();
+    @Bean
+    public CameraSettings getSettings() {
+        return settings;
+    }
 
-    enum Resolution {
+    public File getFile() {
+        return SETTINGS_FILE;
+    }
+
+    public void storeSetting(File file) throws IOException {
+        objectMapper.writeValue(file, settings);
+    }
+    
+    public void storeSetting() throws IOException {
+        storeSetting(SETTINGS_FILE);
+    }
+
+    public CameraSettings loadSetting(File file) throws IOException {
+        return objectMapper.readValue(file, CameraSettings.class);
+    }
+    
+    public CameraSettings loadSetting() throws IOException {
+        return loadSetting(SETTINGS_FILE);
+    }
+
+
+
+    //------------------------------------------------------------------------------------------------------------------
+
+    public enum FrameSize {
         FRAMESIZE_96X96,    // 96x96
         FRAMESIZE_QQVGA,    // 160x120
         FRAMESIZE_QCIF,     // 176x144
@@ -67,40 +81,50 @@ public class CameraSettingsService {
         FRAMESIZE_SXGA,     // 1280x1024
         FRAMESIZE_UXGA;     // 1600x1200
 
-        private final int intValue;
-
-        Resolution() {
-            this.intValue = RESOLUTION_COUNTER.getAndIncrement();
+        @JsonValue
+        public int getOrdinal() {
+            return this.ordinal();
         }
+
+        public static List<FrameSize> ALL = List.of(
+            FRAMESIZE_96X96, FRAMESIZE_QQVGA, FRAMESIZE_QCIF, FRAMESIZE_HQVGA, FRAMESIZE_240X240,
+            FRAMESIZE_QVGA, FRAMESIZE_CIF, FRAMESIZE_HVGA, FRAMESIZE_VGA, FRAMESIZE_SVGA,
+            FRAMESIZE_XGA, FRAMESIZE_HD, FRAMESIZE_SXGA, FRAMESIZE_UXGA
+        );
     }
 
-    enum Level {
+    public enum Level {
         XS(-2), S(-1), M(0), L(1), XL(2);
 
+        @JsonValue
         private final int intValue;
 
         Level(int intValue) {
             this.intValue = intValue;
         }
+
+        public static List<Level> ALL = List.of(XS, S, M, L, XL);
     }
 
-    enum SpecialEffect {
-        None(0), Negative(1), Grayscale(2), Red(3), Green(4), Blue(5), Sepia(6);
+    public enum SpecialEffect {
+        None, Negative, Grayscale, Red, Green, Blue, Sepia;
 
-        private final int intValue;
-
-        SpecialEffect(int intValue) {
-            this.intValue = intValue;
+        @JsonValue
+        public int getOrdinal() {
+            return this.ordinal();
         }
+
+        public static List<SpecialEffect> ALL = List.of(None, Negative, Grayscale, Red, Green, Blue, Sepia);
     }
 
-    enum WhiteBalanceMode {
-        Auto(0), Sunny(1), Cloudy(2), Office(3), Home(4);
+    public enum WhiteBalanceMode {
+        Auto, Sunny, Cloudy, Office, Home;
 
-        private final int intValue;
-
-        WhiteBalanceMode(int intValue) {
-            this.intValue = intValue;
+        @JsonValue
+        public int getOrdinal() {
+            return this.ordinal();
         }
+
+        public static List<WhiteBalanceMode> ALL = List.of(Auto, Sunny, Cloudy, Office, Home);
     }
 }

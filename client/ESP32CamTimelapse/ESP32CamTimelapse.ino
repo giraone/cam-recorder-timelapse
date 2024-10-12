@@ -16,7 +16,7 @@
 //-- PICTURE mode -----------------------------------------------------------------
 
 // if 0, we wait for touch on PIN 12, otherwise this is the loop delay
-const int PICTURE_LOOP_DELAY_SECONDS = 30;
+int loopDelaySeconds = 30;
 // threshold for touch value
 const uint8_t TOUCH_THRESHOLD = 20;
 
@@ -60,12 +60,13 @@ void setup() {
 
   JSONVar settingsJson = fetchAndParseCameraSettings();
   initCameraWithSettings(settingsJson);
+  loopDelaySeconds = settingsJson["loopDelaySeconds"];
 }
 
 void loop() {
 
-  if (PICTURE_LOOP_DELAY_SECONDS > 0) {
-    delay(PICTURE_LOOP_DELAY_SECONDS * 1000);
+  if (loopDelaySeconds > 0) {
+    delay(loopDelaySeconds * 1000);
     shootAndSend();
   } else {
     const bool touched = (touchRead(T5) < TOUCH_THRESHOLD);
@@ -121,14 +122,13 @@ JSONVar parseJson(String jsonString) {
     Serial.println(">>> Parsing JSON input failed!");
     return NULL;
   }
-  Serial.print(">>> JSON object = ");
   return jsonObject;
 }
 
 bool sendPhotoViaHttp(camera_fb_t* frameBuffer, char* timeString) {
  
   char urlBuffer[128];
-  snprintf(urlBuffer, sizeof(urlBuffer), "%s/files/images/esp32-cam1-%s.jpg", TARGET_URL, timeString);
+  snprintf(urlBuffer, sizeof(urlBuffer), "%s/camera-images/esp32-cam1-%s.jpg", TARGET_URL, timeString);
   Serial.printf(">>> POST URL = \"%s\"\n", urlBuffer);
  
   HTTPClient http;
@@ -145,7 +145,7 @@ bool sendPhotoViaHttp(camera_fb_t* frameBuffer, char* timeString) {
     jsonResponse = parseJson(responseString);
   } else {
     Serial.printf(">>> HTTP Response code = %d\n", httpResponseCode);
-    jsonResponse = "{\"restart\":true}";
+    jsonResponse = "{\"restart\":false}";
   }
   http.end();
 
@@ -164,7 +164,7 @@ JSONVar fetchAndParseCameraSettings() {
 String fetchCameraSettings() {
  
   char urlBuffer[128];
-  snprintf(urlBuffer, sizeof(urlBuffer), "%s/camera/settings", TARGET_URL);
+  snprintf(urlBuffer, sizeof(urlBuffer), "%s/camera-settings", TARGET_URL);
   Serial.printf(">>> GET URL = \"%s\"\n", urlBuffer);
  
   HTTPClient http;
@@ -176,7 +176,7 @@ String fetchCameraSettings() {
   String jsonString; 
   if (ok) {
     jsonString = http.getString();
-    Serial.print(">>> ");
+    Serial.print(">>> settings = ");
     Serial.println(jsonString);
   } else {
     Serial.printf(">>> HTTP Response code = %d\n", httpResponseCode);
@@ -186,8 +186,6 @@ String fetchCameraSettings() {
 
   return jsonString;
 }
-
-
 
 char _timeBuffer[22];
 // Return e.g. 2024-02-13-07-44-17

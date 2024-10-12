@@ -213,7 +213,7 @@ void initCameraWithSettings(JSONVar settingsJson) {
     .pixel_format = PIXFORMAT_JPEG,
     // QVGA|CIF|VGA|SVGA|XGA|SXGA|UXGA
     .frame_size = framesizeFromInt(settingsJson["frameSize"]),
-    // 0 - 63
+    // 0 - 63 (smaller is less compression and better)
     .jpeg_quality = settingsJson["jpegQuality"],
     .fb_count = 2,
     .grab_mode = CAMERA_GRAB_LATEST
@@ -223,6 +223,8 @@ void initCameraWithSettings(JSONVar settingsJson) {
   if (status != ESP_OK) {
     Serial.printf(">>> Camera not initialized: status=0x%x", status);
     return;
+  } else {
+    Serial.println(">>> Camera successfully initialized.");
   }
 
   sensor_t* sensor = esp_camera_sensor_get();
@@ -264,7 +266,7 @@ void initCameraWithSettings(JSONVar settingsJson) {
   sensor->set_gainceiling(sensor, gainceilingFromInt(settingsJson["autoExposureGainCeiling"]));
 
   // Black Pixel Correct - 0: no, 1: yes
-  sensor->set_bpc(sensor, settingsJson["backPixelCorrect"]);
+  sensor->set_bpc(sensor, settingsJson["blackPixelCorrect"]);
   // White Pixel Correct - 0: no, 1: yes
   sensor->set_wpc(sensor, settingsJson["whitePixelCorrect"]);
   // Auto Gamma Correct: no, 1: yes - mit yes i.d.R. besser
