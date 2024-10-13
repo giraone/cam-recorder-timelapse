@@ -15,7 +15,7 @@ import jakarta.annotation.security.PermitAll;
 
 @PermitAll
 @Route(value = "dashboard", layout = MainLayout.class)
-@PageTitle("Dashboard | Cam Recorder")
+@PageTitle("Dashboard | Cam Recorder Administration")
 public class DashboardView extends VerticalLayout {
 
     private final CrmService service;

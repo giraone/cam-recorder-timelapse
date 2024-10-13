@@ -4,7 +4,6 @@ import com.giraone.imaging.ConversionCommand;
 import com.giraone.imaging.ImagingProvider;
 import com.giraone.imaging.java2.ProviderJava2D;
 import com.giraone.streaming.config.ApplicationProperties;
-import com.giraone.streaming.controller.FileController;
 import com.giraone.streaming.service.model.FileInfo;
 import com.giraone.streaming.service.model.FileInfoAndContent;
 import org.slf4j.Logger;
@@ -31,10 +30,10 @@ import static java.nio.file.StandardOpenOption.*;
 @Service
 public class FileService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(FileController.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileService.class);
 
-    public static final File FILE_BASE = new File("FILES");
-    public static final File FILE_THUMBS = new File(FILE_BASE, ".thumbs");
+    private static final File FILE_BASE = new File("../FILES");
+    private static final File FILE_THUMBS = new File(FILE_BASE, ".thumbs");
     private static final Pattern FILE_NAME_PATTERN = Pattern.compile("[a-zA-Z0-9-]+[.][a-z]{3,4}");
 
     private final ImagingProvider imagingProvider = new ProviderJava2D();
@@ -80,7 +79,8 @@ public class FileService {
                     createThumbnail(file);
                 }
             })
-            .thenReturn(new FileInfo(filename, writtenBytes.get(), FileInfo.mediaTypeFromFileName(filename)));
+            .thenReturn(new FileInfo(filename, writtenBytes.get(),
+                FileInfo.mediaTypeFromFileName(filename), FileInfo.ofEpochSecond(file.lastModified())));
     }
 
     public FileInfoAndContent downloadFile(@PathVariable String filename) throws IOException {
@@ -111,9 +111,17 @@ public class FileService {
         return Arrays.stream(files).map(FileInfo::fromFile).toList();
     }
 
+    public static File getThumbDir() {
+        return FILE_THUMBS;
+    }
+
+    public static File getFileDir() {
+        return FILE_BASE;
+    }
+
     //------------------------------------------------------------------------------------------------------------------
 
-    private void createThumbnail(File originalFile) {
+    void createThumbnail(File originalFile) {
 
         final File thumbnailFile = new File(FILE_THUMBS, originalFile.getName());
         try {

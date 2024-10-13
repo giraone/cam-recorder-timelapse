@@ -1,5 +1,5 @@
 server:
-  port: ${PORT:8080}
+  port: ${PORT:9002}
 
 spring:
   application:
@@ -30,4 +30,5 @@ vaadin:
   # For more information https://vaadin.com/docs/flow/spring/tutorial-spring-configuration.html#special-configuration-parameters
   whitelisted-packages: com.vaadin,org.vaadin,com.giraone
   # By-pass these URLs from Vaadin
-  exclude-urls: '/camera-images/**'
+  exclude-urls: '/api/**'
+  # servlet.productionMode: true

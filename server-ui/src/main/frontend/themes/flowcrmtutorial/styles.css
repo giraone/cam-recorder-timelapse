@@ -2,9 +2,15 @@
   .list-view.editing .toolbar,
   .list-view.editing .contact-grid {
     display: none;
+  .list-view.editing .files-grid {
+    display: none;
   }
 }
 a[highlight] {
     font-weight: bold;
     text-decoration: underline;
+}
+no-padding {
+    padding: 0px;
+    background-color: red;
 }

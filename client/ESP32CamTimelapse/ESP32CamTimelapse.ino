@@ -22,7 +22,7 @@ const uint8_t TOUCH_THRESHOLD = 20;
 
 //-- HTTP -------------------------------------------------------------------------
 
-const char* TARGET_URL = "http://192.168.178.45:8080";
+const char* TARGET_URL = "http://192.168.178.45:9001";
 const char* MIME_TYPE_JPEG = "image/jpeg";
 const char* MIME_TYPE_JSON = "application/json";
 

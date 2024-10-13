@@ -1,6 +1,6 @@
 package com.giraone.streaming.views.settings;
 
-import com.giraone.streaming.service.CameraSettingsService;
+import com.giraone.streaming.service.CameraSettingsAdminService;
 import com.giraone.streaming.service.model.CameraSettings;
 import com.giraone.streaming.views.MainLayout;
 import com.vaadin.flow.component.Component;
@@ -40,7 +40,7 @@ public class CameraSettingsForm extends FormLayout {
     private static final Logger LOGGER = LoggerFactory.getLogger(CameraSettingsForm.class);
 
     IntegerField loopDelaySeconds = new IntegerField("Delay between each picture");
-    ComboBox<CameraSettingsService.FrameSize> frameSize = new ComboBox<>("Frame Size (Resolution)",  CameraSettingsService.FrameSize.ALL);
+    ComboBox<CameraSettings.FrameSize> frameSize = new ComboBox<>("Frame Size (Resolution)",  CameraSettings.FrameSize.ALL);
     IntegerField jpegQuality = new IntegerField("JPEG Quality (0=best)");
 
     Checkbox blackPixelCorrect = new Checkbox("Black Pixel Correct");
@@ -51,20 +51,20 @@ public class CameraSettingsForm extends FormLayout {
     Checkbox horizontalMirror = new Checkbox("Horizontal Mirror");
     Checkbox verticalFlip = new Checkbox("Vertical Flip");
 
-    ComboBox<CameraSettingsService.Level> brightness = new ComboBox<>("Brightness", CameraSettingsService.Level.ALL);
-    ComboBox<CameraSettingsService.Level> contrast = new ComboBox<>("Contrast", CameraSettingsService.Level.ALL);
-    ComboBox<CameraSettingsService.Level> sharpness = new ComboBox<>("Sharpness", CameraSettingsService.Level.ALL);
-    ComboBox<CameraSettingsService.Level> saturation = new ComboBox<>("Saturation", CameraSettingsService.Level.ALL);
-    ComboBox<CameraSettingsService.Level> denoise = new ComboBox<>("Denoise", CameraSettingsService.Level.ALL);
-    ComboBox<CameraSettingsService.SpecialEffect> specialEffect = new ComboBox<>("Special Effect",  CameraSettingsService.SpecialEffect.ALL);
+    ComboBox<CameraSettings.Level> brightness = new ComboBox<>("Brightness", CameraSettings.Level.ALL);
+    ComboBox<CameraSettings.Level> contrast = new ComboBox<>("Contrast", CameraSettings.Level.ALL);
+    ComboBox<CameraSettings.Level> sharpness = new ComboBox<>("Sharpness", CameraSettings.Level.ALL);
+    ComboBox<CameraSettings.Level> saturation = new ComboBox<>("Saturation", CameraSettings.Level.ALL);
+    ComboBox<CameraSettings.Level> denoise = new ComboBox<>("Denoise", CameraSettings.Level.ALL);
+    ComboBox<CameraSettings.SpecialEffect> specialEffect = new ComboBox<>("Special Effect",  CameraSettings.SpecialEffect.ALL);
 
     Checkbox autoWhitebalance = new Checkbox("Auto Whitebalance");
     Checkbox autoWhitebalanceGain = new Checkbox("Auto Whitebalance Gain");
-    ComboBox<CameraSettingsService.WhiteBalanceMode> whitebalanceMode = new ComboBox<>("Whitebalance Mode",  CameraSettingsService.WhiteBalanceMode.ALL);
+    ComboBox<CameraSettings.WhiteBalanceMode> whitebalanceMode = new ComboBox<>("Whitebalance Mode",  CameraSettings.WhiteBalanceMode.ALL);
 
     Checkbox exposureCtrlSensor = new Checkbox("Exposure Control using Sensor");
     Checkbox exposureCtrlDsp = new Checkbox("Exposure Control using DSP");
-    ComboBox<CameraSettingsService.Level> autoExposureLevel = new ComboBox<>("Auto Exposure Level", CameraSettingsService.Level.ALL);
+    ComboBox<CameraSettings.Level> autoExposureLevel = new ComboBox<>("Auto Exposure Level", CameraSettings.Level.ALL);
     IntegerField autoExposureValue = new IntegerField("Auto Exposure Value");
     Checkbox autoExposureGainControl = new Checkbox("Auto Exposure Gain Control");
     IntegerField autoExposureGainValue = new IntegerField("Auto Exposure Gain Value");
@@ -74,11 +74,11 @@ public class CameraSettingsForm extends FormLayout {
     Button close = new Button("Cancel");
 
     Binder<CameraSettings> binder = new BeanValidationBinder<>(CameraSettings.class);
-    CameraSettingsService cameraSettingsService;
+    CameraSettingsAdminService cameraSettingsAdminService;
 
-    public CameraSettingsForm(CameraSettingsService cameraSettingsService) {
+    public CameraSettingsForm(CameraSettingsAdminService cameraSettingsAdminService) {
 
-        this.cameraSettingsService = cameraSettingsService;
+        this.cameraSettingsAdminService = cameraSettingsAdminService;
 
         addClassName("camera-settings-form");
         binder.bindInstanceFields(this);
@@ -143,7 +143,7 @@ public class CameraSettingsForm extends FormLayout {
         addSaveListener(this::saveCameraSettings);
         //addCloseListener(e -> closeEditor());
 
-        setCameraSettings(cameraSettingsService.getSettings());
+        setCameraSettings(cameraSettingsAdminService.getSettings());
     }
 
     private void setCameraSettings(CameraSettings cameraSettings) {
@@ -152,8 +152,8 @@ public class CameraSettingsForm extends FormLayout {
 
     private void saveCameraSettings(CameraSettingsForm.SaveEvent event) {
         try {
-            cameraSettingsService.storeSetting();
-            Notification.show("Saved into \"" + cameraSettingsService.getFile().getAbsolutePath() + "\"");
+            cameraSettingsAdminService.storeSetting();
+            Notification.show("Saved into \"" + cameraSettingsAdminService.getFile().getAbsolutePath() + "\"");
         } catch (IOException e) {
             LOGGER.warn("Cannot save!", e);
             Notification.show("Cannot save settings: " + e.getMessage());

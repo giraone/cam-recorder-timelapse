@@ -14,10 +14,6 @@ public class ApplicationProperties {
      * Log the configuration to the log on startup
      */
     private boolean showConfigOnStartup;
-    /**
-     * If true, generate thumbnails for uploaded images.
-     */
-    private boolean generateThumbnails;
 
     public boolean isShowConfigOnStartup() {
         return showConfigOnStartup;
@@ -27,19 +23,10 @@ public class ApplicationProperties {
         this.showConfigOnStartup = showConfigOnStartup;
     }
 
-    public boolean isGenerateThumbnails() {
-        return generateThumbnails;
-    }
-
-    public void setGenerateThumbnails(boolean generateThumbnails) {
-        this.generateThumbnails = generateThumbnails;
-    }
-
     @Override
     public String toString() {
         return "ApplicationProperties{" +
             "showConfigOnStartup=" + showConfigOnStartup +
-            ", generateThumbnails=" + generateThumbnails +
             '}';
     }
 

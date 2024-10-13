@@ -11,16 +11,16 @@ import java.io.IOException;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
-class CameraSettingsServiceIT {
+class CameraSettingsAdminServiceIT {
 
     @Autowired
-    CameraSettingsService cameraSettingsService;
+    CameraSettingsAdminService cameraSettingsAdminService;
 
     @Test
     void getSettings() {
 
         // act
-        CameraSettings settings = cameraSettingsService.getSettings();
+        CameraSettings settings = cameraSettingsAdminService.getSettings();
         // assert
         assertThat(settings).isNotNull();
         assertThat(settings.jpegQuality).isGreaterThanOrEqualTo(0);
@@ -32,7 +32,7 @@ class CameraSettingsServiceIT {
         // arrange
         File tmpFile = File.createTempFile("settings", ".json");
         // act
-        cameraSettingsService.storeSetting(tmpFile);
+        cameraSettingsAdminService.storeSetting(tmpFile);
         // assert
         assertThat(tmpFile).exists();
         tmpFile.delete();
