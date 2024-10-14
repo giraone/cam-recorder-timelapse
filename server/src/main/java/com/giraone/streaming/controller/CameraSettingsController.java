@@ -17,7 +17,8 @@ import java.nio.file.Path;
 public class CameraSettingsController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CameraSettingsController.class);
-    private static final Path SETTINGS_FILE_PATH = new File("../camera-settings.json").toPath();
+    private static final File SETTINGS_FILE = new File("../camera-settings.json");
+    private static final Path SETTINGS_FILE_PATH = SETTINGS_FILE.toPath();
 
     @SuppressWarnings("unused")
     @GetMapping("camera-settings")
@@ -25,11 +26,16 @@ public class CameraSettingsController {
 
         try {
             final String content = Files.readString(SETTINGS_FILE_PATH);
+            LOGGER.info("Passing {} bytes of camera settings.", content.length());
             return ResponseEntity.ok(content);
         } catch (IOException e) {
             LOGGER.warn("Cannot read \"{}\"", SETTINGS_FILE_PATH, e);
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
         }
 
+    }
+
+    public static long getLastModified() {
+        return SETTINGS_FILE.lastModified();
     }
 }

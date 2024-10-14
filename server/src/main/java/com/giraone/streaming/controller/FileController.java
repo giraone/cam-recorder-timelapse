@@ -25,6 +25,7 @@ import java.nio.file.NoSuchFileException;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 @RestController
 public class FileController {
@@ -32,9 +33,10 @@ public class FileController {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileController.class);
 
     private static final String X_HEADER_ERROR = "X-Files-Error";
-    private static final int RESTART_EVERY_PHOTO = 10;
+    private static final int RESTART_EVERY_PHOTO = 20;
 
     private final AtomicInteger photosStored = new AtomicInteger(0);
+    private long lastSettingsChange = CameraSettingsController.getLastModified();
 
     private final FileService fileService;
 
@@ -48,15 +50,19 @@ public class FileController {
                                                   @RequestBody Flux<ByteBuffer> content,
                                                   @RequestHeader("Content-Length") Optional<String> contentLengthString) {
 
-        long contentLength = contentLengthString.orElse("-1").transform(Long::parseLong);
+        final long contentLength = contentLengthString.orElse("-1").transform(Long::parseLong);
         return fileService.storeFile(filename, content, contentLength)
             .map(fileInfo -> {
+                long newLastSettingsChange;
                 final int newNumberStored = photosStored.getAndIncrement();
                 final boolean restartNow;
                 if (newNumberStored >= (RESTART_EVERY_PHOTO - 1)) {
                     restartNow = true;
                     LOGGER.info("Forcing restart after {} photos.", RESTART_EVERY_PHOTO);
                     photosStored.set(0);
+                } else if ((newLastSettingsChange = CameraSettingsController.getLastModified()) > lastSettingsChange) {
+                    lastSettingsChange = newLastSettingsChange;
+                    restartNow = true;
                 } else {
                     restartNow = false;
                 }

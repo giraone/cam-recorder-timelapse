@@ -9,7 +9,7 @@ spring:
 logging:
   level:
     ROOT: INFO
-    com.giraone.streaming: DEBUG
+    com.giraone.streaming: INFO
 
 management:
   endpoints:

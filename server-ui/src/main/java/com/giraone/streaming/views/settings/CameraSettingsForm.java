@@ -103,11 +103,11 @@ public class CameraSettingsForm extends FormLayout {
         autoExposureLevel.setItemLabelGenerator(Enum::name);
         autoExposureValue.setMin(0);
         autoExposureValue.setMax(1024);
-        autoExposureGainCeiling.setHelperText("0 to 1024");
+        autoExposureValue.setHelperText("0 to 1024");
         autoExposureValue.setStepButtonsVisible(true);
         autoExposureGainValue.setMin(0);
         autoExposureGainValue.setMax(30);
-        autoExposureGainCeiling.setHelperText("0 to 30");
+        autoExposureGainValue.setHelperText("0 to 30");
         autoExposureGainValue.setStepButtonsVisible(true);
         autoExposureGainCeiling.setMin(0);
         autoExposureGainCeiling.setMax(6);

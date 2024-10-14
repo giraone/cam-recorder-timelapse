@@ -31,4 +31,4 @@ vaadin:
   whitelisted-packages: com.vaadin,org.vaadin,com.giraone
   # By-pass these URLs from Vaadin
   exclude-urls: '/api/**'
-  # servlet.productionMode: true
+  servlet.productionMode: true
