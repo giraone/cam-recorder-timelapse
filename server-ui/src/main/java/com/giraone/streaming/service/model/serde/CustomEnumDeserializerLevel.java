@@ -20,10 +20,10 @@ public class CustomEnumDeserializerLevel extends StdDeserializer<CameraSettings.
         JsonNode node = jsonParser.getCodec().readTree(jsonParser);
         int value = Integer.parseInt(node.asText());
         for (CameraSettings.Level e: CameraSettings.Level.ALL) {
-            if (e.ordinal() == value) {
+            if (e.ordinal() == value + 2) {
                 return e;
             }
         }
-        return null;
+        return CameraSettings.Level.M;
     }
 }

@@ -2,10 +2,13 @@ package com.giraone.streaming.service.model;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.giraone.streaming.service.model.serde.CustomDeserializerBoolean;
 import com.giraone.streaming.service.model.serde.CustomEnumDeserializerFrameSize;
 import com.giraone.streaming.service.model.serde.CustomEnumDeserializerLevel;
 import com.giraone.streaming.service.model.serde.CustomEnumDeserializerSpecialEffect;
 import com.giraone.streaming.service.model.serde.CustomEnumDeserializerWhiteBalanceMode;
+import com.giraone.streaming.service.model.serde.CustomSerializerBoolean;
 
 import java.util.List;
 
@@ -90,50 +93,62 @@ public class CameraSettings {
         this.jpegQuality = jpegQuality;
     }
 
+    @JsonDeserialize(using = CustomDeserializerBoolean.class)
     public boolean isBlackPixelCorrect() {
         return blackPixelCorrect;
     }
 
+    @JsonSerialize(using = CustomSerializerBoolean.class)
     public void setBlackPixelCorrect(boolean blackPixelCorrect) {
         this.blackPixelCorrect = blackPixelCorrect;
     }
 
+    @JsonDeserialize(using = CustomDeserializerBoolean.class)
     public boolean isWhitePixelCorrect() {
         return whitePixelCorrect;
     }
 
+    @JsonSerialize(using = CustomSerializerBoolean.class)
     public void setWhitePixelCorrect(boolean whitePixelCorrect) {
         this.whitePixelCorrect = whitePixelCorrect;
     }
 
+    @JsonDeserialize(using = CustomDeserializerBoolean.class)
     public boolean isGammaCorrect() {
         return gammaCorrect;
     }
 
+    @JsonSerialize(using = CustomSerializerBoolean.class)
     public void setGammaCorrect(boolean gammaCorrect) {
         this.gammaCorrect = gammaCorrect;
     }
 
+    @JsonDeserialize(using = CustomDeserializerBoolean.class)
     public boolean isLensCorrect() {
         return lensCorrect;
     }
 
+    @JsonSerialize(using = CustomSerializerBoolean.class)
     public void setLensCorrect(boolean lensCorrect) {
         this.lensCorrect = lensCorrect;
     }
 
+    @JsonDeserialize(using = CustomDeserializerBoolean.class)
     public boolean isHorizontalMirror() {
         return horizontalMirror;
     }
 
+    @JsonSerialize(using = CustomSerializerBoolean.class)
     public void setHorizontalMirror(boolean horizontalMirror) {
         this.horizontalMirror = horizontalMirror;
     }
 
+    @JsonDeserialize(using = CustomDeserializerBoolean.class)
     public boolean isVerticalFlip() {
         return verticalFlip;
     }
 
+    @JsonSerialize(using = CustomSerializerBoolean.class)
     public void setVerticalFlip(boolean verticalFlip) {
         this.verticalFlip = verticalFlip;
     }
@@ -186,18 +201,22 @@ public class CameraSettings {
         this.specialEffect = specialEffect;
     }
 
+    @JsonDeserialize(using = CustomDeserializerBoolean.class)
     public boolean isAutoWhitebalance() {
         return autoWhitebalance;
     }
 
+    @JsonSerialize(using = CustomSerializerBoolean.class)
     public void setAutoWhitebalance(boolean autoWhitebalance) {
         this.autoWhitebalance = autoWhitebalance;
     }
 
+    @JsonDeserialize(using = CustomDeserializerBoolean.class)
     public boolean isAutoWhitebalanceGain() {
         return autoWhitebalanceGain;
     }
 
+    @JsonSerialize(using = CustomSerializerBoolean.class)
     public void setAutoWhitebalanceGain(boolean autoWhitebalanceGain) {
         this.autoWhitebalanceGain = autoWhitebalanceGain;
     }
@@ -210,18 +229,22 @@ public class CameraSettings {
         this.whitebalanceMode = whitebalanceMode;
     }
 
+    @JsonDeserialize(using = CustomDeserializerBoolean.class)
     public boolean isExposureCtrlSensor() {
         return exposureCtrlSensor;
     }
 
+    @JsonSerialize(using = CustomSerializerBoolean.class)
     public void setExposureCtrlSensor(boolean exposureCtrlSensor) {
         this.exposureCtrlSensor = exposureCtrlSensor;
     }
 
+    @JsonDeserialize(using = CustomDeserializerBoolean.class)
     public boolean isExposureCtrlDsp() {
         return exposureCtrlDsp;
     }
 
+    @JsonSerialize(using = CustomSerializerBoolean.class)
     public void setExposureCtrlDsp(boolean exposureCtrlDsp) {
         this.exposureCtrlDsp = exposureCtrlDsp;
     }
@@ -242,10 +265,12 @@ public class CameraSettings {
         this.autoExposureValue = autoExposureValue;
     }
 
+    @JsonDeserialize(using = CustomDeserializerBoolean.class)
     public boolean isAutoExposureGainControl() {
         return autoExposureGainControl;
     }
 
+    @JsonSerialize(using = CustomSerializerBoolean.class)
     public void setAutoExposureGainControl(boolean autoExposureGainControl) {
         this.autoExposureGainControl = autoExposureGainControl;
     }
