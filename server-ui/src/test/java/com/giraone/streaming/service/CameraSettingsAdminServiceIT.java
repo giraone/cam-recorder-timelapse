@@ -23,7 +23,7 @@ class CameraSettingsAdminServiceIT {
         CameraSettings settings = cameraSettingsAdminService.getSettings();
         // assert
         assertThat(settings).isNotNull();
-        assertThat(settings.jpegQuality).isGreaterThanOrEqualTo(0);
+        assertThat(settings.getJpegQuality()).isGreaterThanOrEqualTo(0);
     }
 
     @Test

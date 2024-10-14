@@ -33,7 +33,7 @@ public class FileController {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileController.class);
 
     private static final String X_HEADER_ERROR = "X-Files-Error";
-    private static final int RESTART_EVERY_PHOTO = 20;
+    private static final int RESTART_EVERY_PHOTO = 25;
 
     private final AtomicInteger photosStored = new AtomicInteger(0);
     private long lastSettingsChange = CameraSettingsController.getLastModified();

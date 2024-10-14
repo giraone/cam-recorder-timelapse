@@ -75,7 +75,6 @@ public class FileService {
                 }
             })
             .doOnSuccess(unused -> {
-
                 if (applicationProperties.isGenerateThumbnails() && filename.endsWith(".jpg")) {
                     createThumbnail(file);
                     LOGGER.debug("Thumbnail for \"{}\" stored.", filename);

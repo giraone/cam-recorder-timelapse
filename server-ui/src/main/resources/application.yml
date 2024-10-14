@@ -5,8 +5,6 @@ spring:
   application:
     name: cam-recorder
   mustache.check-template-location: false
-  jpa:
-    defer-datasource-initialization: true # TODO remove
 
 logging:
   level:
@@ -20,8 +18,7 @@ management:
   endpoints:
     web:
       exposure:
-        # health,prometheus is needed; the others are for troubleshooting
-        include: 'health,metrics,prometheus,loggers'
+        include: 'health,loggers'
 
 vaadin:
    # Launch the default browser when starting the application in development mode

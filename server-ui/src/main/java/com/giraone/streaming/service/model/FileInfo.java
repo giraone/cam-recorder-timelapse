@@ -1,5 +1,7 @@
 package com.giraone.streaming.service.model;
 
+import com.giraone.imaging.ImagingProvider;
+import com.giraone.imaging.java2.ProviderJava2D;
 import org.springframework.http.MediaType;
 
 import java.io.File;
@@ -9,15 +11,18 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
-public record FileInfo(String fileName, long sizeInBytes, String mediaType, LocalDateTime lastModified) {
+public record FileInfo(int index, String fileName, long sizeInBytes, String mediaType, LocalDateTime lastModified, String resolution) {
+
+    private static final ImagingProvider imagingProvider = new ProviderJava2D();
 
     public String toDisplayShort() {
         return DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(lastModified);
     }
 
-    public static FileInfo fromFile(File file) {
+    public static FileInfo fromFile(File file, int index) {
         final String fileName = file.getName();
-        return new FileInfo(file.getName(), file.length(), mediaTypeFromFileName(fileName), ofEpochSecond(file.lastModified() / 1000));
+        return new FileInfo(index, file.getName(), file.length(), mediaTypeFromFileName(fileName),
+            ofEpochSecond(file.lastModified() / 1000), fetchResolution(file));
     }
 
     public static String mediaTypeFromFileName(String filename) {
@@ -28,6 +33,15 @@ public record FileInfo(String fileName, long sizeInBytes, String mediaType, Loca
             return MediaType.IMAGE_PNG_VALUE;
         } else {
             return MediaType.APPLICATION_OCTET_STREAM_VALUE;
+        }
+    }
+
+    public static String fetchResolution(File file) {
+        try {
+            com.giraone.imaging.FileInfo imagingFileInfo = imagingProvider.fetchFileInfo(file);
+            return imagingFileInfo.getWidth() + "x" + imagingFileInfo.getHeight();
+        } catch (Exception e) {
+            return "?";
         }
     }
 

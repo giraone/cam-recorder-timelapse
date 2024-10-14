@@ -62,7 +62,8 @@ class FileControllerIT {
                 .value(value -> assertThat(value).containsExactlyInAnyOrderEntriesOf(Map.of(
                     "success", true,
                     "size", -1,
-                    "restart", false
+                    "restart", false,
+                    "paused", false
                 )));
         }
         File uploadedFile = new File(FileService.getFileDir(), FILENAME);

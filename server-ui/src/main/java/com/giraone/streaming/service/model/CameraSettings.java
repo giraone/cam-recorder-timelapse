@@ -11,43 +11,52 @@ import java.util.List;
 
 public class CameraSettings {
 
-    public int loopDelaySeconds = 10;
-    public int clockFrequencyHz = 16000000;
+    private boolean paused = false;
+    private int loopDelaySeconds = 10;
+    private int clockFrequencyHz = 16000000;
     FrameSize frameSize = FrameSize.FRAMESIZE_UXGA;
     /**
      * 0 - 63 (smaller is less compression and better)
      */
-    public int jpegQuality = 10;
+    private int jpegQuality = 10;
 
-    public boolean blackPixelCorrect;
-    public boolean whitePixelCorrect;
-    public boolean gammaCorrect = true;
-    public boolean lensCorrect = true;
+    private boolean blackPixelCorrect;
+    private boolean whitePixelCorrect;
+    private boolean gammaCorrect = true;
+    private boolean lensCorrect = true;
 
-    public boolean horizontalMirror;
-    public boolean verticalFlip;
+    private boolean horizontalMirror;
+    private boolean verticalFlip;
 
-    public Level brightness = Level.M;
-    public Level contrast = Level.M;
-    public Level sharpness = Level.M;
-    public Level saturation = Level.M;
-    public Level denoise = Level.M;
-    public SpecialEffect specialEffect = SpecialEffect.None;
+    private Level brightness = Level.M;
+    private Level contrast = Level.M;
+    private Level sharpness = Level.M;
+    private Level saturation = Level.M;
+    private Level denoise = Level.M;
+    private SpecialEffect specialEffect = SpecialEffect.None;
 
-    public boolean autoWhitebalance = true;
-    public boolean autoWhitebalanceGain = true;
-    public WhiteBalanceMode whitebalanceMode = WhiteBalanceMode.Auto;
+    private boolean autoWhitebalance = true;
+    private boolean autoWhitebalanceGain = true;
+    private WhiteBalanceMode whitebalanceMode = WhiteBalanceMode.Auto;
 
-    public boolean exposureCtrlSensor = true;
-    public boolean exposureCtrlDsp;
-    public Level autoExposureLevel;
+    private boolean exposureCtrlSensor = true;
+    private boolean exposureCtrlDsp;
+    private Level autoExposureLevel;
     /** 0 - 1024 **/
-    public int autoExposureValue = 1000;
-    public boolean autoExposureGainControl;
+    private int autoExposureValue = 1000;
+    private boolean autoExposureGainControl;
     /** 0 - 30 **/
-    public int autoExposureGainValue = 25;
+    private int autoExposureGainValue = 25;
     /** 0=2x, 1=4x, 2=8x, 3=16x, 4=32x, 5=64x, 6=128x **/
-    public int autoExposureGainCeiling = 2;
+    private int autoExposureGainCeiling = 2;
+
+    public boolean isPaused() {
+        return paused;
+    }
+
+    public void setPaused(boolean paused) {
+        this.paused = paused;
+    }
 
     public int getLoopDelaySeconds() {
         return loopDelaySeconds;

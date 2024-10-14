@@ -10,6 +10,7 @@ import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.Image;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -38,12 +39,15 @@ public class FilesView extends VerticalLayout {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FilesView.class);
 
-    Grid<FileInfo> grid = new Grid<>(FileInfo.class);
-    TextField filterText = new TextField();
-    VerticalLayout displayForm;
-    Image displayImage;
+    private final Grid<FileInfo> grid = new Grid<>(FileInfo.class);
+    private final TextField filterText = new TextField();
+    private VerticalLayout displayForm;
+    private Image displayImage;
+    private Paragraph displayLabel;
 
     private final FileViewService fileViewService;
+    private List<FileInfo> items = List.of();
+    private FileInfo currentItem = null;
 
     public FilesView(FileViewService fileViewService) {
 
@@ -94,22 +98,36 @@ public class FilesView extends VerticalLayout {
         grid.addColumn(FileInfo::fileName).setSortable(true).setHeader("File Name").setAutoWidth(true);
         grid.addColumn(FileInfo::toDisplayShort).setSortable(true).setHeader("Last Modified").setAutoWidth(true);
         grid.addColumn(FileInfo::sizeInBytes).setSortable(true).setHeader("Size").setAutoWidth(true);
-        grid.addColumn(FileInfo::mediaType).setSortable(true).setHeader("Type").setAutoWidth(true);
+        grid.addColumn(FileInfo::resolution).setSortable(true).setHeader("Resolution").setAutoWidth(true);
+        //grid.addColumn(FileInfo::mediaType).setSortable(true).setHeader("Type").setAutoWidth(true);
         grid.sort(List.of(new GridSortOrder<>(grid.getColumns().get(4), SortDirection.DESCENDING))); // lastModified
     }
 
     private void configureDisplay() {
-        final Button fullButton = new Button("Max");
+        final Button fullButton = new Button("Maximize View");
         fullButton.setClassName("no-padding");
-        fullButton.setIcon(LineAwesomeIcon.ARROW_LEFT_SOLID.create());
+        fullButton.setIcon(LineAwesomeIcon.CARET_SQUARE_LEFT_SOLID.create());
         fullButton.addClickListener(event -> fullFileViewer());
         final Button closeButton = new Button("Close");
         closeButton.setClassName("no-padding");
-        closeButton.setIcon(LineAwesomeIcon.CLOSED_CAPTIONING_SOLID.create());
+        closeButton.setIcon(LineAwesomeIcon.TIMES_CIRCLE_SOLID.create());
         closeButton.addClickListener(event -> closeFileViewer());
+        final Button previousButton = new Button("Previous");
+        previousButton.setClassName("no-padding");
+        previousButton.setIcon(LineAwesomeIcon.BACKWARD_SOLID.create());
+        previousButton.addClickListener(event -> viewPreviousFile());
+        final Button nextButton = new Button("Next");
+        nextButton.setClassName("no-padding");
+        nextButton.setIcon(LineAwesomeIcon.FORWARD_SOLID.create());
+        nextButton.addClickListener(event -> viewNextFile());
         displayImage = new Image("images/default-thumbnail.png", "");
-        displayForm = new VerticalLayout(new HorizontalLayout(fullButton, closeButton), displayImage);
-        displayForm.setWidth("70em");
+        displayLabel = new Paragraph("-");
+        displayForm = new VerticalLayout(
+            new HorizontalLayout(fullButton, closeButton, previousButton, nextButton),
+            displayLabel,
+            displayImage
+        );
+        displayForm.setWidth("65em");
         displayForm.setVisible(false);
     }
 
@@ -133,11 +151,6 @@ public class FilesView extends VerticalLayout {
     }
 
     //-- actions --
-
-    private void displayFile(FileInfo fileInfo) {
-        String url = "http://localhost:9001/camera-images/" + fileInfo.fileName();
-        openFileViewer(url);
-    }
 
     private void deleteFile(FileInfo fileInfo) {
         confirm("Delete file \"" + fileInfo.fileName() + "\"?", () -> deleteFileConfirmed(fileInfo));
@@ -172,13 +185,37 @@ public class FilesView extends VerticalLayout {
     }
 
     private void updateList() {
-        grid.setItems(fileViewService.listFileInfos(filterText.getValue()));
+        items = fileViewService.listFileInfos(filterText.getValue());
+        grid.setItems(items);
     }
 
-    private void openFileViewer(String url) {
+    private void displayFile(FileInfo fileInfo) {
+        currentItem = fileInfo;
+        String url = "http://localhost:9001/camera-images/" + fileInfo.fileName();
+        openFileViewer(url, fileInfo.fileName() + "  (" + fileInfo.resolution() + ", " + fileInfo.sizeInBytes() + " Bytes)");
+    }
+
+    private void openFileViewer(String url, String label) {
         displayImage.setSrc(url);
         displayForm.setVisible(true);
+        displayLabel.setText(label);
         addClassName("editing");
+    }
+
+    private void viewPreviousFile() {
+        if (currentItem == null || currentItem.index() == 0) {
+            return;
+        }
+        FileInfo fileInfo = items.get(currentItem.index() - 1);
+        displayFile(fileInfo);
+    }
+
+    private void viewNextFile() {
+        if (currentItem == null || currentItem.index() == items.size() - 1) {
+            return;
+        }
+        FileInfo fileInfo = items.get(currentItem.index() + 1);
+        displayFile(fileInfo);
     }
 
     private void closeFileViewer() {

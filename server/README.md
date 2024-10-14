@@ -34,7 +34,8 @@ This should return a JSON like this (the "restart" attribute is used to tell the
 {
   "success": true,
   "size": 10240,
-  "restart": false
+  "restart": false,
+  "paused": false
 }
 ```
 

@@ -13,7 +13,7 @@ import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Label;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
@@ -39,6 +39,7 @@ public class CameraSettingsForm extends FormLayout {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CameraSettingsForm.class);
 
+    Checkbox paused = new Checkbox("Paused");
     IntegerField loopDelaySeconds = new IntegerField("Delay between each picture");
     ComboBox<CameraSettings.FrameSize> frameSize = new ComboBox<>("Frame Size (Resolution)",  CameraSettings.FrameSize.ALL);
     IntegerField jpegQuality = new IntegerField("JPEG Quality (0=best)");
@@ -101,6 +102,7 @@ public class CameraSettingsForm extends FormLayout {
         whitebalanceMode.setItemLabelGenerator(Enum::name);
 
         autoExposureLevel.setItemLabelGenerator(Enum::name);
+        autoExposureLevel.setHelperText("(no real influence)");
         autoExposureValue.setMin(0);
         autoExposureValue.setMax(1024);
         autoExposureValue.setHelperText("0 to 1024");
@@ -116,7 +118,7 @@ public class CameraSettingsForm extends FormLayout {
 
         FormLayout formLayout = new FormLayout();
         formLayout.setWidthFull(); // TODO: does not work
-        formLayout.add(new Label("Cameras Settings"), loopDelaySeconds,
+        formLayout.add(paused, loopDelaySeconds,
             frameSize, jpegQuality,
             blackPixelCorrect, whitePixelCorrect,
             gammaCorrect, lensCorrect,
@@ -124,9 +126,9 @@ public class CameraSettingsForm extends FormLayout {
             brightness, contrast,
             sharpness, saturation,
             denoise, specialEffect,
-            new Label("White Balance"), autoWhitebalance, autoWhitebalanceGain, whitebalanceMode,
+            new Paragraph("White Balance"), autoWhitebalance, autoWhitebalanceGain, whitebalanceMode,
             exposureCtrlSensor, exposureCtrlDsp,
-            new Label("Exposure"), autoExposureLevel,
+            new Paragraph("Exposure"), autoExposureLevel,
             autoExposureValue, autoExposureGainControl,
             autoExposureGainValue, autoExposureGainCeiling,
             createButtonsLayout());

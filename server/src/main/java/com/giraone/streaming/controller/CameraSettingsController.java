@@ -32,7 +32,6 @@ public class CameraSettingsController {
             LOGGER.warn("Cannot read \"{}\"", SETTINGS_FILE_PATH, e);
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
         }
-
     }
 
     public static long getLastModified() {

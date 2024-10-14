@@ -6,9 +6,10 @@
 - `mvn -p production package`
 - `java -jar target/cam-recorder-ui.jar`
 
-## Running the Application
+## TODO
 
-There are two ways to run the application:  using `mvn` or by running the `Application` class directly from your IDE.
+- [ ] Image viewer with scaling
+- [ ] Restart every ... as setting from server (client + server)
 
 ## Vaadin Links
 

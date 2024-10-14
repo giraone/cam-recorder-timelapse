@@ -1,6 +1,8 @@
 package com.giraone.streaming.service;
 
 import com.giraone.streaming.service.model.FileInfo;
+import com.sun.jna.platform.unix.X11;
+import org.checkerframework.checker.units.qual.A;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -11,6 +13,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class FileViewService {
@@ -49,7 +52,10 @@ public class FileViewService {
         if (files == null) {
             return Collections.emptyList();
         }
-        return Arrays.stream(files).map(FileInfo::fromFile).toList();
+        AtomicInteger index = new AtomicInteger(0);
+        return Arrays.stream(files)
+            .map(file -> FileInfo.fromFile(file, index.getAndIncrement()))
+            .toList();
     }
 
     public void deleteFile(FileInfo fileInfo) {

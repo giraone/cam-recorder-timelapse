@@ -1,7 +1,6 @@
 package com.giraone.streaming.views;
 
 import com.giraone.streaming.security.SecurityService;
-import com.giraone.streaming.views.contacts.ContactsView;
 import com.giraone.streaming.views.files.FilesView;
 import com.giraone.streaming.views.settings.CameraSettingsForm;
 import com.vaadin.flow.component.applayout.AppLayout;
@@ -45,9 +44,7 @@ public class MainLayout extends AppLayout {
     private void createDrawer() {
         addToDrawer(new VerticalLayout(
             new RouterLink("Files", FilesView.class),
-            new RouterLink("Contacts", ContactsView.class),
-            new RouterLink("Camera Settings", CameraSettingsForm.class),
-            new RouterLink("Dashboard", DashboardView.class)
+            new RouterLink("Camera Settings", CameraSettingsForm.class)
         ));
     }
 }
