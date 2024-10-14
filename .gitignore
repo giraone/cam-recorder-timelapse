@@ -1,3 +1,6 @@
+FILES/esp*.jpg
+FILES/.thumbs/esp*.jpg
+
 ### IntelliJ IDEA ###
 .idea
 *.iws

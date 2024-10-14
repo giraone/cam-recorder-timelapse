@@ -20,9 +20,9 @@
   "whitebalanceMode": 0,
   "exposureCtrlSensor": true,
   "exposureCtrlDsp": false,
-  "autoExposureLevel": -2,
+  "autoExposureLevel": 0,
   "autoExposureValue": 25,
   "autoExposureGainControl": false,
   "autoExposureGainValue": 25,
-  "autoExposureGainCeiling": 2
+  "autoExposureGainCeiling": 0
 }

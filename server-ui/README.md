@@ -1,9 +1,10 @@
 # Spring Boot and Vaadin
 
-## TODOS
+## Build/Run
 
-- [ ] RestController f. File geht nicht
-- [ ]
+- `mvn package`
+- `mvn -p production package`
+- `java -jar target/cam-recorder-ui.jar`
 
 ## Running the Application
 

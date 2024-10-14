@@ -1,7 +1,11 @@
 /*
- Schiesse Foto und sende es per HTTP Post
+ Take a photo and send it to the server using HTTP POST.
+ - This is done either in a loop or using "touch" on the PIN 12
+ - The file contains the date (fetched from an NTP server)
+ - The camera settings are fetch on each restart from the server
+ - The server can force a restart after each upload, so then all new settings are applied
   
- Siehe
+ See
   - [Make-Magazin ESP32C_Mailkamera](https://github.com/MakeMagazinDE/ESP32C_Mailkamera)
   - https://RandomNerdTutorials.com/esp32-send-email-smtp-server-arduino-ide/
   - https://RandomNerdTutorials.com/esp32-http-get-post-arduino/
@@ -32,7 +36,7 @@ const String JSON_DEFAULT = "{\"clockFrequencyHz\":16000000,\"gammaCorrect\":tru
 
 //-- NTP --------------------------------------------------------------------------
 
-const char* ntpServer = "pool.ntp.org";
+const char* ntpServer = "de.pool.ntp.org";
 const long gmtOffset_sec = 3600;
 const int daylightOffset_sec = 0;
 
