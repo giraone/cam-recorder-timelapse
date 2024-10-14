@@ -1,10 +1,11 @@
 /*
- Take a photo and send it to the server using HTTP POST.
+ Take a photo and send it to the image server using HTTP POST.
  - This is done either in a loop or using "touch" on the PIN 12
- - The file contains the date (fetched from an NTP server)
+ - The file name is build using the date (with base time fetched from an NTP server)
  - The camera settings are fetch on each restart from the server
- - The server can force a restart after each upload, so then all new settings are applied
-  
+ - The server can force a "restart" after each upload, so then all new settings are applied
+ - The server can force pause/resume of the loop. If paused this software will still send requests, but without taking a photo.
+
  See
   - [Make-Magazin ESP32C_Mailkamera](https://github.com/MakeMagazinDE/ESP32C_Mailkamera)
   - https://RandomNerdTutorials.com/esp32-send-email-smtp-server-arduino-ide/
@@ -21,6 +22,8 @@
 
 // if 0, we wait for touch on PIN 12, otherwise this is the loop delay
 int loopDelaySeconds = 30;
+// Is the camera in "paused mode"
+bool paused = false;
 // threshold for touch value
 const uint8_t TOUCH_THRESHOLD = 20;
 
@@ -29,6 +32,7 @@ const uint8_t TOUCH_THRESHOLD = 20;
 const char* TARGET_URL = "http://192.168.178.45:9001";
 const char* MIME_TYPE_JPEG = "image/jpeg";
 const char* MIME_TYPE_JSON = "application/json";
+const char* FILE_PREFIX = "cam-b";
 
 //-- JSON -------------------------------------------------------------------------
 
@@ -61,17 +65,18 @@ void setup() {
   }
   initWiFi(); 
   initNtp();
-
-  JSONVar settingsJson = fetchAndParseCameraSettings();
-  initCameraWithSettings(settingsJson);
-  loopDelaySeconds = settingsJson["loopDelaySeconds"];
+  fetchAndApplySettings(true);
 }
 
 void loop() {
 
   if (loopDelaySeconds > 0) {
     delay(loopDelaySeconds * 1000);
-    shootAndSend();
+    if (paused) {
+      fetchAndApplySettings(false);
+    } else {
+      shootAndSend();
+    }
   } else {
     const bool touched = (touchRead(T5) < TOUCH_THRESHOLD);
     if (touched) {
@@ -132,7 +137,7 @@ JSONVar parseJson(String jsonString) {
 bool sendPhotoViaHttp(camera_fb_t* frameBuffer, char* timeString) {
  
   char urlBuffer[128];
-  snprintf(urlBuffer, sizeof(urlBuffer), "%s/camera-images/esp32-cam1-%s.jpg", TARGET_URL, timeString);
+  snprintf(urlBuffer, sizeof(urlBuffer), "%s/camera-images/%s-%s.jpg", TARGET_URL, FILE_PREFIX, timeString);
   Serial.printf(">>> POST URL = \"%s\"\n", urlBuffer);
  
   HTTPClient http;
@@ -159,14 +164,26 @@ bool sendPhotoViaHttp(camera_fb_t* frameBuffer, char* timeString) {
   return ok;
 }
 
-JSONVar fetchAndParseCameraSettings() {
+void fetchAndApplySettings(bool initCam) {
+  JSONVar settingsJson = fetchAndParseCameraSettings();
+  if (initCam) {
+    initCameraWithSettings(settingsJson);
+  }
+  loopDelaySeconds = settingsJson["loopDelaySeconds"];
+  if (paused && !settingsJson["paused"]) {
+    Serial.println(">>> Leaving paused mode.");
+  } else if (!paused && settingsJson["paused"]) {
+    Serial.println(">>> Going into paused mode.");
+  }
+  paused = settingsJson["paused"];  
+}
 
+JSONVar fetchAndParseCameraSettings() {
   String jsonString = fetchCameraSettings();
   return parseJson(jsonString);
 }
 
 String fetchCameraSettings() {
- 
   char urlBuffer[128];
   snprintf(urlBuffer, sizeof(urlBuffer), "%s/camera-settings", TARGET_URL);
   Serial.printf(">>> GET URL = \"%s\"\n", urlBuffer);
@@ -194,7 +211,6 @@ String fetchCameraSettings() {
 char _timeBuffer[22];
 // Return e.g. 2024-02-13-07-44-17
 char* fetchTimeString() {
- 
   struct tm now;
   if (!getLocalTime(&now)){
     Serial.println(">>> Failed to obtain time!");
