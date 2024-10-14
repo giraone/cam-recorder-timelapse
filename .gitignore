@@ -1,5 +1,5 @@
-FILES/esp*.jpg
-FILES/.thumbs/esp*.jpg
+FILES/cam*.jpg
+FILES/.thumbs/cam*.jpg
 
 ### IntelliJ IDEA ###
 .idea
