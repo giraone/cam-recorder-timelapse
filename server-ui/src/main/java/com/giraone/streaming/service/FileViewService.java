@@ -1,8 +1,6 @@
 package com.giraone.streaming.service;
 
 import com.giraone.streaming.service.model.FileInfo;
-import com.sun.jna.platform.unix.X11;
-import org.checkerframework.checker.units.qual.A;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -55,6 +53,7 @@ public class FileViewService {
         AtomicInteger index = new AtomicInteger(0);
         return Arrays.stream(files)
             .map(file -> FileInfo.fromFile(file, index.getAndIncrement()))
+            .sorted((o1, o2) -> o1.lastModified().isBefore(o2.lastModified()) ? 1 : o1.lastModified().isAfter(o2.lastModified()) ? -1 : 0)
             .toList();
     }
 

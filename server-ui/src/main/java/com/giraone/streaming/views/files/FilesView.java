@@ -104,7 +104,7 @@ public class FilesView extends VerticalLayout {
         grid.addColumn(FileInfo::sizeInBytes).setSortable(true).setHeader("Size").setAutoWidth(true);
         grid.addColumn(FileInfo::resolution).setSortable(true).setHeader("Resolution").setAutoWidth(true);
         //grid.addColumn(FileInfo::mediaType).setSortable(true).setHeader("Type").setAutoWidth(true);
-        grid.sort(List.of(new GridSortOrder<>(grid.getColumns().get(4), SortDirection.DESCENDING))); // lastModified
+        grid.sort(List.of(new GridSortOrder<>(grid.getColumns().get(3), SortDirection.DESCENDING))); // lastModified
     }
 
     private void configureDisplay() {
