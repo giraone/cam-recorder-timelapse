@@ -40,9 +40,13 @@ public class CameraSettingsForm extends FormLayout {
     private static final Logger LOGGER = LoggerFactory.getLogger(CameraSettingsForm.class);
 
     Checkbox paused = new Checkbox("Paused");
+    Checkbox blinkOnSuccess = new Checkbox("Blink on success");
     IntegerField loopDelaySeconds = new IntegerField("Delay between each picture");
-    ComboBox<CameraSettings.FrameSize> frameSize = new ComboBox<>("Frame Size (Resolution)",  CameraSettings.FrameSize.ALL);
+    ComboBox<CameraSettings.FrameSize> frameSize = new ComboBox<>("Frame Size (Resolution)", CameraSettings.FrameSize.ALL);
     IntegerField jpegQuality = new IntegerField("JPEG Quality (0=best)");
+
+    Checkbox flashLedForPicture = new Checkbox("Flash LED");
+    IntegerField flashDurationMs = new IntegerField("Flash Duration");
 
     Checkbox blackPixelCorrect = new Checkbox("Black Pixel Correct");
     Checkbox whitePixelCorrect = new Checkbox("White Pixel Correct");
@@ -57,11 +61,11 @@ public class CameraSettingsForm extends FormLayout {
     ComboBox<CameraSettings.Level> sharpness = new ComboBox<>("Sharpness", CameraSettings.Level.ALL);
     ComboBox<CameraSettings.Level> saturation = new ComboBox<>("Saturation", CameraSettings.Level.ALL);
     ComboBox<CameraSettings.Level> denoise = new ComboBox<>("Denoise", CameraSettings.Level.ALL);
-    ComboBox<CameraSettings.SpecialEffect> specialEffect = new ComboBox<>("Special Effect",  CameraSettings.SpecialEffect.ALL);
+    ComboBox<CameraSettings.SpecialEffect> specialEffect = new ComboBox<>("Special Effect", CameraSettings.SpecialEffect.ALL);
 
     Checkbox autoWhitebalance = new Checkbox("Auto Whitebalance");
     Checkbox autoWhitebalanceGain = new Checkbox("Auto Whitebalance Gain");
-    ComboBox<CameraSettings.WhiteBalanceMode> whitebalanceMode = new ComboBox<>("Whitebalance Mode",  CameraSettings.WhiteBalanceMode.ALL);
+    ComboBox<CameraSettings.WhiteBalanceMode> whitebalanceMode = new ComboBox<>("Whitebalance Mode", CameraSettings.WhiteBalanceMode.ALL);
 
     Checkbox exposureCtrlSensor = new Checkbox("Exposure Control using Sensor");
     Checkbox exposureCtrlDsp = new Checkbox("Exposure Control using DSP");
@@ -93,6 +97,12 @@ public class CameraSettingsForm extends FormLayout {
         jpegQuality.setMin(0);
         jpegQuality.setMax(63);
 
+        flashDurationMs.setMin(1);
+        flashDurationMs.setMax(3600);
+        Div milliSecondsSuffix = new Div();
+        secondsSuffix.setText("milliseconds");
+        flashDurationMs.setSuffixComponent(milliSecondsSuffix);
+
         brightness.setItemLabelGenerator(Enum::name);
         contrast.setItemLabelGenerator(Enum::name);
         sharpness.setItemLabelGenerator(Enum::name);
@@ -118,19 +128,20 @@ public class CameraSettingsForm extends FormLayout {
 
         FormLayout formLayout = new FormLayout();
         formLayout.setWidthFull(); // TODO: does not work
-        formLayout.add(paused, loopDelaySeconds,
-            frameSize, jpegQuality,
-            blackPixelCorrect, whitePixelCorrect,
-            gammaCorrect, lensCorrect,
-            horizontalMirror, verticalFlip,
-            brightness, contrast,
-            sharpness, saturation,
-            denoise, specialEffect,
+        formLayout.add(
+            new Paragraph("Operation Modes"), paused, blinkOnSuccess, loopDelaySeconds,
+            new Paragraph("Image Size and Quality"), new Paragraph(""), frameSize, jpegQuality,
+            new Paragraph("Flash"), new Paragraph(""), flashLedForPicture, flashDurationMs,
+            new Paragraph("Pixel Correction"), new Paragraph(""), blackPixelCorrect, whitePixelCorrect,
+            new Paragraph("Image Correction"), new Paragraph(""), gammaCorrect, lensCorrect,
+            new Paragraph("Mirror/Flip"), new Paragraph(""), horizontalMirror, verticalFlip,
+            new Paragraph("Brightness/Contrast"), new Paragraph(""), brightness, contrast,
+            new Paragraph("Image Enhancement"), new Paragraph(""), sharpness, saturation,
+            new Paragraph("Effects"), new Paragraph(""), denoise, specialEffect,
             new Paragraph("White Balance"), autoWhitebalance, autoWhitebalanceGain, whitebalanceMode,
-            exposureCtrlSensor, exposureCtrlDsp,
-            new Paragraph("Exposure"), autoExposureLevel,
-            autoExposureValue, autoExposureGainControl,
-            autoExposureGainValue, autoExposureGainCeiling,
+            new Paragraph("Exposure Control"), new Paragraph(""), exposureCtrlSensor, exposureCtrlDsp,
+            new Paragraph("Exposure"), new Paragraph(""), autoExposureLevel, autoExposureValue,
+            new Paragraph("Exposure Gain"), autoExposureGainControl, autoExposureGainValue, autoExposureGainCeiling,
             createButtonsLayout());
         formLayout.setResponsiveSteps(
             // Use one column by default

@@ -15,6 +15,9 @@ import java.util.List;
 public class CameraSettings {
 
     private boolean paused = false;
+    private boolean blinkOnSuccess = false;
+    private boolean flashLedForPicture = false;
+    private int flashDurationMs = 100;
     private int loopDelaySeconds = 10;
     private int clockFrequencyHz = 16000000;
     FrameSize frameSize = FrameSize.FRAMESIZE_UXGA;
@@ -59,6 +62,30 @@ public class CameraSettings {
 
     public void setPaused(boolean paused) {
         this.paused = paused;
+    }
+
+    public boolean isBlinkOnSuccess() {
+        return blinkOnSuccess;
+    }
+
+    public void setBlinkOnSuccess(boolean blinkOnSuccess) {
+        this.blinkOnSuccess = blinkOnSuccess;
+    }
+
+    public boolean isFlashLedForPicture() {
+        return flashLedForPicture;
+    }
+
+    public void setFlashLedForPicture(boolean flashLedForPicture) {
+        this.flashLedForPicture = flashLedForPicture;
+    }
+
+    public int getFlashDurationMs() {
+        return flashDurationMs;
+    }
+
+    public void setFlashDurationMs(int flashDurationMs) {
+        this.flashDurationMs = flashDurationMs;
     }
 
     public int getLoopDelaySeconds() {
