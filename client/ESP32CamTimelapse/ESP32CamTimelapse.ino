@@ -22,14 +22,19 @@
 
 // if 0, we wait for touch on PIN 12, otherwise this is the loop delay
 int loopDelaySeconds = 30;
-// Is the camera in "paused mode"
-bool paused = false;
+// Is the camera in "paused mode" - we start always with paused=false
+bool paused = true;
 // threshold for touch value
 const uint8_t TOUCH_THRESHOLD = 20;
 
+//-- Board LED --------------------------------------------------------------------
+
+const int BOARD_LED = 33;
+bool blinkOnSuccess = false;
+
 //-- HTTP -------------------------------------------------------------------------
 
-const char* TARGET_URL = "http://192.168.178.45:9001";
+const char* TARGET_URL = "http://192.168.178.87:9001";
 const char* MIME_TYPE_JPEG = "image/jpeg";
 const char* MIME_TYPE_JSON = "application/json";
 const char* FILE_PREFIX = "cam-b";
@@ -47,8 +52,8 @@ const int daylightOffset_sec = 0;
 //-- Camera (Flash LED) -----------------------------------------------------------
 
 const int FLASH_GPIO_NUM = 4;
-const int FLASH_DURATION_MS = 100;
-const bool FLASH_LED_FOR_PICTURE = false;
+int flashDurationMs = 100;
+bool flashLedForPicture = false;
 
 //-- WIFI -------------------------------------------------------------------------
 
@@ -59,12 +64,13 @@ const char* PASSWORD = "<enter here>";
 
 void setup() {
   Serial.begin(115200);
- 
-  if (FLASH_LED_FOR_PICTURE) {
-    pinMode(FLASH_GPIO_NUM, OUTPUT);
-  }
-  initWiFi(); 
+  pinMode(BOARD_LED, OUTPUT);
+  pinMode(FLASH_GPIO_NUM, OUTPUT);
+  
+  initWiFi();
+  blinkLedOk();
   initNtp();
+  blinkLedOk();
   fetchAndApplySettings(true);
 }
 
@@ -90,21 +96,23 @@ void shootAndSend() {
 
   char* timeString = fetchTimeString();
 
-  if (FLASH_LED_FOR_PICTURE) {
+  if (flashLedForPicture) {
+    Serial.printf(">>> Flash wanted. Using GPIO %d.\n", FLASH_GPIO_NUM);
     digitalWrite(FLASH_GPIO_NUM, HIGH);
-    delay(FLASH_DURATION_MS);
+    delay(flashDurationMs);
   }
-  // Serial.println(">>> Take photo...");
   camera_fb_t* frameBuffer = esp_camera_fb_get();
-  if (FLASH_LED_FOR_PICTURE) {
+  if (flashLedForPicture) {
     digitalWrite(FLASH_GPIO_NUM, LOW);
   }
   if (!frameBuffer) {
     Serial.println(">>> No photo taken!");
+    blinkLedError();
   } else {
     Serial.printf(">>> Photo taken with %d bytes.\n", frameBuffer->len);
     sendPhotoViaHttp(frameBuffer, timeString);
     esp_camera_fb_return(frameBuffer);
+    blinkLedOk();
   }
 }
 
@@ -152,9 +160,11 @@ bool sendPhotoViaHttp(camera_fb_t* frameBuffer, char* timeString) {
     Serial.print(">>> ");
     Serial.println(responseString);
     jsonResponse = parseJson(responseString);
+    blinkLedError();
   } else {
     Serial.printf(">>> HTTP Response code = %d\n", httpResponseCode);
     jsonResponse = "{\"restart\":false}";
+    blinkLedOk();
   }
   http.end();
 
@@ -175,7 +185,10 @@ void fetchAndApplySettings(bool initCam) {
   } else if (!paused && settingsJson["paused"]) {
     Serial.println(">>> Going into paused mode.");
   }
-  paused = settingsJson["paused"];  
+  paused = settingsJson["paused"];
+  blinkOnSuccess = settingsJson["blinkOnSuccess"]; 
+  flashLedForPicture = settingsJson["flashLedForPicture"]; 
+  flashDurationMs = settingsJson["flashDurationMs"]; 
 }
 
 JSONVar fetchAndParseCameraSettings() {
@@ -199,13 +212,34 @@ String fetchCameraSettings() {
     jsonString = http.getString();
     Serial.print(">>> settings = ");
     Serial.println(jsonString);
+    blinkLedOk();
   } else {
     Serial.printf(">>> HTTP Response code = %d\n", httpResponseCode);
     jsonString = JSON_DEFAULT;
+    blinkLedError();
   }
   http.end();
 
   return jsonString;
+}
+
+void blinkLed(int count, int duration) {
+  for (int i = 0; i < count; i++) {
+    digitalWrite(BOARD_LED, HIGH);
+    delay(duration);
+    digitalWrite(BOARD_LED, LOW);
+    delay(duration/2);
+  }
+}
+
+void blinkLedOk() {
+  if (blinkOnSuccess) {
+    blinkLed(1,800);
+  }
+}
+
+void blinkLedError() {
+  blinkLed(3,300);
 }
 
 char _timeBuffer[22];
