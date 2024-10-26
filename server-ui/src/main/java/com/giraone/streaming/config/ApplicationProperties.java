@@ -5,6 +5,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 @ConfigurationProperties(prefix = "application", ignoreUnknownFields = false)
 public class ApplicationProperties {
 
@@ -15,6 +18,20 @@ public class ApplicationProperties {
      */
     private boolean showConfigOnStartup;
 
+    /**
+     * URL for downloading
+     */
+    private String hostUrl;
+
+    public ApplicationProperties() {
+        try {
+            hostUrl = "http://" + InetAddress.getLocalHost().getHostName() + ":9001";
+        } catch (UnknownHostException e) {
+            LOGGER.warn("Cannot obtain host name!");
+            hostUrl = "http://localhost:9001";
+        }
+    }
+
     public boolean isShowConfigOnStartup() {
         return showConfigOnStartup;
     }
@@ -23,10 +40,19 @@ public class ApplicationProperties {
         this.showConfigOnStartup = showConfigOnStartup;
     }
 
+    public String getHostUrl() {
+        return hostUrl;
+    }
+
+    public void setHostUrl(String hostUrl) {
+        this.hostUrl = hostUrl;
+    }
+
     @Override
     public String toString() {
         return "ApplicationProperties{" +
             "showConfigOnStartup=" + showConfigOnStartup +
+            ", hostUrl='" + hostUrl + '\'' +
             '}';
     }
 

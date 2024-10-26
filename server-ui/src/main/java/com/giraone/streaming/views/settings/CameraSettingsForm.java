@@ -93,6 +93,7 @@ public class CameraSettingsForm extends FormLayout {
         Div secondsSuffix = new Div();
         secondsSuffix.setText("seconds");
         loopDelaySeconds.setSuffixComponent(secondsSuffix);
+
         frameSize.setItemLabelGenerator(Enum::name);
         jpegQuality.setMin(0);
         jpegQuality.setMax(63);
@@ -100,7 +101,7 @@ public class CameraSettingsForm extends FormLayout {
         flashDurationMs.setMin(1);
         flashDurationMs.setMax(3600);
         Div milliSecondsSuffix = new Div();
-        secondsSuffix.setText("milliseconds");
+        milliSecondsSuffix.setText("milliseconds");
         flashDurationMs.setSuffixComponent(milliSecondsSuffix);
 
         brightness.setItemLabelGenerator(Enum::name);

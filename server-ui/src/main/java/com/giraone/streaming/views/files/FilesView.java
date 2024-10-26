@@ -1,5 +1,6 @@
 package com.giraone.streaming.views.files;
 
+import com.giraone.streaming.config.ApplicationProperties;
 import com.giraone.streaming.service.FileViewService;
 import com.giraone.streaming.service.model.FileInfo;
 import com.giraone.streaming.views.MainLayout;
@@ -46,12 +47,15 @@ public class FilesView extends VerticalLayout {
     private Paragraph displayLabel;
 
     private final FileViewService fileViewService;
+    private final ApplicationProperties applicationProperties;
+
     private List<FileInfo> items = List.of();
     private FileInfo currentItem = null;
 
-    public FilesView(FileViewService fileViewService) {
+    public FilesView(FileViewService fileViewService, ApplicationProperties applicationProperties) {
 
         this.fileViewService = fileViewService;
+        this.applicationProperties = applicationProperties;
         addClassName("list-view");
         setSizeFull();
         configureGrid();
@@ -191,7 +195,7 @@ public class FilesView extends VerticalLayout {
 
     private void displayFile(FileInfo fileInfo) {
         currentItem = fileInfo;
-        String url = "http://localhost:9001/camera-images/" + fileInfo.fileName();
+        String url = applicationProperties.getHostUrl() + "/camera-images/" + fileInfo.fileName();
         openFileViewer(url, fileInfo.fileName() + "  (" + fileInfo.resolution() + ", " + fileInfo.sizeInBytes() + " Bytes)");
     }
 
