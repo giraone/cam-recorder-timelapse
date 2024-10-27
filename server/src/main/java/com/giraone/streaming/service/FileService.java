@@ -32,7 +32,7 @@ public class FileService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileService.class);
 
-    private static final File FILE_BASE = new File("../FILES");
+    static final File FILE_BASE = new File("../FILES");
     private static final File FILE_THUMBS = new File(FILE_BASE, ".thumbs");
     private static final Pattern FILE_NAME_PATTERN = Pattern.compile("[a-zA-Z0-9-]+[.][a-z]{3,4}");
 
@@ -52,7 +52,7 @@ public class FileService {
         if (isFileNameInvalid(filename)) {
             return Mono.error(new IllegalArgumentException("Invalid target filename \"" + filename + "\"!"));
         }
-        final File file = new File(FILE_BASE, filename);
+        final File file = getFile(filename);
         final AsynchronousFileChannel channel;
         try {
             channel = AsynchronousFileChannel.open(file.toPath(), CREATE, WRITE);
@@ -118,6 +118,10 @@ public class FileService {
 
     public static File getFileDir() {
         return FILE_BASE;
+    }
+
+    public static File getFile(String filename) {
+       return new File(FILE_BASE, filename);
     }
 
     //------------------------------------------------------------------------------------------------------------------

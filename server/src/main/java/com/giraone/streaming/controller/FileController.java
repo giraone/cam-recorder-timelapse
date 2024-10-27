@@ -61,6 +61,7 @@ public class FileController {
                     LOGGER.info("Forcing restart after {} photos.", RESTART_EVERY_PHOTO);
                     photosStored.set(0);
                 } else if ((newLastSettingsChange = CameraSettingsController.getLastModified()) > lastSettingsChange) {
+                    LOGGER.info("Forcing restart after setting changed.");
                     lastSettingsChange = newLastSettingsChange;
                     restartNow = true;
                 } else {

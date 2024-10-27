@@ -15,7 +15,7 @@ class FileServiceIT {
     void createThumbnail() {
 
         for (FileInfo fileInfo : fileService.listFileInfos("000")) {
-            fileService.createThumbnail(fileInfo.toFile());
+            fileService.createThumbnail(FileService.getFile(fileInfo.fileName()));
         }
     }
 }
