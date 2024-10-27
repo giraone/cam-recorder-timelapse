@@ -125,20 +125,20 @@ framesize_t framesizeFromInt(int value) {
       return framesize_t::FRAMESIZE_HQVGA;
     case 4:
       return framesize_t::FRAMESIZE_240X240;
-    case 5:
-      return framesize_t::FRAMESIZE_CIF;
+	case 5:
+      return framesize_t::FRAMESIZE_QVGA;  
     case 6:
-      return framesize_t::FRAMESIZE_HVGA;
+      return framesize_t::FRAMESIZE_CIF;
     case 7:
-      return framesize_t::FRAMESIZE_VGA;
+      return framesize_t::FRAMESIZE_HVGA;
     case 8:
-      return framesize_t::FRAMESIZE_SVGA;
+      return framesize_t::FRAMESIZE_VGA;
     case 9:
-      return framesize_t::FRAMESIZE_XGA;
+      return framesize_t::FRAMESIZE_SVGA;
     case 10:
-      return framesize_t::FRAMESIZE_HD;
+      return framesize_t::FRAMESIZE_XGA;
     case 11:
-      return framesize_t::FRAMESIZE_HQVGA;
+      return framesize_t::FRAMESIZE_HD;
     case 12:
       return framesize_t::FRAMESIZE_SXGA;
     case 13:
