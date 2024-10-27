@@ -94,7 +94,7 @@ public class CameraSettingsForm extends FormLayout {
         secondsSuffix.setText("seconds");
         loopDelaySeconds.setSuffixComponent(secondsSuffix);
 
-        frameSize.setItemLabelGenerator(Enum::name);
+        frameSize.setItemLabelGenerator(CameraSettings.FrameSize::getLabel);
         jpegQuality.setMin(0);
         jpegQuality.setMax(63);
 
