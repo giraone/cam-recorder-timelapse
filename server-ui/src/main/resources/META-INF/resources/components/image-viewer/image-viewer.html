@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>WebImageHtmlViewer</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<script type="text/javascript" src="js/browser-1.1.js" ></script>
+<script type="text/javascript" src="js/imagecanvas-1.3.js"></script>
+<style type="text/css" media="screen">
+body            { margin: 0px; padding: 0px; background-color: #C2C2D6; font-size: 1px; }
+#mainTable      { table-layout: fixed; border: 0px none; width: 99%; height: 44px; }
+#iconTable      { table-layout: fixed; border: 0px none; height: 44px; }
+#menuCell       { padding: 0px; height: 44px; }
+#titleCell      { padding-left: 16px; height: 44px; }
+#titleDiv       { height: 44px; overflow: hidden; font-family: Arial,Helvetica,sans-serif; font-size: 12px; }
+td.icon         { padding: 0px; border: 0px none; width: 32px; height: 36px; }
+td.iconSep      { padding: 0px; border: 0px none; width: 16px; height: 36px; }
+td.iconRuler    { padding: 0px; border: 0px none; width: 70px; height: 8px; text-align: center; }
+canvas          { margin: 0px; display: block; background: #000000; border: 0px none }
+.hide           { display: none; }
+.show           { display: inline; }
+</style>
+</head>
+
+<body onload="onloadFunction()">
+<table id="mainTable" class="show">
+<tr>
+    <td id="menuCell">
+        <table id="iconTable">
+            <tr>
+                <td class="icon"><img src="images/zoom_in.gif" onMouseOut="R.restoreImage(0);" id="x_menu_0" onMouseOver="R.swapImage(0);" onclick="imageCanvas1.zoomRelative(+1)" /></td>
+                <td class="icon"><img src="images/zoom_normal.gif" title="Viewer_tooltip_zoomn" id="x_menu_1" onMouseOut="R.restoreImage(1);" onMouseOver="R.swapImage(1);" onclick="imageCanvas1.scaleAbsolute(1.0)" /></td>
+                <td class="icon"><img src="images/zoom_out.gif" title="Viewer_tooltip_zoomout" id="x_menu_2" onMouseOut="R.restoreImage(2);" onMouseOver="R.swapImage(2);" onclick="imageCanvas1.zoomRelative(-1)" /></td>
+            </tr>
+            <tr>
+                <td class="iconRuler" colspan="3"><img id="zoom_ruler" src="images/ruler/r0.gif" /></td>
+            </tr>
+        </table>
+    </td>
+    <td id="titleCell"><div id="titleDiv">No image loaded!</div></td>
+</tr>
+</table>
+<canvas id="imageCanvas1"></canvas>
+<script type="text/javascript">
+var R = new Rollover();
+// Size of header, used to calculate canvas height.
+// Windows: Chrome, MSIE, Safari5 needs 52,  Firefox 21 needs 54
+// Android: Chrome, Android needs 54, Firefox needs 52
+var headerWidth = 54;
+var basePath = "";
+
+if (!window.console) console = {log: function() {}};
+function log(msg)
+{
+	console.log(msg);
+};
+
+function logx(msg)
+{
+    var l = document.getElementById("log");
+    l.value = msg + "\r\n" + l.value;
+};
+
+function valueToRulerName(floatValue)
+{
+	var value = Math.ceil(floatValue); 
+	if (value < 0)
+    {
+		if (value > -10)
+			return "rm" + (-value);
+		else
+			return "rm10";
+    }
+	else if (value > 0)
+    {
+		if (value < 10)
+			return "rp" + value;
+		else
+			return "rp10";
+    }
+	else
+	{
+		return "r0";	
+	}
+};
+
+function zoomCallback(floatValue)
+{	
+	var rulerValue = (floatValue - 1.0) * 8.0;
+	var r = document.getElementById("zoom_ruler");
+	r.src = basePath + "images/ruler/" + valueToRulerName(rulerValue) + ".gif";
+};
+
+function loadURL(url, text)
+{
+	imageCanvas1.options.msgLoadStart = 'Image loading. Please wait...';
+	imageCanvas1.options.msgLoaded = 'Image loaded.';
+	imageCanvas1.loadImage(url, true, 'Image is loaded. Please wait...');
+  DHTML.setHtmlContent(DHTML.getElementById("titleDiv"), text);
+}
+
+var imageCanvasInitOnce = new ImageCanvasInitOnce(document);
+imageCanvasInitOnce.disableMouseWheelOnDocument(document);
+
+var imageCanvas1 = null;
+
+function onloadFunction()
+{
+	R.loadIcons(
+		basePath + "images/zoom_in.gif",
+		basePath + "images/zoom_normal.gif",
+		basePath + "images/zoom_out.gif",
+	);
+		
+	var c = document.getElementById("imageCanvas1");
+	c.width = DHTML.getDocumentWidth();
+	c.height = DHTML.getDocumentHeight() - headerWidth;
+	
+	imageCanvas1 = new ImageCanvas(document, c, log);
+	imageCanvas1.zoomCallback = zoomCallback;
+
+	var windowWidth = DHTML.getWindowWidth();
+	var windowHeight = DHTML.getWindowHeight();
+
+	window.onresize = function(e) {
+		var windowWidth2 = DHTML.getWindowWidth();
+		var windowHeight2 = DHTML.getWindowHeight();
+		var dw = windowWidth2 - windowWidth;
+		var dh = windowHeight2 - windowHeight;
+		c.width += dw;
+		c.height += dh;
+		windowWidth = windowWidth2;
+		windowHeight = windowHeight2;
+		imageCanvas1.scaleToContainer();
+	};
+
+}
+</script>
+
+</body>
+</html>

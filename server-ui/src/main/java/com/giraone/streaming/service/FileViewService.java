@@ -46,7 +46,6 @@ public class FileViewService {
 
     public List<FileInfo> listFileInfos(String prefixFilter) {
         File[] files = FILE_BASE.listFiles((dir, name) -> !name.startsWith(".") && name.startsWith(prefixFilter));
-        LOGGER.debug("Files: {}", files);
         if (files == null) {
             return Collections.emptyList();
         }

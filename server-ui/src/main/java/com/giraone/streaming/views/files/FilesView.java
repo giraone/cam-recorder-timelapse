@@ -5,13 +5,14 @@ import com.giraone.streaming.service.FileViewService;
 import com.giraone.streaming.service.model.FileInfo;
 import com.giraone.streaming.views.MainLayout;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridSortOrder;
+import com.vaadin.flow.component.html.IFrame;
 import com.vaadin.flow.component.html.Image;
-import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -47,9 +48,10 @@ public class FilesView extends VerticalLayout {
 
     private final Grid<FileInfo> grid = new Grid<>(FileInfo.class);
     private final TextField filterText = new TextField();
+    private VerticalLayout gridWithToolbar;
     private VerticalLayout displayForm;
-    private Image displayImage;
-    private Paragraph displayLabel;
+    private IFrame displayIframe;
+    private Button fullButton;
     private Button previousButton;
     private Button nextButton;
 
@@ -58,6 +60,7 @@ public class FilesView extends VerticalLayout {
 
     private List<FileInfo> items = List.of();
     private FileInfo currentItem = null;
+    private boolean firstDisplay = true;
 
     public FilesView(FileViewService fileViewService, ApplicationProperties applicationProperties) {
 
@@ -67,14 +70,15 @@ public class FilesView extends VerticalLayout {
         setSizeFull();
         configureGrid();
         configureDisplay();
-        add(getToolbar(), getContent());
+        add(getContent());
         updateList();
         closeFileViewer();
     }
 
     private HorizontalLayout getContent() {
-        HorizontalLayout content = new HorizontalLayout(grid, displayForm);
-        content.setFlexGrow(2, grid);
+        gridWithToolbar = new VerticalLayout(buildToolbar(), grid);
+        HorizontalLayout content = new HorizontalLayout(gridWithToolbar, displayForm);
+        content.setFlexGrow(2, gridWithToolbar);
         content.setFlexGrow(1, displayForm);
         content.setSizeFull();
         return content;
@@ -114,10 +118,11 @@ public class FilesView extends VerticalLayout {
     }
 
     private void configureDisplay() {
-        final Button fullButton = new Button("Maximize View");
+        fullButton = new Button("Maximize View");
         fullButton.setClassName("no-padding");
         fullButton.setIcon(LineAwesomeIcon.CARET_SQUARE_LEFT_SOLID.create());
         fullButton.addClickListener(event -> fullFileViewer());
+        fullButton.setEnabled(!items.isEmpty());
         final Button closeButton = new Button("Close");
         closeButton.setClassName("no-padding");
         closeButton.setIcon(LineAwesomeIcon.TIMES_CIRCLE_SOLID.create());
@@ -132,20 +137,25 @@ public class FilesView extends VerticalLayout {
         nextButton.setIcon(LineAwesomeIcon.FORWARD_SOLID.create());
         nextButton.addClickListener(event -> viewNextFile());
         nextButton.setEnabled(!items.isEmpty());
-        displayImage = new Image("images/default-thumbnail.png", "");
-        displayLabel = new Paragraph("-");
+        displayIframe = new IFrame("components/image-viewer/image-viewer.html");
+        displayIframe.setWidth("100%");
+        displayIframe.setHeight("100vh");
+        displayIframe.getElement().setAttribute("frameborder", "0");
+        displayIframe.setId("imageViewerIFrame");
         displayForm = new VerticalLayout(
             new HorizontalLayout(fullButton, closeButton, previousButton, nextButton),
-            displayLabel,
-            displayImage
+            displayIframe
         );
-        displayForm.setWidth("65em");
+        displayForm.setPadding(false);
+        displayForm.setMinWidth("35%");
         displayForm.setVisible(false);
+        UI.getCurrent().getPage().addJavaScript("js/global.js");
     }
 
-    private Component getToolbar() {
+    private Component buildToolbar() {
         filterText.setPlaceholder("Filter by name...");
         filterText.setClearButtonVisible(true);
+        filterText.setMinWidth("40%");
         filterText.setValueChangeMode(ValueChangeMode.LAZY);
         filterText.addValueChangeListener(e -> updateList());
 
@@ -157,9 +167,7 @@ public class FilesView extends VerticalLayout {
         deleteSelectedButton.setIcon(LineAwesomeIcon.CUT_SOLID.create());
         deleteSelectedButton.addClickListener(click -> deleteSelected());
 
-        var toolbar = new HorizontalLayout(filterText, reloadButton, deleteSelectedButton);
-        toolbar.addClassName("toolbar");
-        return toolbar;
+        return new HorizontalLayout(filterText, reloadButton, deleteSelectedButton);
     }
 
     //-- actions --
@@ -233,10 +241,15 @@ public class FilesView extends VerticalLayout {
     }
 
     private void openFileViewer(String url, String label) {
-        displayImage.setSrc(url);
         displayForm.setVisible(true);
-        displayLabel.setText(label);
-        addClassName("editing");
+
+        if (firstDisplay) {
+            // for some reason on the first image, we have to wait a little before we can load the image
+            UI.getCurrent().getPage().executeJs("setTimeout(loadImage,500,$0,$1)", url, label);
+            firstDisplay = false;
+        } else {
+            UI.getCurrent().getPage().executeJs("loadImage($0,$1)", url, label);
+        }
     }
 
     private void viewPreviousFile() {
@@ -262,14 +275,15 @@ public class FilesView extends VerticalLayout {
     }
 
     private void closeFileViewer() {
-        displayImage.setSrc("images/default-thumbnail.png");
         displayForm.setVisible(false);
-        grid.setVisible(true);
+        gridWithToolbar.setVisible(true);
+        fullButton.setEnabled(!items.isEmpty());
         removeClassName("editing");
     }
 
     private void fullFileViewer() {
-        grid.setVisible(false);
+        gridWithToolbar.setVisible(false);
+        fullButton.setEnabled(false);
     }
 
     private void confirm(String text, Supplier<String> action) {
