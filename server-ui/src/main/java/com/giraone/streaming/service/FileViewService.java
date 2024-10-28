@@ -52,7 +52,7 @@ public class FileViewService {
         }
         AtomicInteger index = new AtomicInteger(0);
         return Arrays.stream(files)
-            .map(file -> FileInfo.fromFile(file, index.getAndIncrement()))
+            .map(FileInfo::fromFile)
             .sorted((o1, o2) -> o1.lastModified().isBefore(o2.lastModified()) ? 1 : o1.lastModified().isAfter(o2.lastModified()) ? -1 : 0)
             .toList();
     }
@@ -63,6 +63,6 @@ public class FileViewService {
     }
 
     public void deleteFiles(Set<FileInfo> selectedItems) {
-        selectedItems.forEach(fileInfo -> deleteFile(fileInfo));
+        selectedItems.forEach(this::deleteFile);
     }
 }

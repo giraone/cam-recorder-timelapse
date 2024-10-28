@@ -16,6 +16,9 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.provider.DataCommunicator;
+import com.vaadin.flow.data.provider.ListDataProvider;
+import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
@@ -30,6 +33,8 @@ import org.vaadin.lineawesome.LineAwesomeIcon;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @SpringComponent
 @Scope("prototype")
@@ -45,6 +50,8 @@ public class FilesView extends VerticalLayout {
     private VerticalLayout displayForm;
     private Image displayImage;
     private Paragraph displayLabel;
+    private Button previousButton;
+    private Button nextButton;
 
     private final FileViewService fileViewService;
     private final ApplicationProperties applicationProperties;
@@ -103,7 +110,6 @@ public class FilesView extends VerticalLayout {
         grid.addColumn(FileInfo::toDisplayShort).setSortable(true).setHeader("Last Modified").setAutoWidth(true);
         grid.addColumn(FileInfo::sizeInBytes).setSortable(true).setHeader("Size").setAutoWidth(true);
         grid.addColumn(FileInfo::resolution).setSortable(true).setHeader("Resolution").setAutoWidth(true);
-        //grid.addColumn(FileInfo::mediaType).setSortable(true).setHeader("Type").setAutoWidth(true);
         grid.sort(List.of(new GridSortOrder<>(grid.getColumns().get(3), SortDirection.DESCENDING))); // lastModified
     }
 
@@ -116,14 +122,16 @@ public class FilesView extends VerticalLayout {
         closeButton.setClassName("no-padding");
         closeButton.setIcon(LineAwesomeIcon.TIMES_CIRCLE_SOLID.create());
         closeButton.addClickListener(event -> closeFileViewer());
-        final Button previousButton = new Button("Previous");
+        previousButton = new Button("Previous");
         previousButton.setClassName("no-padding");
         previousButton.setIcon(LineAwesomeIcon.BACKWARD_SOLID.create());
         previousButton.addClickListener(event -> viewPreviousFile());
-        final Button nextButton = new Button("Next");
+        previousButton.setEnabled(!items.isEmpty());
+        nextButton = new Button("Next");
         nextButton.setClassName("no-padding");
         nextButton.setIcon(LineAwesomeIcon.FORWARD_SOLID.create());
         nextButton.addClickListener(event -> viewNextFile());
+        nextButton.setEnabled(!items.isEmpty());
         displayImage = new Image("images/default-thumbnail.png", "");
         displayLabel = new Paragraph("-");
         displayForm = new VerticalLayout(
@@ -176,9 +184,9 @@ public class FilesView extends VerticalLayout {
         confirm("Delete " + selectedItems.size() + " selected files?", () -> deleteSelectedConfirm(selectedItems));
     }
 
-    private String deleteSelectedConfirm(Set<FileInfo> items) {
+    private String deleteSelectedConfirm(Set<FileInfo> itemsToDelete) {
         try {
-            fileViewService.deleteFiles(items);
+            fileViewService.deleteFiles(itemsToDelete);
         } catch (Exception e) {
             LOGGER.warn("deleteSelected failed!", e);
             return e.getMessage();
@@ -191,6 +199,31 @@ public class FilesView extends VerticalLayout {
     private void updateList() {
         items = fileViewService.listFileInfos(filterText.getValue());
         grid.setItems(items);
+        final boolean enabled = !items.isEmpty();
+        previousButton.setEnabled(enabled);
+        nextButton.setEnabled(enabled);
+    }
+
+    private List<FileInfo> getItemsWithSortOrder() {
+        ListDataProvider<FileInfo> dataProvider = (ListDataProvider<FileInfo>) grid.getDataProvider();
+        int totalSize = dataProvider.getItems().size();
+        DataCommunicator<FileInfo> dataCommunicator = grid.getDataCommunicator();
+        Stream<FileInfo> stream = dataProvider.fetch(new Query<>(
+            0,
+            totalSize,
+            dataCommunicator.getBackEndSorting(),
+            dataCommunicator.getInMemorySorting(),
+            dataProvider.getFilter()));
+        return stream.collect(Collectors.toList());
+    }
+
+    private static int findIndexOfItem(List<FileInfo> items, FileInfo wanted) {
+        for (int i = 0; i < items.size(); i++) {
+            if (items.get(i).fileName().equals(wanted.fileName())) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private void displayFile(FileInfo fileInfo) {
@@ -207,18 +240,24 @@ public class FilesView extends VerticalLayout {
     }
 
     private void viewPreviousFile() {
-        if (currentItem == null || currentItem.index() == 0) {
+        if (items.isEmpty()) {
             return;
         }
-        FileInfo fileInfo = items.get(currentItem.index() - 1);
+        final List<FileInfo> sortedItems = getItemsWithSortOrder();
+        final int currentIndex = findIndexOfItem(sortedItems, currentItem);
+        final int nextIndex = currentIndex == 0 ? items.size() - 1 : currentIndex - 1;
+        final FileInfo fileInfo = sortedItems.get(nextIndex);
         displayFile(fileInfo);
     }
 
     private void viewNextFile() {
-        if (currentItem == null || currentItem.index() == items.size() - 1) {
+        if (items.isEmpty()) {
             return;
         }
-        FileInfo fileInfo = items.get(currentItem.index() + 1);
+        final List<FileInfo> sortedItems = getItemsWithSortOrder();
+        final int currentIndex = findIndexOfItem(sortedItems, currentItem);
+        final int nextIndex =currentIndex == items.size() - 1 ? 0 : currentIndex + 1;
+        final FileInfo fileInfo = sortedItems.get(nextIndex);
         displayFile(fileInfo);
     }
 

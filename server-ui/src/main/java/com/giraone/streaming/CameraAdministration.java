@@ -29,12 +29,12 @@ import java.nio.charset.Charset;
     offlinePath = "offline.html",
     offlineResources = {"images/offline.png"}
 )
-public class CameraApplication implements AppShellConfigurator {
+public class CameraAdministration implements AppShellConfigurator {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(CameraApplication.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(CameraAdministration.class);
 
     public static void main(String[] args) {
-        SpringApplication app = new SpringApplication(CameraApplication.class);
+        SpringApplication app = new SpringApplication(CameraAdministration.class);
         Environment env = app.run(args).getEnvironment();
         logApplicationStartup(env);
     }

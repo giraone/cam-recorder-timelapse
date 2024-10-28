@@ -11,7 +11,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
-public record FileInfo(int index, String fileName, long sizeInBytes, String mediaType, LocalDateTime lastModified, String resolution) {
+public record FileInfo(String fileName, long sizeInBytes, String mediaType, LocalDateTime lastModified, String resolution) {
 
     private static final ImagingProvider imagingProvider = new ProviderJava2D();
 
@@ -19,9 +19,9 @@ public record FileInfo(int index, String fileName, long sizeInBytes, String medi
         return DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(lastModified);
     }
 
-    public static FileInfo fromFile(File file, int index) {
+    public static FileInfo fromFile(File file) {
         final String fileName = file.getName();
-        return new FileInfo(index, file.getName(), file.length(), mediaTypeFromFileName(fileName),
+        return new FileInfo(file.getName(), file.length(), mediaTypeFromFileName(fileName),
             ofEpochSecond(file.lastModified() / 1000), fetchResolution(file));
     }
 

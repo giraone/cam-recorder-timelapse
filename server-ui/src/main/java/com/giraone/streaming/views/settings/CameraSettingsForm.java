@@ -7,12 +7,14 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -128,10 +130,11 @@ public class CameraSettingsForm extends FormLayout {
         autoExposureGainCeiling.setStepButtonsVisible(true);
 
         FormLayout formLayout = new FormLayout();
-        formLayout.setWidthFull(); // TODO: does not work
+        formLayout.setMinWidth(98, Unit.PERCENTAGE);
         formLayout.add(
             new Paragraph("Operation Modes"), paused, blinkOnSuccess, loopDelaySeconds,
             new Paragraph("Image Size and Quality"), new Paragraph(""), frameSize, jpegQuality,
+            new Hr(), new Hr(), new Hr(), new Hr(),
             new Paragraph("Flash"), new Paragraph(""), flashLedForPicture, flashDurationMs,
             new Paragraph("Pixel Correction"), new Paragraph(""), blackPixelCorrect, whitePixelCorrect,
             new Paragraph("Image Correction"), new Paragraph(""), gammaCorrect, lensCorrect,
@@ -139,10 +142,12 @@ public class CameraSettingsForm extends FormLayout {
             new Paragraph("Brightness/Contrast"), new Paragraph(""), brightness, contrast,
             new Paragraph("Image Enhancement"), new Paragraph(""), sharpness, saturation,
             new Paragraph("Effects"), new Paragraph(""), denoise, specialEffect,
+            new Hr(), new Hr(), new Hr(), new Hr(),
             new Paragraph("White Balance"), autoWhitebalance, autoWhitebalanceGain, whitebalanceMode,
+            new Hr(), new Hr(), new Hr(), new Hr(),
             new Paragraph("Exposure Control"), new Paragraph(""), exposureCtrlSensor, exposureCtrlDsp,
             new Paragraph("Exposure"), new Paragraph(""), autoExposureLevel, autoExposureValue,
-            new Paragraph("Exposure Gain"), autoExposureGainControl, autoExposureGainValue, autoExposureGainCeiling,
+            new Paragraph("Exposure Gain (when peformed by sensor)"), autoExposureGainControl, autoExposureGainValue, autoExposureGainCeiling,
             createButtonsLayout());
         formLayout.setResponsiveSteps(
             // Use one column by default
@@ -153,10 +158,7 @@ public class CameraSettingsForm extends FormLayout {
             new ResponsiveStep("640px", 4));
 
         add(formLayout);
-
         addSaveListener(this::saveCameraSettings);
-        //addCloseListener(e -> closeEditor());
-
         setCameraSettings(cameraSettingsAdminService.getSettings());
     }
 
