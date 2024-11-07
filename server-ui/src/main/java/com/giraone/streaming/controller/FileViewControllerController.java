@@ -26,10 +26,24 @@ public class FileViewControllerController {
     }
 
     @SuppressWarnings("unused")
-    @GetMapping("api/thumbs/{filename}")
-    ResponseEntity<byte[]> streamThumb(@PathVariable String filename) {
+    @GetMapping("api/images/thumbs/{filename}")
+    ResponseEntity<byte[]> streamImageThumb(@PathVariable String filename) {
 
         final File file = new File(fileViewService.getImagesThumbDir(), filename);
+        try {
+            final byte[] content = Files.readAllBytes(file.toPath());
+            return ResponseEntity.ok(content);
+        } catch (IOException e) {
+            LOGGER.warn("Cannot read \"{}\"", file, e);
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @GetMapping("api/videos/thumbs/{filename}")
+    ResponseEntity<byte[]> streamVideoThumb(@PathVariable String filename) {
+
+        final File file = new File(fileViewService.getVideosThumbDir(), filename);
         try {
             final byte[] content = Files.readAllBytes(file.toPath());
             return ResponseEntity.ok(content);

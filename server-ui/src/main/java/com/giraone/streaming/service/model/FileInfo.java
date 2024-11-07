@@ -19,10 +19,19 @@ public record FileInfo(String fileName, long sizeInBytes, String mediaType, Loca
         return DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(lastModified);
     }
 
+    public boolean isVideo() {
+        return mediaType.startsWith("video");
+    }
+
+    public boolean isImage() {
+        return mediaType.startsWith("image");
+    }
+
     public static FileInfo fromFile(File file) {
         final String fileName = file.getName();
-        return new FileInfo(file.getName(), file.length(), mediaTypeFromFileName(fileName),
-            ofEpochSecond(file.lastModified() / 1000), fetchResolution(file));
+        final String mediaType = mediaTypeFromFileName(fileName);
+        return new FileInfo(file.getName(), file.length(), mediaType,
+            ofEpochSecond(file.lastModified() / 1000), mediaType.startsWith("image") ? fetchImageResolution(file) : "Video");
     }
 
     public static String mediaTypeFromFileName(String filename) {
@@ -31,12 +40,14 @@ public record FileInfo(String fileName, long sizeInBytes, String mediaType, Loca
             return MediaType.IMAGE_JPEG_VALUE;
         } else if (filename.endsWith(".png")) {
             return MediaType.IMAGE_PNG_VALUE;
+        } else if (filename.endsWith(".mp4")) {
+            return "video/mp4";
         } else {
             return MediaType.APPLICATION_OCTET_STREAM_VALUE;
         }
     }
 
-    public static String fetchResolution(File file) {
+    public static String fetchImageResolution(File file) {
         try {
             com.giraone.imaging.FileInfo imagingFileInfo = imagingProvider.fetchFileInfo(file);
             return imagingFileInfo.getWidth() + "x" + imagingFileInfo.getHeight();

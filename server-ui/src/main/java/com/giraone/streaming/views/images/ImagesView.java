@@ -65,7 +65,7 @@ public class ImagesView extends VerticalLayout {
 
         this.fileViewService = fileViewService;
         this.applicationProperties = applicationProperties;
-        addClassName("list-view");
+        addClassName("images-view");
         setSizeFull();
         configureGrid();
         configureDisplay();
@@ -103,7 +103,7 @@ public class ImagesView extends VerticalLayout {
             return ret;
         }).setHeader("Action").setAutoWidth(false);
         grid.addComponentColumn(fileInfo -> {
-            final Image image = new Image(fileViewService.getThumbUrl(fileInfo.fileName()), "no thubnail!");
+            final Image image = new Image(fileViewService.getThumbUrl(fileInfo), "no thubnail!");
             image.setWidth(64, Unit.PIXELS);
             image.setHeight(48, Unit.PIXELS);
             image.setClassName("no-padding");
@@ -241,7 +241,6 @@ public class ImagesView extends VerticalLayout {
 
     private void openFileViewer(String url, String label) {
         displayForm.setVisible(true);
-
         if (firstDisplay) {
             // for some reason on the first image, we have to wait a little before we can load the image
             UI.getCurrent().getPage().executeJs("setTimeout(loadImage,500,$0,$1)", url, label);

@@ -11,7 +11,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class FileViewService {
@@ -56,8 +55,10 @@ public class FileViewService {
         return VIDEOS_THUMBS;
     }
 
-    public String getThumbUrl(String fileName) {
-        return "api/thumbs/" + fileName;
+    public String getThumbUrl(FileInfo fileInfo) {
+        return fileInfo.isVideo()
+            ? "api/videos/thumbs/" +  fileInfo.fileName().replace(".mp4", ".jpg")
+            : "api/images/thumbs/" + fileInfo.fileName();
     }
 
     public List<FileInfo> listImageInfos(String prefixFilter) {

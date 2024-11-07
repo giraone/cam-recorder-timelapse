@@ -65,7 +65,7 @@ public class VideosView extends VerticalLayout {
 
         this.fileViewService = fileViewService;
         this.applicationProperties = applicationProperties;
-        addClassName("list-view");
+        addClassName("videos-view");
         setSizeFull();
         configureGrid();
         configureDisplay();
@@ -103,7 +103,7 @@ public class VideosView extends VerticalLayout {
             return ret;
         }).setHeader("Action").setAutoWidth(false);
         grid.addComponentColumn(fileInfo -> {
-            final Image image = new Image(fileViewService.getThumbUrl(fileInfo.fileName()), "no thubnail!");
+            final Image image = new Image(fileViewService.getThumbUrl(fileInfo), "no thubnail!");
             image.setWidth(64, Unit.PIXELS);
             image.setHeight(48, Unit.PIXELS);
             image.setClassName("no-padding");
@@ -136,11 +136,11 @@ public class VideosView extends VerticalLayout {
         nextButton.setIcon(LineAwesomeIcon.FORWARD_SOLID.create());
         nextButton.addClickListener(event -> viewNextFile());
         nextButton.setEnabled(!items.isEmpty());
-        IFrame displayIframe = new IFrame("components/image-viewer/image-viewer.html");
+        IFrame displayIframe = new IFrame("components/video-viewer/video-viewer.html");
         displayIframe.setWidth("100%");
         displayIframe.setHeight("100vh");
         displayIframe.getElement().setAttribute("frameborder", "0");
-        displayIframe.setId("imageViewerIFrame");
+        displayIframe.setId("videoViewerIFrame");
         displayForm = new VerticalLayout(
             new HorizontalLayout(fullButton, closeButton, previousButton, nextButton),
             displayIframe
@@ -241,13 +241,12 @@ public class VideosView extends VerticalLayout {
 
     private void openFileViewer(String url, String label) {
         displayForm.setVisible(true);
-
         if (firstDisplay) {
             // for some reason on the first image, we have to wait a little before we can load the image
-            UI.getCurrent().getPage().executeJs("setTimeout(loadImage,500,$0,$1)", url, label);
+            UI.getCurrent().getPage().executeJs("setTimeout(loadVideo,500,$0,$1)", url, label);
             firstDisplay = false;
         } else {
-            UI.getCurrent().getPage().executeJs("loadImage($0,$1)", url, label);
+            UI.getCurrent().getPage().executeJs("loadVideo($0,$1)", url, label);
         }
     }
 

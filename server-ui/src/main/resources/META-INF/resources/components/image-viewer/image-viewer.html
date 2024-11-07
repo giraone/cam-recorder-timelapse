@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>WebImageHtmlViewer</title>
+<title>ImageViewer</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <script type="text/javascript" src="js/browser-1.1.js" ></script>
@@ -91,7 +91,7 @@ function zoomCallback(floatValue)
 	r.src = basePath + "images/ruler/" + valueToRulerName(rulerValue) + ".gif";
 };
 
-function loadURL(url, text)
+function loadUrl(url, text)
 {
 	imageCanvas1.options.msgLoadStart = 'Image loading. Please wait...';
 	imageCanvas1.options.msgLoaded = 'Image loaded.';
