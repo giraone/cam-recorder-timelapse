@@ -16,9 +16,13 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.textfield.IntegerField;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.router.PageTitle;
@@ -42,6 +46,8 @@ public class CameraSettingsForm extends FormLayout {
     private static final Logger LOGGER = LoggerFactory.getLogger(CameraSettingsForm.class);
 
     Checkbox paused = new Checkbox("Paused");
+    IntegerField restartAfterAmount = new IntegerField("Restart device after n images");
+
     Checkbox blinkOnSuccess = new Checkbox("Blink on success");
     IntegerField loopDelaySeconds = new IntegerField("Delay between each picture");
     ComboBox<CameraSettings.FrameSize> frameSize = new ComboBox<>("Frame Size (Resolution)", CameraSettings.FrameSize.ALL);
@@ -73,7 +79,7 @@ public class CameraSettingsForm extends FormLayout {
     Checkbox exposureCtrlDsp = new Checkbox("Exposure Control using DSP");
     ComboBox<CameraSettings.Level> autoExposureLevel = new ComboBox<>("Auto Exposure Level", CameraSettings.Level.ALL);
     IntegerField autoExposureValue = new IntegerField("Auto Exposure Value");
-    Checkbox autoExposureGainControl = new Checkbox("Auto Exposure Gain Control");
+    Checkbox autoExposureGainControl = new Checkbox("Exposure Gain, when peformed by sensor");
     IntegerField autoExposureGainValue = new IntegerField("Auto Exposure Gain Value");
     IntegerField autoExposureGainCeiling = new IntegerField("Auto Exposure Gain Ceiling");
 
@@ -90,6 +96,10 @@ public class CameraSettingsForm extends FormLayout {
         addClassName("camera-settings-form");
         binder.bindInstanceFields(this);
 
+        paused.setHelperText("Device/camera will be paused also on start/restart.");
+        restartAfterAmount.setMin(1);
+        restartAfterAmount.setMax(1000);
+
         loopDelaySeconds.setMin(1);
         loopDelaySeconds.setMax(3600);
         Div secondsSuffix = new Div();
@@ -105,6 +115,12 @@ public class CameraSettingsForm extends FormLayout {
         Div milliSecondsSuffix = new Div();
         milliSecondsSuffix.setText("milliseconds");
         flashDurationMs.setSuffixComponent(milliSecondsSuffix);
+
+        gammaCorrect.setClassName("label-bold");
+        gammaCorrect.setHelperText("Absolutely necessary.");
+        lensCorrect.setHelperText("Small improvement of quality and brighter images.");
+        whitePixelCorrect.setHelperText("Remove white pixels in the image. White pixels occur more often, than block pixels.");
+        blackPixelCorrect.setHelperText("Remove black pixels in the image. Black pixels occur not so often, than white pixels.");
 
         brightness.setItemLabelGenerator(Enum::name);
         contrast.setItemLabelGenerator(Enum::name);
@@ -132,30 +148,30 @@ public class CameraSettingsForm extends FormLayout {
         FormLayout formLayout = new FormLayout();
         formLayout.setMinWidth(98, Unit.PERCENTAGE);
         formLayout.add(
-            new Paragraph("Operation Modes"), paused, blinkOnSuccess, loopDelaySeconds,
+            new Paragraph("Operation Modes"), paused, restartAfterAmount,
+            new Paragraph(""), blinkOnSuccess, loopDelaySeconds,
+            new Hr(), new Hr(), new Hr(),
             new Paragraph("Image Size and Quality"), new Paragraph(""), frameSize, jpegQuality,
-            new Hr(), new Hr(), new Hr(), new Hr(),
-            new Paragraph("Flash"), new Paragraph(""), flashLedForPicture, flashDurationMs,
-            new Paragraph("Pixel Correction"), new Paragraph(""), blackPixelCorrect, whitePixelCorrect,
-            new Paragraph("Image Correction"), new Paragraph(""), gammaCorrect, lensCorrect,
-            new Paragraph("Mirror/Flip"), new Paragraph(""), horizontalMirror, verticalFlip,
-            new Paragraph("Brightness/Contrast"), new Paragraph(""), brightness, contrast,
-            new Paragraph("Image Enhancement"), new Paragraph(""), sharpness, saturation,
-            new Paragraph("Effects"), new Paragraph(""), denoise, specialEffect,
-            new Hr(), new Hr(), new Hr(), new Hr(),
-            new Paragraph("White Balance"), autoWhitebalance, autoWhitebalanceGain, whitebalanceMode,
-            new Hr(), new Hr(), new Hr(), new Hr(),
-            new Paragraph("Exposure Control"), new Paragraph(""), exposureCtrlSensor, exposureCtrlDsp,
-            new Paragraph("Exposure"), new Paragraph(""), autoExposureLevel, autoExposureValue,
-            new Paragraph("Exposure Gain (when peformed by sensor)"), autoExposureGainControl, autoExposureGainValue, autoExposureGainCeiling,
+            new Hr(), new Hr(), new Hr(),
+            new Paragraph("Flash"), flashLedForPicture, flashDurationMs,
+            new Paragraph("Pixel Correction"), blackPixelCorrect, whitePixelCorrect,
+            new Paragraph("Image Correction"), gammaCorrect, lensCorrect,
+            new Paragraph("Mirror/Flip"), horizontalMirror, verticalFlip,
+            new Paragraph("Brightness/Contrast"), brightness, contrast,
+            new Paragraph("Image Enhancement"), sharpness, saturation,
+            new Paragraph("Effects"), denoise, specialEffect,
+            new Hr(), new Hr(), new Hr(),
+            autoWhitebalance, autoWhitebalanceGain, whitebalanceMode,
+            new Hr(), new Hr(), new Hr(),
+            new Paragraph("Exposure performed by ..."), exposureCtrlSensor, exposureCtrlDsp,
+            new Paragraph("Exposure Control, when performed by DSP"), autoExposureLevel, autoExposureValue,
+            autoExposureGainControl, autoExposureGainValue, autoExposureGainCeiling,
             createButtonsLayout());
         formLayout.setResponsiveSteps(
             // Use one column by default
             new ResponsiveStep("0", 1),
-            // Use 2 columns, if the layout's width exceeds 320px
-            new ResponsiveStep("320px", 2),
-            // Use 4 columns, if the layout's width exceeds 640px
-            new ResponsiveStep("640px", 4));
+            // Use 3 columns, if the layout's width exceeds 640px
+            new ResponsiveStep("640px", 3));
 
         add(formLayout);
         addSaveListener(this::saveCameraSettings);
@@ -231,5 +247,18 @@ public class CameraSettingsForm extends FormLayout {
             fireEvent(new SaveEvent(this, binder.getBean()));
         }
     }
+
+    private void addTooltip(TextField component, String text) {
+        Button button = new Button(new Icon(VaadinIcon.INFO_CIRCLE));
+        button.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE,
+            ButtonVariant.LUMO_ICON);
+        component.setSuffixComponent(button);
+        component.setTooltipText(text);
+        Tooltip tooltip = component.getTooltip().withManual(true);
+        button.addClickListener(event -> {
+            tooltip.setOpened(!tooltip.isOpened());
+        });
+    }
+
 }
 

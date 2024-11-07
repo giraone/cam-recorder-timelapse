@@ -29,7 +29,7 @@ public class FileViewControllerController {
     @GetMapping("api/thumbs/{filename}")
     ResponseEntity<byte[]> streamThumb(@PathVariable String filename) {
 
-        final File file = new File(fileViewService.getThumbDir(), filename);
+        final File file = new File(fileViewService.getImagesThumbDir(), filename);
         try {
             final byte[] content = Files.readAllBytes(file.toPath());
             return ResponseEntity.ok(content);

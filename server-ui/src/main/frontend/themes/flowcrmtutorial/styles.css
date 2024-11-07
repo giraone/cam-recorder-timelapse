@@ -6,3 +6,7 @@ no-padding {
     padding: 0px;
     background-color: red;
 }
+label-bold {
+    background: red;
+    font-weight: bold;
+}

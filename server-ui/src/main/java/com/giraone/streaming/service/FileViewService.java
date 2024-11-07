@@ -18,50 +18,82 @@ public class FileViewService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileViewService.class);
 
-    public static File FILE_BASE = new File("../FILES");
-    public static File FILE_THUMBS = new File(FILE_BASE, ".thumbs");
+    public static File IMAGES_BASE = new File("../FILES");
+    public static File IMAGES_THUMBS = new File(IMAGES_BASE, ".thumbs");
+    public static File VIDEOS_BASE = new File("../VIDEOS");
+    public static File VIDEOS_THUMBS = new File(VIDEOS_BASE, ".thumbs");
 
     static {
         try {
-            FILE_BASE = FILE_BASE.getCanonicalFile();
+            IMAGES_BASE = IMAGES_BASE.getCanonicalFile();
         } catch (IOException ioe) {
-            LOGGER.debug("Cannot canonicalize: {}", FILE_BASE, ioe);
+            LOGGER.debug("Cannot canonicalize: {}", IMAGES_BASE, ioe);
         }
         try {
-            FILE_THUMBS = FILE_THUMBS.getCanonicalFile();
+            VIDEOS_BASE = VIDEOS_BASE.getCanonicalFile();
         } catch (IOException ioe) {
-            LOGGER.debug("Cannot canonicalize: {}", FILE_THUMBS, ioe);
+            LOGGER.debug("Cannot canonicalize: {}", VIDEOS_BASE, ioe);
+        }
+        try {
+            IMAGES_THUMBS = IMAGES_THUMBS.getCanonicalFile();
+        } catch (IOException ioe) {
+            LOGGER.debug("Cannot canonicalize: {}", IMAGES_THUMBS, ioe);
+        }
+        try {
+            VIDEOS_THUMBS = VIDEOS_THUMBS.getCanonicalFile();
+        } catch (IOException ioe) {
+            LOGGER.debug("Cannot canonicalize: {}", VIDEOS_THUMBS, ioe);
         }
     }
     public FileViewService() {
     }
 
-    public File getThumbDir() {
-        return FILE_THUMBS;
+    public File getImagesThumbDir() {
+        return IMAGES_THUMBS;
+    }
+
+    public File getVideosThumbDir() {
+        return VIDEOS_THUMBS;
     }
 
     public String getThumbUrl(String fileName) {
         return "api/thumbs/" + fileName;
     }
 
-    public List<FileInfo> listFileInfos(String prefixFilter) {
-        File[] files = FILE_BASE.listFiles((dir, name) -> !name.startsWith(".") && name.startsWith(prefixFilter));
+    public List<FileInfo> listImageInfos(String prefixFilter) {
+        return listFileInfos(IMAGES_BASE, prefixFilter);
+    }
+
+    public List<FileInfo> listVideoInfos(String prefixFilter) {
+        return listFileInfos(VIDEOS_BASE, prefixFilter);
+    }
+
+    public List<FileInfo> listFileInfos(File base, String prefixFilter) {
+        File[] files = base.listFiles((dir, name) -> !name.startsWith(".") && name.startsWith(prefixFilter));
         if (files == null) {
             return Collections.emptyList();
         }
-        AtomicInteger index = new AtomicInteger(0);
         return Arrays.stream(files)
             .map(FileInfo::fromFile)
             .sorted((o1, o2) -> o1.lastModified().isBefore(o2.lastModified()) ? 1 : o1.lastModified().isAfter(o2.lastModified()) ? -1 : 0)
             .toList();
     }
 
-    public void deleteFile(FileInfo fileInfo) {
-        new File(FILE_BASE, fileInfo.fileName()).delete();
-        new File(FILE_THUMBS, fileInfo.fileName()).delete();
+    public void deleteImage(FileInfo fileInfo) {
+        new File(IMAGES_BASE, fileInfo.fileName()).delete();
+        new File(IMAGES_THUMBS, fileInfo.fileName()).delete();
     }
 
-    public void deleteFiles(Set<FileInfo> selectedItems) {
-        selectedItems.forEach(this::deleteFile);
+    public void deleteVideos(FileInfo fileInfo) {
+        new File(VIDEOS_BASE, fileInfo.fileName()).delete();
+        new File(VIDEOS_THUMBS, fileInfo.fileName()).delete();
+    }
+
+    public void deleteImages(Set<FileInfo> selectedItems) {
+        selectedItems.forEach(this::deleteImage);
+    }
+
+    public void deleteVideos(Set<FileInfo> selectedItems) {
+        selectedItems.forEach(this::deleteVideos);
     }
 }

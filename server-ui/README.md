@@ -8,7 +8,8 @@
 
 ## TODO
 
-- [ ] Image viewer with scaling
+- [x] Image viewer with scaling
+- [ ] Image veiwer as WebComponent
 - [ ] Restart every ... as setting from server (client + server)
 
 ## Vaadin Links

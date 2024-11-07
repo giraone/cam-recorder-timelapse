@@ -1,4 +1,4 @@
-package com.giraone.streaming.views.files;
+package com.giraone.streaming.views.videos;
 
 import com.giraone.streaming.config.ApplicationProperties;
 import com.giraone.streaming.service.FileViewService;
@@ -40,17 +40,16 @@ import java.util.stream.Stream;
 @SpringComponent
 @Scope("prototype")
 @PermitAll
-@Route(value = "", layout = MainLayout.class)
-@PageTitle("Files | Cam Recorder")
-public class FilesView extends VerticalLayout {
+@Route(value = "videos", layout = MainLayout.class)
+@PageTitle("Videos | Cam Recorder")
+public class VideosView extends VerticalLayout {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(FilesView.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(VideosView.class);
 
     private final Grid<FileInfo> grid = new Grid<>(FileInfo.class);
     private final TextField filterText = new TextField();
     private VerticalLayout gridWithToolbar;
     private VerticalLayout displayForm;
-    private IFrame displayIframe;
     private Button fullButton;
     private Button previousButton;
     private Button nextButton;
@@ -62,7 +61,7 @@ public class FilesView extends VerticalLayout {
     private FileInfo currentItem = null;
     private boolean firstDisplay = true;
 
-    public FilesView(FileViewService fileViewService, ApplicationProperties applicationProperties) {
+    public VideosView(FileViewService fileViewService, ApplicationProperties applicationProperties) {
 
         this.fileViewService = fileViewService;
         this.applicationProperties = applicationProperties;
@@ -85,7 +84,7 @@ public class FilesView extends VerticalLayout {
     }
 
     private void configureGrid() {
-        grid.addClassNames("files-grid");
+        grid.addClassNames("videos-grid");
         grid.setSizeFull();
         grid.setSelectionMode(Grid.SelectionMode.MULTI);
         grid.addSelectionListener(selection -> {
@@ -137,7 +136,7 @@ public class FilesView extends VerticalLayout {
         nextButton.setIcon(LineAwesomeIcon.FORWARD_SOLID.create());
         nextButton.addClickListener(event -> viewNextFile());
         nextButton.setEnabled(!items.isEmpty());
-        displayIframe = new IFrame("components/image-viewer/image-viewer.html");
+        IFrame displayIframe = new IFrame("components/image-viewer/image-viewer.html");
         displayIframe.setWidth("100%");
         displayIframe.setHeight("100vh");
         displayIframe.getElement().setAttribute("frameborder", "0");
@@ -178,7 +177,7 @@ public class FilesView extends VerticalLayout {
 
     private String deleteFileConfirmed(FileInfo fileInfo) {
         try {
-            fileViewService.deleteFile(fileInfo);
+            fileViewService.deleteImage(fileInfo);
         } catch (Exception e) {
             LOGGER.warn("deleteFile {} failed!", fileInfo, e);
             return e.getMessage();
@@ -194,7 +193,7 @@ public class FilesView extends VerticalLayout {
 
     private String deleteSelectedConfirm(Set<FileInfo> itemsToDelete) {
         try {
-            fileViewService.deleteFiles(itemsToDelete);
+            fileViewService.deleteVideos(itemsToDelete);
         } catch (Exception e) {
             LOGGER.warn("deleteSelected failed!", e);
             return e.getMessage();
@@ -205,7 +204,7 @@ public class FilesView extends VerticalLayout {
     }
 
     private void updateList() {
-        items = fileViewService.listFileInfos(filterText.getValue());
+        items = fileViewService.listVideoInfos(filterText.getValue());
         grid.setItems(items);
         final boolean enabled = !items.isEmpty();
         previousButton.setEnabled(enabled);

@@ -1,5 +1,6 @@
 {
   "paused": false,
+  "restartAfterAmount": 100,
   "blinkOnSuccess": false,
   "flashLedForPicture": false,
   "flashDurationMs": 100,

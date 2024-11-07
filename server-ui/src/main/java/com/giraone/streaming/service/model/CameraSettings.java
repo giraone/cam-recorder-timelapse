@@ -12,13 +12,16 @@ import com.giraone.streaming.service.model.serde.CustomSerializerBoolean;
 
 import java.util.List;
 
+@SuppressWarnings("unused")
 public class CameraSettings {
 
     private boolean paused = false;
+    private int restartAfterAmount = 100;
     private boolean blinkOnSuccess = false;
+    private int loopDelaySeconds = 10;
     private boolean flashLedForPicture = false;
     private int flashDurationMs = 100;
-    private int loopDelaySeconds = 10;
+
     private int clockFrequencyHz = 16000000;
     FrameSize frameSize = FrameSize.FRAMESIZE_UXGA;
     /**
@@ -62,6 +65,14 @@ public class CameraSettings {
 
     public void setPaused(boolean paused) {
         this.paused = paused;
+    }
+
+    public int getRestartAfterAmount() {
+        return restartAfterAmount;
+    }
+
+    public void setRestartAfterAmount(int restartAfterAmount) {
+        this.restartAfterAmount = restartAfterAmount;
     }
 
     public boolean isBlinkOnSuccess() {
@@ -321,7 +332,12 @@ public class CameraSettings {
     @Override
     public String toString() {
         return "CameraSettings{" +
-            "loopDelaySeconds=" + loopDelaySeconds +
+            "paused=" + paused +
+            ", restartAfterAmount=" + restartAfterAmount +
+            ", blinkOnSuccess=" + blinkOnSuccess +
+            ", loopDelaySeconds=" + loopDelaySeconds +
+            ", flashLedForPicture=" + flashLedForPicture +
+            ", flashDurationMs=" + flashDurationMs +
             ", clockFrequencyHz=" + clockFrequencyHz +
             ", frameSize=" + frameSize +
             ", jpegQuality=" + jpegQuality +
