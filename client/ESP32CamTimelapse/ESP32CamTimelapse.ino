@@ -22,8 +22,12 @@
 
 // if 0, we wait for touch on PIN 12, otherwise this is the loop delay
 int loopDelaySeconds = 30;
-// Is the camera in "paused mode" - we start always with paused=false
+// Is the camera in "paused mode". Start is always in paused mode to fetch the settings first.
 bool paused = true;
+// count number of images taken
+int imageCounter = 0;
+// restart device after n images taken
+int restartAfterAmount = 100;
 // threshold for touch value
 const uint8_t TOUCH_THRESHOLD = 20;
 
@@ -82,6 +86,10 @@ void loop() {
       fetchAndApplySettings(false);
     } else {
       shootAndSend();
+      if (++imageCounter > restartAfterAmount) {
+        Serial.printf(">>> Restarting after %d images!\n", restartAfterAmount);
+        ESP.restart();
+      }
     }
   } else {
     const bool touched = (touchRead(T5) < TOUCH_THRESHOLD);
@@ -109,7 +117,7 @@ void shootAndSend() {
     Serial.println(">>> No photo taken!");
     blinkLedError();
   } else {
-    Serial.printf(">>> Photo taken with %d bytes.\n", frameBuffer->len);
+    Serial.printf(">>> Photo %d taken with %d bytes.\n", imageCounter, frameBuffer->len);
     sendPhotoViaHttp(frameBuffer, timeString);
     esp_camera_fb_return(frameBuffer);
     blinkLedOk();
@@ -186,6 +194,7 @@ void fetchAndApplySettings(bool initCam) {
     Serial.println(">>> Going into paused mode.");
   }
   paused = settingsJson["paused"];
+  restartAfterAmount = settingsJson["restartAfterAmount"];
   blinkOnSuccess = settingsJson["blinkOnSuccess"]; 
   flashLedForPicture = settingsJson["flashLedForPicture"]; 
   flashDurationMs = settingsJson["flashDurationMs"]; 
