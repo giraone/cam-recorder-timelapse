@@ -113,39 +113,12 @@ void initCamera() {
   sensor->set_colorbar(sensor, 0);
 }
 
-framesize_t framesizeFromInt(int value) {
-  switch(value) {
-    case 0:
-      return framesize_t::FRAMESIZE_96X96;
-    case 1:
-      return framesize_t::FRAMESIZE_QQVGA;
-    case 2:
-      return framesize_t::FRAMESIZE_QCIF;
-    case 3:
-      return framesize_t::FRAMESIZE_HQVGA;
-    case 4:
-      return framesize_t::FRAMESIZE_240X240;
-	case 5:
-      return framesize_t::FRAMESIZE_QVGA;  
-    case 6:
-      return framesize_t::FRAMESIZE_CIF;
-    case 7:
-      return framesize_t::FRAMESIZE_HVGA;
-    case 8:
-      return framesize_t::FRAMESIZE_VGA;
-    case 9:
-      return framesize_t::FRAMESIZE_SVGA;
-    case 10:
-      return framesize_t::FRAMESIZE_XGA;
-    case 11:
-      return framesize_t::FRAMESIZE_HD;
-    case 12:
-      return framesize_t::FRAMESIZE_SXGA;
-    case 13:
-      return framesize_t::FRAMESIZE_UXGA;
-    default:
-      return framesize_t::FRAMESIZE_UXGA;
-  }
+framesize_t framesizeFromInt(int index) {
+   if (index >= 0 && index < EXT_FRAMESIZE_INVALID) {
+        return (framesize_t) index;
+    } else {
+        return (framesize_t) FRAMESIZE_UXGA;
+    }
 }
 
 gainceiling_t gainceilingFromInt(int value) {

@@ -3,7 +3,7 @@
 ## Build/Run
 
 - `mvn package`
-- `mvn -p production package`
+- `mvn -P production -DskipTests=true package`
 - `java -jar target/cam-recorder-ui.jar`
 
 ## TODO

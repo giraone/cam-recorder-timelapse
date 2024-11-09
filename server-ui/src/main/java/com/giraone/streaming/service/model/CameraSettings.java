@@ -10,6 +10,7 @@ import com.giraone.streaming.service.model.serde.CustomEnumDeserializerSpecialEf
 import com.giraone.streaming.service.model.serde.CustomEnumDeserializerWhiteBalanceMode;
 import com.giraone.streaming.service.model.serde.CustomSerializerBoolean;
 
+import java.util.Arrays;
 import java.util.List;
 
 @SuppressWarnings("unused")
@@ -383,7 +384,14 @@ public class CameraSettings {
         FRAMESIZE_XGA("1024x768 (XGA)"),
         FRAMESIZE_HD(" 1280x720 (HD)"),
         FRAMESIZE_SXGA("1280x1024 (SXGA)"),
-        FRAMESIZE_UXGA("1600x1200 (UXGA)");
+        FRAMESIZE_UXGA("1600x1200 (UXGA)"),
+        FRAMESIZE_FHD("1920x1080 (FHD) - from here OV5640 only"),
+        FRAMESIZE_P_HD("720x1280 (P_HD)"),
+        FRAMESIZE_P_3MP("864x1536 (3MP)"),
+        FRAMESIZE_QXGA("2048x1536 (QXGA)"),
+        FRAMESIZE_QHD("2560x1440 (QHD)"),
+        FRAMESIZE_WQXGA("2560x1600 (WQXGA)"),
+        FRAMESIZE_5MP("2592x1944 (5MP)");
 
         private final String label;
 
@@ -400,11 +408,7 @@ public class CameraSettings {
             return this.ordinal();
         }
 
-        public static List<FrameSize> ALL = List.of(
-            FRAMESIZE_96X96, FRAMESIZE_QQVGA, FRAMESIZE_QCIF, FRAMESIZE_HQVGA, FRAMESIZE_240X240,
-            FRAMESIZE_QVGA, FRAMESIZE_CIF, FRAMESIZE_HVGA, FRAMESIZE_VGA, FRAMESIZE_SVGA,
-            FRAMESIZE_XGA, FRAMESIZE_HD, FRAMESIZE_SXGA, FRAMESIZE_UXGA
-        );
+        public static List<FrameSize> ALL = Arrays.asList(FrameSize.values());
     }
 
     @JsonDeserialize(using = CustomEnumDeserializerLevel.class)
