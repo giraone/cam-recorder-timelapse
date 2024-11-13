@@ -51,6 +51,7 @@ public class ImagesView extends VerticalLayout {
     private VerticalLayout gridWithToolbar;
     private VerticalLayout displayForm;
     private Button fullButton;
+    private Button halfButton;
     private Button previousButton;
     private Button nextButton;
 
@@ -117,11 +118,16 @@ public class ImagesView extends VerticalLayout {
     }
 
     private void configureDisplay() {
-        fullButton = new Button("Maximize View");
+        fullButton = new Button("Maximize");
         fullButton.setClassName("no-padding");
         fullButton.setIcon(LineAwesomeIcon.CARET_SQUARE_LEFT_SOLID.create());
         fullButton.addClickListener(event -> fullFileViewer());
         fullButton.setEnabled(!items.isEmpty());
+        halfButton = new Button("Normal");
+        halfButton.setClassName("no-padding");
+        halfButton.setIcon(LineAwesomeIcon.CARET_SQUARE_RIGHT_SOLID.create());
+        halfButton.addClickListener(event -> halfFileViewer());
+        halfButton.setVisible(false);
         final Button closeButton = new Button("Close");
         closeButton.setClassName("no-padding");
         closeButton.setIcon(LineAwesomeIcon.TIMES_CIRCLE_SOLID.create());
@@ -142,7 +148,7 @@ public class ImagesView extends VerticalLayout {
         displayIframe.getElement().setAttribute("frameborder", "0");
         displayIframe.setId("imageViewerIFrame");
         displayForm = new VerticalLayout(
-            new HorizontalLayout(fullButton, closeButton, previousButton, nextButton),
+            new HorizontalLayout(fullButton, halfButton, closeButton, previousButton, nextButton),
             displayIframe
         );
         displayForm.setPadding(false);
@@ -276,12 +282,20 @@ public class ImagesView extends VerticalLayout {
         displayForm.setVisible(false);
         gridWithToolbar.setVisible(true);
         fullButton.setEnabled(!items.isEmpty());
+        fullButton.setVisible(true);
         removeClassName("editing");
     }
 
     private void fullFileViewer() {
         gridWithToolbar.setVisible(false);
-        fullButton.setEnabled(false);
+        fullButton.setVisible(false);
+        halfButton.setVisible(true);
+    }
+
+    private void halfFileViewer() {
+        gridWithToolbar.setVisible(true);
+        fullButton.setVisible(true);
+        halfButton.setVisible(false);
     }
 
     private void confirm(String text, Supplier<String> action) {
