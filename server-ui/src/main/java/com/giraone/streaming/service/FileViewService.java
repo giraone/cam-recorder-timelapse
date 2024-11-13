@@ -17,9 +17,10 @@ public class FileViewService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileViewService.class);
 
-    public static File IMAGES_BASE = new File("../FILES");
+    public static File STORAGE_BASE = new File("../STORAGE");
+    public static File IMAGES_BASE = new File(STORAGE_BASE, "IMAGES");
     public static File IMAGES_THUMBS = new File(IMAGES_BASE, ".thumbs");
-    public static File VIDEOS_BASE = new File("../VIDEOS");
+    public static File VIDEOS_BASE = new File(STORAGE_BASE, "VIDEOS");
     public static File VIDEOS_THUMBS = new File(VIDEOS_BASE, ".thumbs");
 
     static {

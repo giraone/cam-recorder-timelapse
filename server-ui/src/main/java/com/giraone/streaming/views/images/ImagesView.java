@@ -235,7 +235,7 @@ public class ImagesView extends VerticalLayout {
 
     private void displayFile(FileInfo fileInfo) {
         currentItem = fileInfo;
-        String url = applicationProperties.getHostUrl() + "/camera-images/" + fileInfo.fileName();
+        String url = applicationProperties.getHostUrl() + "/images/" + fileInfo.fileName();
         openFileViewer(url, fileInfo.fileName() + "  (" + fileInfo.resolution() + ", " + fileInfo.sizeInBytes() + " Bytes)");
     }
 

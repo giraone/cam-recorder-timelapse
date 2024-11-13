@@ -87,9 +87,7 @@ public class VideosView extends VerticalLayout {
         grid.addClassNames("videos-grid");
         grid.setSizeFull();
         grid.setSelectionMode(Grid.SelectionMode.MULTI);
-        grid.addSelectionListener(selection -> {
-            LOGGER.debug("Number of selected files: {}", selection.getAllSelectedItems().size());
-        });
+        grid.addSelectionListener(selection -> LOGGER.debug("Number of selected files: {}", selection.getAllSelectedItems().size()));
         grid.removeAllColumns();
         grid.addComponentColumn(fileInfo -> {
             final Button displayButton = new Button("");
@@ -235,7 +233,7 @@ public class VideosView extends VerticalLayout {
 
     private void displayFile(FileInfo fileInfo) {
         currentItem = fileInfo;
-        String url = applicationProperties.getHostUrl() + "/camera-images/" + fileInfo.fileName();
+        String url = applicationProperties.getHostUrl() + "/videos/" + fileInfo.fileName();
         openFileViewer(url, fileInfo.fileName() + "  (" + fileInfo.resolution() + ", " + fileInfo.sizeInBytes() + " Bytes)");
     }
 

@@ -5,31 +5,21 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <style type="text/css" media="screen">
-body            { margin: 0px; padding: 0px; background-color: #C2C2D6; font-size: 1px; }
-#mainTable      { table-layout: fixed; border: 0px none; width: 99%; height: 44px; }
-#iconTable      { table-layout: fixed; border: 0px none; height: 44px; }
-#menuCell       { padding: 0px; height: 44px; }
-#titleCell      { padding-left: 16px; height: 44px; }
-#titleDiv       { height: 44px; overflow: hidden; font-family: Arial,Helvetica,sans-serif; font-size: 12px; }
-td.icon         { padding: 0px; border: 0px none; width: 32px; height: 36px; }
-td.iconSep      { padding: 0px; border: 0px none; width: 16px; height: 36px; }
-td.iconRuler    { padding: 0px; border: 0px none; width: 70px; height: 8px; text-align: center; }
-canvas          { margin: 0px; display: block; background: #000000; border: 0px none }
+body            { margin: 0px; padding: 0; background-color: #FFFFFF; }
+video           { margin: 0px; display: block; background: #000000; width: calc(100% - 1px); border: 0; }
 .hide           { display: none; }
 .show           { display: inline; }
 </style>
 </head>
-
 <body>
 <h2 id="videoLabel">No video</h2>
-<video width="100%" controls>
-  <source id="videoSrc" src="" type="video/mp4">
-  Your browser does not support the video tag.
+<video id="videoInstance" controls>
+  <source src="" type="video/mp4">
+  <p>Your browser does not support the video tag.</p>
 </video>
 <script type="text/javascript">
-function loadUrl(url, text)
-{
-	document.getElementById('videoSrc').src  = url;
+function loadUrl(url, text) {
+  document.getElementById('videoInstance').src = url;
   document.getElementById('videoLabel').innerText  = text;
 }
 </script>
