@@ -1,9 +1,15 @@
 package com.giraone.streaming.service;
 
+import com.giraone.streaming.config.ApplicationProperties;
 import com.giraone.streaming.service.model.FileInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,7 +51,11 @@ public class FileViewService {
             LOGGER.debug("Cannot canonicalize: {}", VIDEOS_THUMBS, ioe);
         }
     }
-    public FileViewService() {
+
+    private final ApplicationProperties applicationProperties;
+
+    public FileViewService(ApplicationProperties applicationProperties) {
+        this.applicationProperties = applicationProperties;
     }
 
     public File getImagesThumbDir() {
@@ -86,7 +96,7 @@ public class FileViewService {
         new File(IMAGES_THUMBS, fileInfo.fileName()).delete();
     }
 
-    public void deleteVideos(FileInfo fileInfo) {
+    public void deleteVideo(FileInfo fileInfo) {
         new File(VIDEOS_BASE, fileInfo.fileName()).delete();
         new File(VIDEOS_THUMBS, fileInfo.fileName()).delete();
     }
@@ -96,6 +106,16 @@ public class FileViewService {
     }
 
     public void deleteVideos(Set<FileInfo> selectedItems) {
-        selectedItems.forEach(this::deleteVideos);
+        selectedItems.forEach(this::deleteVideo);
+    }
+
+    public Mono<String> makeTimelapseVideo(List<String> imageNames) {
+        WebClient client = WebClient.builder()
+            .baseUrl(applicationProperties.getHostUrl() + "/video-admin/create-timelapse")
+            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+            .build();
+        return client.post().body(BodyInserters.fromValue(imageNames)).exchangeToMono(clientResponse -> {
+            return clientResponse.bodyToMono(String.class);
+        });
     }
 }

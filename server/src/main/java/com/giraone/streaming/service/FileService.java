@@ -164,6 +164,10 @@ public class FileService {
        return replaceFileExtension(fileName, ".jpg");
     }
 
+    public String createTimelapseVideo(List<String> imageNames) {
+        return "DONE!";
+    }
+
     //------------------------------------------------------------------------------------------------------------------
 
     boolean createThumbnail(Media type, File originalFile) {

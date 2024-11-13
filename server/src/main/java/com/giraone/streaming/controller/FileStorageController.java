@@ -99,6 +99,12 @@ public class FileStorageController {
         return fileService.rebuildThumbnails(FileService.Media.VIDEOS);
     }
 
+    @SuppressWarnings("unused")
+    @PostMapping("video-admin/create-timelapse")
+    String createTimelapseVideo(@RequestBody List<String> imageNames) {
+        return fileService.createTimelapseVideo(imageNames);
+    }
+
     //------------------------------------------------------------------------------------------------------------------
 
     private Mono<ResponseEntity<UploadStatus>> uploadFile(FileService.Media type,

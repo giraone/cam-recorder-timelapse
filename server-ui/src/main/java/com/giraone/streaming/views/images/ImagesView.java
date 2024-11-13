@@ -5,15 +5,20 @@ import com.giraone.streaming.service.FileViewService;
 import com.giraone.streaming.service.model.FileInfo;
 import com.giraone.streaming.views.MainLayout;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridSortOrder;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.IFrame;
 import com.vaadin.flow.component.html.Image;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
@@ -31,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Scope;
 import org.vaadin.lineawesome.LineAwesomeIcon;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -54,6 +60,8 @@ public class ImagesView extends VerticalLayout {
     private Button halfButton;
     private Button previousButton;
     private Button nextButton;
+    private Button deleteSelectedButton;
+    private Button makeVideoButton;
 
     private final FileViewService fileViewService;
     private final ApplicationProperties applicationProperties;
@@ -90,6 +98,7 @@ public class ImagesView extends VerticalLayout {
         grid.setSelectionMode(Grid.SelectionMode.MULTI);
         grid.addSelectionListener(selection -> {
             LOGGER.debug("Number of selected images: {}", selection.getAllSelectedItems().size());
+            activation(!selection.getAllSelectedItems().isEmpty());
         });
         grid.removeAllColumns();
         grid.addComponentColumn(fileInfo -> {
@@ -168,11 +177,18 @@ public class ImagesView extends VerticalLayout {
         reloadButton.setIcon(LineAwesomeIcon.SYNC_SOLID.create());
         reloadButton.addClickListener(click -> updateList());
 
-        Button deleteSelectedButton = new Button("Delete selected");
+        deleteSelectedButton = new Button("Delete selected");
         deleteSelectedButton.setIcon(LineAwesomeIcon.CUT_SOLID.create());
         deleteSelectedButton.addClickListener(click -> deleteSelected());
+        deleteSelectedButton.setEnabled(!items.isEmpty());
 
-        return new HorizontalLayout(filterText, reloadButton, deleteSelectedButton);
+        makeVideoButton = new Button("Create video");
+        makeVideoButton.setIcon(LineAwesomeIcon.VIDEO_SOLID.create());
+        makeVideoButton.addClickListener(click -> makeTimelapseVideo());
+        makeVideoButton.setEnabled(!items.isEmpty());
+
+        // specific
+        return new HorizontalLayout(filterText, reloadButton, deleteSelectedButton, makeVideoButton);
     }
 
     //-- actions --
@@ -212,9 +228,7 @@ public class ImagesView extends VerticalLayout {
     private void updateList() {
         items = fileViewService.listImageInfos(filterText.getValue());
         grid.setItems(items);
-        final boolean enabled = !items.isEmpty();
-        previousButton.setEnabled(enabled);
-        nextButton.setEnabled(enabled);
+        activation(false);
     }
 
     private List<FileInfo> getItemsWithSortOrder() {
@@ -314,5 +328,44 @@ public class ImagesView extends VerticalLayout {
             dialog.close();
         });
         dialog.open();
+    }
+
+    private void activation(boolean selected) {
+        final boolean entries = !items.isEmpty();
+        deleteSelectedButton.setEnabled(entries && selected);
+        makeVideoButton.setEnabled(entries && selected);
+        previousButton.setEnabled(entries);
+        nextButton.setEnabled(entries);
+    }
+
+    // specific
+
+    private void makeTimelapseVideo() {
+        Set<FileInfo> selectedItems = grid.getSelectedItems();
+        List<String> names = selectedItems.stream().map(FileInfo::fileName).sorted().toList();
+        try {
+            String result = fileViewService.makeTimelapseVideo(names).block(Duration.ofSeconds(120));
+            Notification notification = Notification.show(result);
+            notification.addThemeVariants(NotificationVariant.LUMO_PRIMARY);
+        } catch (Exception e) {
+            LOGGER.warn("makeTimelapseVideo failed!", e);
+            showError(e.getMessage());
+        }
+    }
+
+    private void showError(String text) {
+        Notification notification = new Notification();
+        notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+        Div divText = new Div(new Text(text));
+        Button closeButton = new Button(new Icon("lumo", "cross"));
+        closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+        closeButton.setAriaLabel("Close");
+        closeButton.addClickListener(event -> {
+            notification.close();
+        });
+        HorizontalLayout layout = new HorizontalLayout(divText, closeButton);
+        layout.setAlignItems(Alignment.CENTER);
+        notification.add(layout);
+        notification.open();
     }
 }
