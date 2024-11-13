@@ -4,7 +4,7 @@ server:
 
 spring:
   application:
-    name: cam-recorder
+    name: cam-backend
 
 logging:
   level:

@@ -25,7 +25,7 @@ Upload a JPEG image
 curl --request POST \
   --header "Content-Type: image/jpeg" \
   --data-binary @FILES/0000-ferrari.jpg \
-  http://localhost:9001/camera-images/my-file.jpg
+  http://localhost:9001/images/my-file.jpg
 ```
 
 This should return a JSON like this (the "restart" attribute is used to tell the camera to restart and re-load the settings):
@@ -42,7 +42,7 @@ This should return a JSON like this (the "restart" attribute is used to tell the
 Download the uploaded image
 
 ```bash
-curl --request GET --output out.jpg http://localhost:9001/camera-images/my-file.jpg
+curl --request GET --output out.jpg http://localhost:9001/images/my-file.jpg
 ```
 
 This should return the file.

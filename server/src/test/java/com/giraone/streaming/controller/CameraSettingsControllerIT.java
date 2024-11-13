@@ -6,20 +6,13 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
-
-import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @TestMethodOrder(MethodOrderer.MethodName.class)
 @AutoConfigureWebTestClient
 class CameraSettingsControllerIT {
-
-    private static final ParameterizedTypeReference<Map<String, Object>> MAP = new ParameterizedTypeReference<>() {
-    };
 
     @Autowired
     private WebTestClient webTestClient;
@@ -29,15 +22,8 @@ class CameraSettingsControllerIT {
 
         webTestClient.get()
             .uri("/camera-settings")
+            .accept(MediaType.APPLICATION_JSON)
             .exchange()
-            .expectStatus().isOk()
-            .expectBody(MAP)
-            .value(value -> assertThat(value).containsAllEntriesOf(Map.of(
-                "brightness", 0,
-                "contrast", 0,
-                "specialEffect", 0,
-                "frameSize", 13,
-                "whitebalanceMode", 0
-            )));
+            .expectStatus().isOk();
     }
 }

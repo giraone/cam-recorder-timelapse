@@ -17,12 +17,12 @@ import java.nio.charset.Charset;
 
 @SpringBootApplication
 @EnableConfigurationProperties({ApplicationProperties.class})
-public class CameraApplication {
+public class CameraStorageBackend {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(CameraApplication.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(CameraStorageBackend.class);
 
     public static void main(String[] args) {
-        SpringApplication app = new SpringApplication(CameraApplication.class);
+        SpringApplication app = new SpringApplication(CameraStorageBackend.class);
         Environment env = app.run(args).getEnvironment();
         logApplicationStartup(env);
     }

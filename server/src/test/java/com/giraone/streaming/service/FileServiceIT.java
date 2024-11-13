@@ -14,8 +14,8 @@ class FileServiceIT {
     @Test
     void createThumbnail() {
 
-        for (FileInfo fileInfo : fileService.listFileInfos("000")) {
-            fileService.createThumbnail(FileService.getFile(fileInfo.fileName()));
+        for (FileInfo fileInfo : fileService.listFileInfos(FileService.Media.IMAGES, "000")) {
+            fileService.createThumbnail(FileService.Media.IMAGES, FileService.getFile(FileService.Media.IMAGES, fileInfo.fileName()));
         }
     }
 }
