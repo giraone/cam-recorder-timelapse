@@ -103,7 +103,7 @@ public class FileStorageController {
 
     @SuppressWarnings("unused")
     @PostMapping(value = "video/create-timelapse")
-    TimelapseResult createTimelapseVideo(@RequestBody TimelapseCommand timelapseCommand) {
+    Mono<TimelapseResult> createTimelapseVideo(@RequestBody TimelapseCommand timelapseCommand) {
         return fileService.createTimelapseVideo(timelapseCommand);
     }
 

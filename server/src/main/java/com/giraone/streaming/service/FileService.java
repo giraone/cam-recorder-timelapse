@@ -166,7 +166,7 @@ public class FileService {
         return replaceFileExtension(fileName, ".jpg");
     }
 
-    public TimelapseResult createTimelapseVideo(TimelapseCommand timelapseCommand) {
+    public Mono<TimelapseResult> createTimelapseVideo(TimelapseCommand timelapseCommand) {
 
         final File outputVideoFile;
         try {
@@ -174,12 +174,12 @@ public class FileService {
             videoService.createTimelapseVideo(timelapseCommand, outputVideoFile);
         } catch (IOException ioe) {
             LOGGER.error("createTimelapseVideo failed", ioe);
-            return new TimelapseResult(false, timelapseCommand.outputFilename());
+            return Mono.just(new TimelapseResult(false, null));
         }
         final long contentLength = outputVideoFile.length();
         final Flux<ByteBuffer> content = FluxUtil.readFile(outputVideoFile.toPath());
-        this.storeFile(Media.VIDEOS, timelapseCommand.outputFilename(), content, contentLength);
-        return new TimelapseResult(true, null);
+        return this.storeFile(Media.VIDEOS, timelapseCommand.outputFilename(), content, contentLength)
+            .thenReturn(new TimelapseResult(true, timelapseCommand.outputFilename()));
     }
 
     // TODO: No zip - actually just a simple concat

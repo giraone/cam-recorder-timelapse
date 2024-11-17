@@ -11,7 +11,9 @@
 - [x] Image viewer with scaling
 - [x] Restart every ... as setting from server (client + server)
 - [x] Support for displaying videos
-- [ ] Create videos from images using *ffmpeg*
+- [x] Create timelapse videos from images using *ffmpeg*
+- [ ] Offer UI to configure timelapse video creation
+- [ ] Possibility to define labels for images
 - [ ] Download n images as ZIP
 - [ ] Image viewer as WebComponent
 

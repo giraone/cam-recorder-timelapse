@@ -73,7 +73,7 @@ public class VideoService {
             if (outputVideoFile.length() < 100L) {
                 throw new RuntimeException("ffmpeg call not successful! No video file created!");
             } else {
-                LOGGER.info("ffmpeg call successful with {} bytes od video.", outputVideoFile.length());
+                LOGGER.info("ffmpeg call successful with output to {} and {} bytes.",outputVideoFile.getAbsolutePath(), outputVideoFile.length());
             }
         } else if (result.code() > 0) {
             throw new RuntimeException("ffmpeg call not successful! Exit code = " + result.code() + ". " + result.output());
