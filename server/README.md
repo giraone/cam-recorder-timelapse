@@ -1,7 +1,10 @@
 # HTTP service for receiving and storing ESP32 camera images
 
 - Receive and store images in local file system via HTTP POST received from (ESP32) camera
+- Create thumbnails for uploaded images
 - Provide camera configuration (brightness, exposure, resolution, ...) to be loaded by camera
+- Store video and create thumbnails using  *ffmpeg*
+- Create timelapse videos using *ffmpeg*
 - UI to change camera settings - see server-ui
 - UI to view uploaded images - see server-ui
 

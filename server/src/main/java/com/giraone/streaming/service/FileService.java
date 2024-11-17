@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.nio.file.StandardOpenOption.*;
 
@@ -164,8 +166,21 @@ public class FileService {
        return replaceFileExtension(fileName, ".jpg");
     }
 
-    public String createTimelapseVideo(List<String> imageNames) {
-        return "DONE!";
+    public String createTimelapseVideo(List<String> imageNames, int rate){
+        final List<File> imageFiles = imageNames.stream().map(fileName -> getFile(Media.IMAGES, fileName)).collect(Collectors.toList());
+        try {
+            File tempFile = File.createTempFile("i2v", ".mp4");
+            videoService.createTimelapseVideo(imageFiles, tempFile, rate);
+        } catch (IOException e) {
+            LOGGER.error("Cannot create video!", e);
+            return "FAILED";
+        }
+        return "DONE";
+    }
+
+    // TODO: No zip - actually just a simple concat
+    public  Flux<ByteBuffer> downloadImagesAsZip(Flux<String> fileNames) {
+        return fileNames.concatMap(fileName -> FluxUtil.readFile(getFile(Media.IMAGES, fileName)));
     }
 
     //------------------------------------------------------------------------------------------------------------------

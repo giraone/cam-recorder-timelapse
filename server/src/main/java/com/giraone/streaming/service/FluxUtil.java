@@ -7,6 +7,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -14,6 +15,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousByteChannel;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
 /**
@@ -165,7 +167,7 @@ public final class FluxUtil {
      * @param chunkSize the size of file chunks to read.
      * @param offset The offset in the file to begin reading.
      * @param length The number of bytes to read from the file.
-     * @return the Flux.
+     * @return The partial content of the channel
      */
     public static Flux<ByteBuffer> readFile(AsynchronousFileChannel fileChannel, int chunkSize, long offset, long length) {
         return new FileReadFlux(fileChannel, chunkSize, offset, length);
@@ -176,7 +178,7 @@ public final class FluxUtil {
      * @param fileChannel The file channel.
      * @param offset The offset in the file to begin reading.
      * @param length The number of bytes to read from the file.
-     * @return the Flux.
+     * @return The partial content of the channel
      */
     public static Flux<ByteBuffer> readFile(AsynchronousFileChannel fileChannel, long offset, long length) {
         return readFile(fileChannel, DEFAULT_CHUNK_SIZE, offset, length);
@@ -186,7 +188,7 @@ public final class FluxUtil {
      * Creates a {@link Flux} from an {@link AsynchronousFileChannel} which reads the entire file.
      * @param fileChannel The file channel.
      * @param chunkSize the size of file chunks to read.
-     * @return The AsyncInputStream.
+     * @return The content of the channel
      */
     public static Flux<ByteBuffer> readFile(AsynchronousFileChannel fileChannel, int chunkSize) {
         try {
@@ -200,7 +202,7 @@ public final class FluxUtil {
     /**
      * Creates a {@link Flux} from an {@link AsynchronousFileChannel} which reads the entire file.
      * @param fileChannel The file channel.
-     * @return The AsyncInputStream.
+     * @return The content of the channel
      */
     public static Flux<ByteBuffer> readFile(AsynchronousFileChannel fileChannel) {
         try {
@@ -209,6 +211,30 @@ public final class FluxUtil {
         } catch (IOException e) {
             return Flux.error(new RuntimeException("Failed to read the file.", e));
         }
+    }
+
+    /**
+     * Creates a {@link Flux} from a {@link Path} which reads the entire file.
+     * @param path the file to read
+     * @return The content of the channel
+     */
+    public static Flux<ByteBuffer> readFile(Path path) {
+        AsynchronousFileChannel inputChannel;
+        try {
+            inputChannel = AsynchronousFileChannel.open(path);
+        } catch (IOException ioe) {
+            return Flux.error(ioe);
+        }
+        return readFile(inputChannel);
+    }
+
+    /**
+     * Creates a {@link Flux} from a {@link File} which reads the entire file.
+     * @param file the file to read
+     * @return The content of the path
+     */
+    public static Flux<ByteBuffer> readFile(File file) {
+        return readFile(file.toPath());
     }
 
     //------------------------------------------------------------------------------------------------------------------

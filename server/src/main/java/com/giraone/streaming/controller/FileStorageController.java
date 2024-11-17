@@ -70,6 +70,12 @@ public class FileStorageController {
         return fileService.rebuildThumbnails(FileService.Media.IMAGES);
     }
 
+    @SuppressWarnings("unused")
+    @PostMapping("image-admin/download-as-zip")
+    Flux<ByteBuffer> downloadImagesAsZip(@RequestBody Flux<String> fileNames) {
+        return fileService.downloadImagesAsZip(fileNames);
+    }
+
     //------------------------------------------------------------------------------------------------------------------
 
     @SuppressWarnings("unused")
@@ -102,7 +108,7 @@ public class FileStorageController {
     @SuppressWarnings("unused")
     @PostMapping("video-admin/create-timelapse")
     String createTimelapseVideo(@RequestBody List<String> imageNames) {
-        return fileService.createTimelapseVideo(imageNames);
+        return fileService.createTimelapseVideo(imageNames, 15);
     }
 
     //------------------------------------------------------------------------------------------------------------------

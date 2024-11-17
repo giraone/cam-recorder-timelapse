@@ -26,7 +26,7 @@ public class CameraSettingsController {
 
         try {
             final String content = Files.readString(SETTINGS_FILE_PATH);
-            LOGGER.info("Passing {} bytes of camera settings.", content.length());
+            LOGGER.info("Passing {} bytes of camera settings: {}", content.length(), content);
             return ResponseEntity.ok(content);
         } catch (IOException e) {
             LOGGER.warn("Cannot read \"{}\"", SETTINGS_FILE_PATH, e);
