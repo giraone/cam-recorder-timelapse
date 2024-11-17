@@ -3,6 +3,8 @@ package com.giraone.streaming.views.images;
 import com.giraone.streaming.config.ApplicationProperties;
 import com.giraone.streaming.service.FileViewService;
 import com.giraone.streaming.service.model.FileInfo;
+import com.giraone.streaming.service.model.timelapse.TimelapseCommand;
+import com.giraone.streaming.service.model.timelapse.TimelapseResult;
 import com.giraone.streaming.views.MainLayout;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
@@ -61,6 +63,7 @@ public class ImagesView extends VerticalLayout {
     private Button previousButton;
     private Button nextButton;
     private Button deleteSelectedButton;
+    private Button downloadSelectedButton;
     private Button makeVideoButton;
 
     private final FileViewService fileViewService;
@@ -181,6 +184,11 @@ public class ImagesView extends VerticalLayout {
         deleteSelectedButton.setIcon(LineAwesomeIcon.CUT_SOLID.create());
         deleteSelectedButton.addClickListener(click -> deleteSelected());
         deleteSelectedButton.setEnabled(!items.isEmpty());
+
+        downloadSelectedButton = new Button("Donwload");
+        downloadSelectedButton.setIcon(LineAwesomeIcon.DOWNLOAD_SOLID.create());
+        downloadSelectedButton.addClickListener(click -> downloadSelected());
+        downloadSelectedButton.setEnabled(!items.isEmpty());
 
         makeVideoButton = new Button("Create video");
         makeVideoButton.setIcon(LineAwesomeIcon.VIDEO_SOLID.create());
@@ -340,13 +348,36 @@ public class ImagesView extends VerticalLayout {
 
     // specific
 
-    private void makeTimelapseVideo() {
+
+    private void downloadSelected() {
         Set<FileInfo> selectedItems = grid.getSelectedItems();
         List<String> names = selectedItems.stream().map(FileInfo::fileName).sorted().toList();
         try {
-            String result = fileViewService.makeTimelapseVideo(names).block(Duration.ofSeconds(120));
+            String result = fileViewService.downloadSelectedImages(names).block(Duration.ofSeconds(120));
             Notification notification = Notification.show(result);
             notification.addThemeVariants(NotificationVariant.LUMO_PRIMARY);
+        } catch (Exception e) {
+            LOGGER.warn("makeTimelapseVideo failed!", e);
+            showError(e.getMessage());
+        }
+    }
+
+    private void makeTimelapseVideo() {
+        Set<FileInfo> selectedItems = grid.getSelectedItems();
+        if (selectedItems.isEmpty()) {
+            return;
+        }
+        List<String> names = selectedItems.stream().map(FileInfo::fileName).sorted().toList();
+        String outputVideoName = names.get(0).replace(".jpg", ".mp4");
+        TimelapseCommand timelapseCommand = new TimelapseCommand(outputVideoName, names, 1);
+        try {
+            TimelapseResult result = fileViewService.makeTimelapseVideo(timelapseCommand).block(Duration.ofSeconds(120));
+            if (result != null) {
+                Notification notification = Notification.show(result.toString());
+                notification.addThemeVariants(NotificationVariant.LUMO_PRIMARY);
+            } else {
+                showError("Timeout for makeTimelapseVideo!");
+            }
         } catch (Exception e) {
             LOGGER.warn("makeTimelapseVideo failed!", e);
             showError(e.getMessage());

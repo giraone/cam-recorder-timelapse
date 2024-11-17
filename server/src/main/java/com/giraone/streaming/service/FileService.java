@@ -7,6 +7,8 @@ import com.giraone.streaming.config.ApplicationProperties;
 import com.giraone.streaming.service.model.FileInfo;
 import com.giraone.streaming.service.model.FileInfoAndContent;
 import com.giraone.streaming.service.video.VideoService;
+import com.giraone.streaming.service.video.model.TimelapseCommand;
+import com.giraone.streaming.service.video.model.TimelapseResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -25,8 +27,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.nio.file.StandardOpenOption.*;
 
@@ -163,23 +163,27 @@ public class FileService {
     }
 
     public static String buildThumbnailFileName(String fileName) {
-       return replaceFileExtension(fileName, ".jpg");
+        return replaceFileExtension(fileName, ".jpg");
     }
 
-    public String createTimelapseVideo(List<String> imageNames, int rate){
-        final List<File> imageFiles = imageNames.stream().map(fileName -> getFile(Media.IMAGES, fileName)).collect(Collectors.toList());
+    public TimelapseResult createTimelapseVideo(TimelapseCommand timelapseCommand) {
+
+        final File outputVideoFile;
         try {
-            File tempFile = File.createTempFile("i2v", ".mp4");
-            videoService.createTimelapseVideo(imageFiles, tempFile, rate);
-        } catch (IOException e) {
-            LOGGER.error("Cannot create video!", e);
-            return "FAILED";
+            outputVideoFile = File.createTempFile("f2mp4-out-", ".mp4");
+            videoService.createTimelapseVideo(timelapseCommand, outputVideoFile);
+        } catch (IOException ioe) {
+            LOGGER.error("createTimelapseVideo failed", ioe);
+            return new TimelapseResult(false, timelapseCommand.outputFilename());
         }
-        return "DONE";
+        final long contentLength = outputVideoFile.length();
+        final Flux<ByteBuffer> content = FluxUtil.readFile(outputVideoFile.toPath());
+        this.storeFile(Media.VIDEOS, timelapseCommand.outputFilename(), content, contentLength);
+        return new TimelapseResult(true, null);
     }
 
     // TODO: No zip - actually just a simple concat
-    public  Flux<ByteBuffer> downloadImagesAsZip(Flux<String> fileNames) {
+    public Flux<ByteBuffer> downloadImagesAsZip(Flux<String> fileNames) {
         return fileNames.concatMap(fileName -> FluxUtil.readFile(getFile(Media.IMAGES, fileName)));
     }
 

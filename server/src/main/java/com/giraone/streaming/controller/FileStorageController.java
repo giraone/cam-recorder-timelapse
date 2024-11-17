@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.giraone.streaming.service.FileService;
 import com.giraone.streaming.service.model.FileInfo;
 import com.giraone.streaming.service.model.FileInfoAndContent;
+import com.giraone.streaming.service.video.model.TimelapseCommand;
+import com.giraone.streaming.service.video.model.TimelapseResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatusCode;
@@ -65,13 +67,13 @@ public class FileStorageController {
     }
 
     @SuppressWarnings("unused")
-    @GetMapping("image-admin/rebuild-thumbnails")
+    @GetMapping("image/rebuild-thumbnails")
     int rebuildImageThumbnails() {
         return fileService.rebuildThumbnails(FileService.Media.IMAGES);
     }
 
     @SuppressWarnings("unused")
-    @PostMapping("image-admin/download-as-zip")
+    @PostMapping("image/download-as-zip")
     Flux<ByteBuffer> downloadImagesAsZip(@RequestBody Flux<String> fileNames) {
         return fileService.downloadImagesAsZip(fileNames);
     }
@@ -100,16 +102,18 @@ public class FileStorageController {
     }
 
     @SuppressWarnings("unused")
-    @GetMapping("video-admin/rebuild-thumbnails")
+    @PostMapping(value = "video/create-timelapse")
+    TimelapseResult createTimelapseVideo(@RequestBody TimelapseCommand timelapseCommand) {
+        return fileService.createTimelapseVideo(timelapseCommand);
+    }
+
+    @SuppressWarnings("unused")
+    @GetMapping("video/rebuild-thumbnails")
     int rebuildVideoThumbnails() {
         return fileService.rebuildThumbnails(FileService.Media.VIDEOS);
     }
 
-    @SuppressWarnings("unused")
-    @PostMapping("video-admin/create-timelapse")
-    String createTimelapseVideo(@RequestBody List<String> imageNames) {
-        return fileService.createTimelapseVideo(imageNames, 15);
-    }
+
 
     //------------------------------------------------------------------------------------------------------------------
 

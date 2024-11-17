@@ -33,6 +33,12 @@
       <groupId>com.giraone.imaging</groupId>
       <artifactId>imaging-kit</artifactId>
       <version>${giraone.imagingkit.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-logging</groupId>
+          <artifactId>commons-logging</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <!-- Test dependencies -->

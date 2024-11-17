@@ -1,7 +1,11 @@
 package com.giraone.streaming.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.giraone.streaming.service.FileService;
 import com.giraone.streaming.service.FluxUtil;
+import com.giraone.streaming.service.video.model.TimelapseCommand;
+import com.giraone.streaming.util.ObjectMapperBuilder;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -23,9 +27,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.giraone.streaming.service.video.VideoServiceIT.buildInputFiles;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.WRITE;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,6 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class FileStorageControllerIT {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileStorageControllerIT.class);
+    private static final ObjectMapper MAPPER = ObjectMapperBuilder.build();
     private static final ParameterizedTypeReference<Map<String, Object>> MAP = new ParameterizedTypeReference<>() {
     };
 
@@ -176,11 +183,40 @@ class FileStorageControllerIT {
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk()
-            .expectHeader().contentType(MediaType.APPLICATION_JSON) // Normally not necessary
+            .expectHeader().contentType(MediaType.APPLICATION_JSON)
             .expectBody()
             .jsonPath("$.[0].fileName").isEqualTo("video-720x480-1MB.mp4")
             .jsonPath("$.[0].sizeInBytes").isEqualTo(1057149L)
             .jsonPath("$.[0].mediaType").isEqualTo("video/mp4")
+        ;
+    }
+
+    @Test
+    void test7_createTimelapseVideo() throws JsonProcessingException {
+
+        // arrange
+        String wantedFilename = "test.mp4";
+        List<String> imageFiles = buildInputFiles();
+        TimelapseCommand timelapseCommand = new TimelapseCommand(wantedFilename, imageFiles, 2);
+        String jsonPostBody = MAPPER.writeValueAsString(imageFiles);
+        // act/assert
+        String result = webTestClient.post().uri("video/create-timelapse}")
+            .bodyValue(jsonPostBody)
+            .accept()
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(String.class)
+            .returnResult()
+            .getResponseBody();
+        assertThat(result).isEqualTo("DONE");
+        // assert (stored)
+        MediaType mp4 = MediaType.parseMediaType("video/mp4");
+        webTestClient.get().uri("/videos/{filename}", wantedFilename)
+            .accept(mp4)
+            .exchange()
+            .expectStatus().isOk()
+            .expectHeader().contentType(mp4)
+            .expectHeader().contentLength(111L)
         ;
     }
 }

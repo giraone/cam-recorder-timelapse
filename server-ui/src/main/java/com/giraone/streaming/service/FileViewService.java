@@ -2,6 +2,8 @@ package com.giraone.streaming.service;
 
 import com.giraone.streaming.config.ApplicationProperties;
 import com.giraone.streaming.service.model.FileInfo;
+import com.giraone.streaming.service.model.timelapse.TimelapseCommand;
+import com.giraone.streaming.service.model.timelapse.TimelapseResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -109,13 +111,20 @@ public class FileViewService {
         selectedItems.forEach(this::deleteVideo);
     }
 
-    public Mono<String> makeTimelapseVideo(List<String> imageNames) {
+    public Mono<TimelapseResult> makeTimelapseVideo(TimelapseCommand timelapseCommand) {
         WebClient client = WebClient.builder()
-            .baseUrl(applicationProperties.getHostUrl() + "/video-admin/create-timelapse")
+            .baseUrl(applicationProperties.getHostUrl() + "/video/create-timelapse")
             .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .build();
-        return client.post().body(BodyInserters.fromValue(imageNames)).exchangeToMono(clientResponse -> {
-            return clientResponse.bodyToMono(String.class);
-        });
+        return client.post().body(BodyInserters.fromValue(timelapseCommand))
+            .exchangeToMono(clientResponse -> clientResponse.bodyToMono(TimelapseResult.class));
+    }
+
+    public Mono<String> downloadSelectedImages(List<String> imageNames) {
+        WebClient client = WebClient.builder()
+            .baseUrl(applicationProperties.getHostUrl() + "/image-admin/download-as-zip")
+            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+            .build();
+        return client.post().body(BodyInserters.fromValue(imageNames)).exchangeToMono(clientResponse -> clientResponse.bodyToMono(String.class));
     }
 }

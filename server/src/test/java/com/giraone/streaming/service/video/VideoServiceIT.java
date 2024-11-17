@@ -1,5 +1,7 @@
 package com.giraone.streaming.service.video;
 
+import com.giraone.streaming.service.FileService;
+import com.giraone.streaming.service.video.model.TimelapseCommand;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -11,6 +13,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
+public
 class VideoServiceIT {
 
     @Autowired
@@ -33,17 +36,23 @@ class VideoServiceIT {
     void createTimelapseVideo() throws Exception {
 
         // arrange
-        String dir = "src/test/resources/testdata/images";
-        File[] files = new File(dir).listFiles();
-        if (files == null || files.length == 0) {
-            throw new IllegalStateException("No input files in \"" + dir + "\"!");
-        }
-        List<File> imageFiles = Arrays.asList(files);
-        File tempFile = File.createTempFile("createTempFile-", ".mp4");
-        tempFile.deleteOnExit();
+        List<String> imageFiles = buildInputFiles();
+        TimelapseCommand timelapseCommand = new TimelapseCommand("", imageFiles, 2);
+        File tempOutputFile = File.createTempFile("createTempFile-", ".mp4");
+        tempOutputFile.deleteOnExit();
         // act
-        videoService.createTimelapseVideo(imageFiles, tempFile, 2);
+        videoService.createTimelapseVideo(timelapseCommand, tempOutputFile);
         // assert
-        assertThat(tempFile).size().isGreaterThan(100);
+        assertThat(tempOutputFile).size().isGreaterThan(100);
+    }
+
+    public static List<String> buildInputFiles() {
+        // arrange
+        File images = FileService.getFileDirImages();
+        File[] files = images.listFiles((dir, name) -> name.startsWith("cam-b-2024-11-17"));
+        if (files == null || files.length == 0) {
+            throw new IllegalStateException("No input files in \"" + images.getAbsolutePath() + "\"!");
+        }
+        return Arrays.stream(files).map(File::getName).toList();
     }
 }

@@ -12,6 +12,7 @@
 - [x] Restart every ... as setting from server (client + server)
 - [x] Support for displaying videos
 - [ ] Create videos from images using *ffmpeg*
+- [ ] Download n images as ZIP
 - [ ] Image viewer as WebComponent
 
 ## Vaadin Links
