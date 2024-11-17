@@ -187,7 +187,7 @@ public class VideosView extends VerticalLayout {
 
     private String deleteFileConfirmed(FileInfo fileInfo) {
         try {
-            fileViewService.deleteImage(fileInfo);
+            fileViewService.deleteVideo(fileInfo);
         } catch (Exception e) {
             LOGGER.warn("deleteFile {} failed!", fileInfo, e);
             return e.getMessage();
