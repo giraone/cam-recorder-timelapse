@@ -153,7 +153,7 @@ JSONVar parseJson(String jsonString) {
 bool sendPhotoViaHttp(camera_fb_t* frameBuffer, char* timeString) {
  
   char urlBuffer[128];
-  snprintf(urlBuffer, sizeof(urlBuffer), "%s/camera-images/%s-%s.jpg", TARGET_URL, FILE_PREFIX, timeString);
+  snprintf(urlBuffer, sizeof(urlBuffer), "%s/images/%s-%s.jpg", TARGET_URL, FILE_PREFIX, timeString);
   Serial.printf(">>> POST URL = \"%s\"\n", urlBuffer);
  
   HTTPClient http;
