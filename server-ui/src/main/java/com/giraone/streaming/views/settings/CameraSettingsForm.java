@@ -151,7 +151,7 @@ public class CameraSettingsForm extends FormLayout {
             new Paragraph("Operation Modes"), paused, restartAfterAmount,
             new Paragraph(""), blinkOnSuccess, loopDelaySeconds,
             new Hr(), new Hr(), new Hr(),
-            new Paragraph("Image Size and Quality"), new Paragraph(""), frameSize, jpegQuality,
+            new Paragraph("Image Size and Quality"), frameSize, jpegQuality,
             new Hr(), new Hr(), new Hr(),
             new Paragraph("Flash"), flashLedForPicture, flashDurationMs,
             new Paragraph("Pixel Correction"), blackPixelCorrect, whitePixelCorrect,
