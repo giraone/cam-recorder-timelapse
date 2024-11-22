@@ -1,5 +1,6 @@
 package com.giraone.streaming.service;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.giraone.imaging.ConversionCommand;
 import com.giraone.imaging.ImagingProvider;
 import com.giraone.imaging.java2.ProviderJava2D;
@@ -130,32 +131,45 @@ public class FileService {
         return Arrays.stream(files).map(FileInfo::fromFile).toList();
     }
 
-    public boolean rename(Media type, String filename, String newName) {
+    public Status rename(Media type, String filename, String newName) {
         if (isFileNameInvalid(filename)) {
-            throw new IllegalArgumentException("Invalid filename \"" + filename + "\"!");
+            return new Status(false, "Invalid filename \"" + filename + "\"!");
         }
         final File oldFile = new File(getBaseOf(type), filename);
         final File newFile = new File(getBaseOf(type), newName);
-        final boolean ret = oldFile.renameTo(newFile);
-        if (ret) {
-            final File oldThumbnailFile = buildThumbnailFile(type, filename);
-            final File newThumbnailFile = buildThumbnailFile(type, newName);
-            oldThumbnailFile.renameTo(newThumbnailFile);
+        LOGGER.error("Rename \"{}\" to \"{}\"", oldFile, newFile);
+        try {
+            final boolean ret = oldFile.renameTo(newFile);
+            if (ret) {
+                final File oldThumbnailFile = buildThumbnailFile(type, filename);
+                final File newThumbnailFile = buildThumbnailFile(type, newName);
+                LOGGER.error("Rename \"{}\" to \"{}\"", oldThumbnailFile, newThumbnailFile);
+                oldThumbnailFile.renameTo(newThumbnailFile);
+            }
+            return new Status(ret, null);
+        } catch (Exception exc) {
+            LOGGER.error("Failed to rename \"{}\" to \"{}\"", oldFile, newFile, exc);
+            return new Status(false, exc.getMessage());
         }
-        return ret;
     }
 
-    public boolean delete(Media type, String filename) {
+    public Status delete(Media type, String filename) {
         if (isFileNameInvalid(filename)) {
-            throw new IllegalArgumentException("Invalid filename \"" + filename + "\"!");
+            return new Status(false, "Invalid filename \"" + filename + "\"!");
         }
         final File file = new File(getBaseOf(type), filename);
-        final boolean ret = file.delete();
-        if (ret) {
-            final File thumbnailFile = buildThumbnailFile(type, filename);
-            thumbnailFile.delete();
+        LOGGER.error("Delete \"{}\"", file);
+        try {
+            final boolean ret = file.delete();
+            if (ret) {
+                final File thumbnailFile = buildThumbnailFile(type, filename);
+                thumbnailFile.delete();
+            }
+            return new Status(ret, null);
+        } catch (Exception exc) {
+            LOGGER.error("Failed to delete \"{}\"", file, exc);
+            return new Status(false, exc.getMessage());
         }
-        return ret;
     }
 
     public int rebuildThumbnails(Media type) {
@@ -327,5 +341,9 @@ public class FileService {
 
     public enum Media {
         IMAGES, VIDEOS
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record Status(boolean success, String error) {
     }
 }

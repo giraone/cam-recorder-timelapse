@@ -64,16 +64,22 @@ public class FileStorageController {
 
     @SuppressWarnings("unused")
     @PutMapping("images/{filename}")
-    ResponseEntity<Boolean> renamImage(@PathVariable String filename, @RequestBody String newName) {
-        boolean ok = fileService.rename(FileService.Media.IMAGES, filename, newName);
-        return ok ? ResponseEntity.ok(ok) : ResponseEntity.unprocessableEntity().build();
+    ResponseEntity<FileService.Status> renameImage(@PathVariable String filename, @RequestBody String newName) {
+        LOGGER.debug("renameImage {} {}", filename, newName);
+        FileService.Status ret = fileService.rename(FileService.Media.IMAGES, filename, newName);
+        return ret.success()
+            ? ResponseEntity.ok(ret)
+            : ResponseEntity.unprocessableEntity().body(ret);
     }
 
     @SuppressWarnings("unused")
     @DeleteMapping("images/{filename}")
-    ResponseEntity<Boolean> deleteImage(@PathVariable String filename) {
-        boolean ok = fileService.delete(FileService.Media.IMAGES, filename);
-        return ok ? ResponseEntity.ok(ok) : ResponseEntity.unprocessableEntity().build();
+    ResponseEntity<FileService.Status> deleteImage(@PathVariable String filename) {
+        LOGGER.debug("deleteImage {}", filename);
+        FileService.Status ret = fileService.delete(FileService.Media.IMAGES, filename);
+        return ret.success()
+            ? ResponseEntity.ok(ret)
+            : ResponseEntity.unprocessableEntity().body(ret);
     }
 
     @SuppressWarnings("unused")
@@ -119,16 +125,22 @@ public class FileStorageController {
 
     @SuppressWarnings("unused")
     @PutMapping("videos/{filename}")
-    ResponseEntity<Boolean> renameVideo(@PathVariable String filename, @RequestBody String newName) {
-        boolean ok = fileService.rename(FileService.Media.VIDEOS, filename, newName);
-        return ok ? ResponseEntity.ok(ok) : ResponseEntity.unprocessableEntity().build();
+    ResponseEntity<FileService.Status> renameVideo(@PathVariable String filename, @RequestBody String newName) {
+        LOGGER.debug("renameVideo {} {}", filename, newName);
+        FileService.Status ret = fileService.rename(FileService.Media.VIDEOS, filename, newName);
+        return ret.success()
+            ? ResponseEntity.ok(ret)
+            : ResponseEntity.unprocessableEntity().body(ret);
     }
 
     @SuppressWarnings("unused")
     @DeleteMapping("videos/{filename}")
-    ResponseEntity<Boolean> deleteVideo(@PathVariable String filename) {
-        boolean ok = fileService.delete(FileService.Media.VIDEOS, filename);
-        return ok ? ResponseEntity.ok(ok) : ResponseEntity.unprocessableEntity().build();
+    ResponseEntity<FileService.Status> deleteVideo(@PathVariable String filename) {
+        LOGGER.debug("deleteVideo {}", filename);
+        FileService.Status ret = fileService.delete(FileService.Media.VIDEOS, filename);
+        return ret.success()
+            ? ResponseEntity.ok(ret)
+            : ResponseEntity.unprocessableEntity().body(ret);
     }
 
     @SuppressWarnings("unused")
@@ -216,4 +228,5 @@ public class FileStorageController {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record UploadStatus(boolean success, long size, boolean restart, String error) {
     }
+
 }

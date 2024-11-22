@@ -3,6 +3,7 @@ package com.giraone.streaming.views.videos;
 import com.giraone.streaming.config.ApplicationProperties;
 import com.giraone.streaming.service.FileViewService;
 import com.giraone.streaming.service.model.FileInfo;
+import com.giraone.streaming.service.model.Status;
 import com.giraone.streaming.views.MainLayout;
 import com.giraone.streaming.views.components.TextPromptDialog;
 import com.vaadin.flow.component.Component;
@@ -199,7 +200,10 @@ public class VideosView extends VerticalLayout {
 
     private void renameFile(FileInfo fileInfo, String name) {
         try {
-            fileViewService.renameVideo(fileInfo, name);
+            Status ret = fileViewService.renameVideo(fileInfo, name);
+            if (!ret.success()) {
+                showError("renameFile {} failed! " + ret.error());
+            }
         } catch (Exception e) {
             LOGGER.warn("renameFile {} failed!", fileInfo, e);
             showError("renameFile {} failed! " + e.getMessage());
@@ -214,7 +218,10 @@ public class VideosView extends VerticalLayout {
 
     private String deleteFileConfirmed(FileInfo fileInfo) {
         try {
-            fileViewService.deleteVideo(fileInfo);
+            Status ret = fileViewService.deleteVideo(fileInfo);
+            if (!ret.success()) {
+                showError("deleteFile {} failed! " + ret.error());
+            }
         } catch (Exception e) {
             LOGGER.warn("deleteFile {} failed!", fileInfo, e);
             return e.getMessage();

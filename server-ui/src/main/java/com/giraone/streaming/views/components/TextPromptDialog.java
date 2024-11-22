@@ -32,9 +32,9 @@ public class TextPromptDialog extends Dialog {
     public void open() {
         super.open();
         // Center the button within the example
-        getStyle().set("position", "fixed").set("top", "0").set("right", "0")
-            .set("bottom", "0").set("left", "0").set("display", "flex")
-            .set("align-items", "center").set("justify-content", "center");
+//        getStyle().set("position", "fixed").set("top", "0").set("right", "0")
+//            .set("bottom", "0").set("left", "0").set("display", "flex")
+//            .set("align-items", "center").set("justify-content", "center");
     }
 
     private VerticalLayout createDialogLayout(String label, String initialValue, String placeHolder) {

@@ -2,6 +2,7 @@ package com.giraone.streaming.service;
 
 import com.giraone.streaming.config.ApplicationProperties;
 import com.giraone.streaming.service.model.FileInfo;
+import com.giraone.streaming.service.model.Status;
 import com.giraone.streaming.service.model.timelapse.TimelapseCommand;
 import com.giraone.streaming.service.model.timelapse.TimelapseResult;
 import org.slf4j.Logger;
@@ -116,24 +117,28 @@ public class FileViewService {
             .toList();
     }
 
-    public boolean renameImage(FileInfo fileInfo, String name) {
-        return waitFor(webClient().put().uri("/videos/{filename}", fileInfo.fileName())
-            .exchangeToMono(clientResponse -> clientResponse.bodyToMono(Boolean.class)));
+    public Status renameImage(FileInfo fileInfo, String name) {
+        LOGGER.debug("renameImage {} {}", fileInfo.fileName(), name);
+        return waitFor(webClient().put().uri("/images/{filename}", fileInfo.fileName()).bodyValue(name)
+            .exchangeToMono(clientResponse -> clientResponse.bodyToMono(Status.class)));
     }
 
-    public boolean renameVideo(FileInfo fileInfo, String name) {
-        return waitFor(webClient().put().uri("/videos/{filename}", fileInfo.fileName())
-            .exchangeToMono(clientResponse -> clientResponse.bodyToMono(Boolean.class)));
+    public Status renameVideo(FileInfo fileInfo, String name) {
+        LOGGER.debug("renameVideo {} {}", fileInfo.fileName(), name);
+        return waitFor(webClient().put().uri("/videos/{filename}", fileInfo.fileName()).bodyValue(name)
+            .exchangeToMono(clientResponse -> clientResponse.bodyToMono(Status.class)));
     }
 
-    public boolean deleteImage(FileInfo fileInfo) {
-        return waitFor(webClient().delete().uri("/videos/{filename}", fileInfo.fileName())
-            .exchangeToMono(clientResponse -> clientResponse.bodyToMono(Boolean.class)));
-    }
-
-    public boolean deleteVideo(FileInfo fileInfo) {
+    public Status deleteImage(FileInfo fileInfo) {
+        LOGGER.debug("deleteImage {}", fileInfo.fileName());
         return waitFor(webClient().delete().uri("/images/{filename}", fileInfo.fileName())
-            .exchangeToMono(clientResponse -> clientResponse.bodyToMono(Boolean.class)));
+            .exchangeToMono(clientResponse -> clientResponse.bodyToMono(Status.class)));
+    }
+
+    public Status deleteVideo(FileInfo fileInfo) {
+        LOGGER.debug("deleteVideo {}", fileInfo.fileName());
+        return waitFor(webClient().delete().uri("/videos/{filename}", fileInfo.fileName())
+            .exchangeToMono(clientResponse -> clientResponse.bodyToMono(Status.class)));
     }
 
     public void deleteImages(Set<FileInfo> selectedItems) {
@@ -145,23 +150,24 @@ public class FileViewService {
     }
 
     public Mono<TimelapseResult> makeTimelapseVideo(TimelapseCommand timelapseCommand) {
-        return webClient().post().body(BodyInserters.fromValue(timelapseCommand))
+        return webClient().post().uri("/video/create-timelapse").body(BodyInserters.fromValue(timelapseCommand))
             .exchangeToMono(clientResponse -> clientResponse.bodyToMono(TimelapseResult.class));
     }
 
     public Mono<String> downloadSelectedImages(List<String> imageNames) {
-        return webClient().post().body(BodyInserters.fromValue(imageNames)).exchangeToMono(clientResponse -> clientResponse.bodyToMono(String.class));
+        return webClient().post().uri("/image/download-as-zip").body(BodyInserters.fromValue(imageNames)).exchangeToMono(clientResponse -> clientResponse.bodyToMono(String.class));
     }
 
     private WebClient webClient() {
         return WebClient.builder()
-            .baseUrl(applicationProperties.getHostUrl() + "/videos")
+            .baseUrl(applicationProperties.getHostUrl())
             .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .build();
     }
 
-    private boolean waitFor(Mono<Boolean> booleanMono) {
-        final Boolean ret = booleanMono.block(Duration.ofSeconds(20L));
-        return ret != null ? ret : false;
+    private Status waitFor(Mono<Status> statusMono) {
+        final Status ret = statusMono.block(Duration.ofSeconds(20L));
+        LOGGER.debug("waitFor {}", ret);
+        return ret != null ? ret : new Status(false, "Timeout (block)!");
     }
 }

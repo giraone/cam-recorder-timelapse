@@ -44,11 +44,7 @@ public class OsUtil {
         }
     }
 
-    public static OsCommandResult runCommandAndReadOutput(String[] command) {
-        return runCommandAndReadOutput(command, 30);
-    }
-
-    public static OsCommandResult runCommandAndReadOutput(String[] command, int maxWaitTimeinSeconds) {
+    public static OsCommandResult runCommandAndReadOutput(String[] command, long maxWaitTimeInMilliseconds) {
         StringBuilder builder = new StringBuilder();
         Process p = null;
         LOGGER.info("OsCommandResult.runCommandAndReadOutput: {}", commandStringFromArray(command));
@@ -56,7 +52,7 @@ public class OsUtil {
         try {
             p = Runtime.getRuntime().exec(command);
             try {
-                if (!p.waitFor(maxWaitTimeinSeconds, TimeUnit.SECONDS)) {
+                if (!p.waitFor(maxWaitTimeInMilliseconds, TimeUnit.MILLISECONDS)) {
                     return new OsCommandResult(-3, "Command " + commandStringFromArray(command) + " timed out after 30 seconds!", null);
                 }
             } catch (InterruptedException interruptedException) {

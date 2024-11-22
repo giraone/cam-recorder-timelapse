@@ -126,38 +126,41 @@ public class VideoService {
 
     public void createTimelapseVideo(TimelapseCommand timelapseCommand, File outputVideoFile) throws IOException {
         File inputListFile = File.createTempFile("f2mp4-list-", ".txt");
-        try {
-            try (PrintStream out = new PrintStream(new FileOutputStream(inputListFile))) {
-                timelapseCommand.inputFileNames().forEach(filename -> {
-                    out.printf("file '%s'%n", getFile(FileService.Media.IMAGES, filename).getAbsolutePath().replace('\\', '/'));
-                });
-            }
-            LOGGER.info("List file created: {}", inputListFile);
-            String[] ffmpegCommands = makeOsCmdMpeg(COMMAND_TIMELAPSE);
-            for (int i = 0; i < ffmpegCommands.length; i++) {
-                if (INFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = inputListFile.getAbsolutePath().replace('\\', '/');
-                if (OUTFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = outputVideoFile.getAbsolutePath().replace('\\', '/');
-                ffmpegCommands[i] = ffmpegCommands[i].replace(SELECT, Integer.toString(timelapseCommand.select()));
-                ffmpegCommands[i] = ffmpegCommands[i].replace(FRAME_RATE, Integer.toString(timelapseCommand.frameRate()));
-            }
-            OsUtil.OsCommandResult result = OsUtil.runCommandAndReadOutput(ffmpegCommands);
-            if (result.code() == 0) {
-                if (outputVideoFile.length() < 100L) {
-                    throw new RuntimeException("ffmpeg call not successful! No video file created!");
-                } else {
-                    LOGGER.info("ffmpeg call successful with output to {} and {} bytes.", outputVideoFile.getAbsolutePath(), outputVideoFile.length());
+        try (PrintStream out = new PrintStream(new FileOutputStream(inputListFile))) {
+            timelapseCommand.inputFileNames().forEach(filename -> {
+                try {
+                    out.printf("file '%s'%n", getFile(FileService.Media.IMAGES, filename).getCanonicalPath().replace('\\', '/'));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
-            } else if (result.code() > 0) {
-                throw new RuntimeException("ffmpeg call not successful! Exit code = " + result.code() + ". " + result.output());
+            });
+        }
+        final long maxWaitTimeMs = timelapseCommand.inputFileNames().size() * 500L;
+        LOGGER.info("List file created \"{}\" with {} entries. Max wait = {}ms",
+            inputListFile, timelapseCommand.inputFileNames().size(), maxWaitTimeMs);
+        String[] ffmpegCommands = makeOsCmdMpeg(COMMAND_TIMELAPSE);
+        for (int i = 0; i < ffmpegCommands.length; i++) {
+            if (INFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = inputListFile.getAbsolutePath().replace('\\', '/');
+            if (OUTFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = outputVideoFile.getAbsolutePath().replace('\\', '/');
+            ffmpegCommands[i] = ffmpegCommands[i].replace(SELECT, Integer.toString(timelapseCommand.select()));
+            ffmpegCommands[i] = ffmpegCommands[i].replace(FRAME_RATE, Integer.toString(timelapseCommand.frameRate()));
+        }
+        final OsUtil.OsCommandResult result = OsUtil.runCommandAndReadOutput(ffmpegCommands, maxWaitTimeMs);
+        if (result.code() == 0) {
+            if (outputVideoFile.length() < 100L) {
+                throw new RuntimeException("ffmpeg call not successful! No video file created!");
             } else {
-                if (result.exception() != null) {
-                    throw new RuntimeException("ffmpeg call failed with exception!", result.exception());
-                } else {
-                    throw new RuntimeException("ffmpeg call failed! " + result.output());
-                }
+                LOGGER.info("ffmpeg call successful with output to {} and {} bytes.", outputVideoFile.getAbsolutePath(), outputVideoFile.length());
+                inputListFile.delete();
             }
-        } finally {
-            inputListFile.delete();
+        } else if (result.code() > 0) {
+            throw new RuntimeException("ffmpeg call not successful! Exit code = " + result.code() + ". " + result.output());
+        } else {
+            if (result.exception() != null) {
+                throw new RuntimeException("ffmpeg call failed with exception!", result.exception());
+            } else {
+                throw new RuntimeException("ffmpeg call failed! " + result.output());
+            }
         }
     }
 
@@ -170,7 +173,7 @@ public class VideoService {
                 if (OUTFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = tempFile.getAbsolutePath().replace('\\', '/');
             }
 
-            OsUtil.OsCommandResult result = OsUtil.runCommandAndReadOutput(ffmpegCommands);
+            OsUtil.OsCommandResult result = OsUtil.runCommandAndReadOutput(ffmpegCommands, 5000L);
             if (result.code() >= 0) {
                 if (tempFile.length() > 100L) {
                     imagingProvider.createThumbNail(tempFile, outputThumbnailFile, MediaType.IMAGE_JPEG_VALUE,
