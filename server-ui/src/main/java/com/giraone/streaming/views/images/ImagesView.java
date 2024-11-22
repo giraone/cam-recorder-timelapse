@@ -6,6 +6,7 @@ import com.giraone.streaming.service.model.FileInfo;
 import com.giraone.streaming.service.model.timelapse.TimelapseCommand;
 import com.giraone.streaming.service.model.timelapse.TimelapseResult;
 import com.giraone.streaming.views.MainLayout;
+import com.giraone.streaming.views.components.TextPromptDialog;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
@@ -18,6 +19,7 @@ import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.IFrame;
 import com.vaadin.flow.component.html.Image;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -65,6 +67,7 @@ public class ImagesView extends VerticalLayout {
     private Button deleteSelectedButton;
     private Button downloadSelectedButton;
     private Button makeVideoButton;
+    private Paragraph itemsLabel;
 
     private final FileViewService fileViewService;
     private final ApplicationProperties applicationProperties;
@@ -111,7 +114,10 @@ public class ImagesView extends VerticalLayout {
             final Button deleteButton = new Button("");
             deleteButton.setIcon(LineAwesomeIcon.CUT_SOLID.create());
             deleteButton.addClickListener(event -> deleteFile(fileInfo));
-            HorizontalLayout ret = new HorizontalLayout(displayButton, deleteButton);
+            final Button renameButton = new Button("");
+            renameButton.setIcon(LineAwesomeIcon.PEN_SOLID.create());
+            renameButton.addClickListener(event -> renameFile(fileInfo));
+            HorizontalLayout ret = new HorizontalLayout(displayButton, deleteButton, renameButton);
             ret.setWidth(64, Unit.PIXELS);
             return ret;
         }).setHeader("Action").setAutoWidth(false);
@@ -125,7 +131,7 @@ public class ImagesView extends VerticalLayout {
         grid.addColumn(FileInfo::fileName).setSortable(true).setHeader("File Name").setAutoWidth(true);
         grid.addColumn(FileInfo::toDisplayShort).setSortable(true).setHeader("Last Modified").setAutoWidth(true);
         grid.addColumn(FileInfo::sizeInBytes).setSortable(true).setHeader("Size").setAutoWidth(true);
-        grid.addColumn(FileInfo::resolution).setSortable(true).setHeader("Resolution").setAutoWidth(true);
+        grid.addColumn(FileInfo::infos).setSortable(true).setHeader("Info").setAutoWidth(true);
         grid.sort(List.of(new GridSortOrder<>(grid.getColumns().get(3), SortDirection.DESCENDING))); // lastModified
     }
 
@@ -195,11 +201,33 @@ public class ImagesView extends VerticalLayout {
         makeVideoButton.addClickListener(click -> makeTimelapseVideo());
         makeVideoButton.setEnabled(!items.isEmpty());
 
+        itemsLabel = new Paragraph("0 items");
+        itemsLabel.setMinWidth(100, Unit.PIXELS);
+
         // specific
-        return new HorizontalLayout(filterText, reloadButton, deleteSelectedButton, makeVideoButton);
+        return new HorizontalLayout(filterText, reloadButton, deleteSelectedButton, makeVideoButton, itemsLabel);
     }
 
     //-- actions --
+
+    private void renameFile(FileInfo fileInfo) {
+        final TextPromptDialog textPromptDialog = new TextPromptDialog(
+            "Rename", "New name:",
+            fileInfo.fileName(), "New name",
+            name -> renameFile(fileInfo, name));
+        textPromptDialog.open();
+    }
+
+    private void renameFile(FileInfo fileInfo, String name) {
+        try {
+            fileViewService.renameImage(fileInfo, name);
+        } catch (Exception e) {
+            LOGGER.warn("renameFile {} failed!", fileInfo, e);
+            showError("renameFile {} failed! " + e.getMessage());
+            return;
+        }
+        updateList();
+    }
 
     private void deleteFile(FileInfo fileInfo) {
         confirm("Delete file \"" + fileInfo.fileName() + "\"?", () -> deleteFileConfirmed(fileInfo));
@@ -264,7 +292,7 @@ public class ImagesView extends VerticalLayout {
     private void displayFile(FileInfo fileInfo) {
         currentItem = fileInfo;
         String url = applicationProperties.getHostUrl() + "/images/" + fileInfo.fileName();
-        openFileViewer(url, fileInfo.fileName() + "  (" + fileInfo.resolution() + ", " + fileInfo.sizeInBytes() + " Bytes)");
+        openFileViewer(url, fileInfo.fileName() + "  (" + fileInfo.infos() + ", " + fileInfo.sizeInBytes() + " Bytes)");
     }
 
     private void openFileViewer(String url, String label) {
@@ -344,10 +372,10 @@ public class ImagesView extends VerticalLayout {
         makeVideoButton.setEnabled(entries && selected);
         previousButton.setEnabled(entries);
         nextButton.setEnabled(entries);
+        itemsLabel.setText(String.format("%d items", items.size()));
     }
 
     // specific
-
 
     private void downloadSelected() {
         Set<FileInfo> selectedItems = grid.getSelectedItems();
@@ -369,7 +397,7 @@ public class ImagesView extends VerticalLayout {
         }
         List<String> names = selectedItems.stream().map(FileInfo::fileName).sorted().toList();
         String outputVideoName = names.get(0).replace(".jpg", ".mp4");
-        TimelapseCommand timelapseCommand = new TimelapseCommand(outputVideoName, names, 1);
+        TimelapseCommand timelapseCommand = new TimelapseCommand(outputVideoName, names, 1, 10);
         try {
             TimelapseResult result = fileViewService.makeTimelapseVideo(timelapseCommand).block(Duration.ofSeconds(120));
             if (result != null) {

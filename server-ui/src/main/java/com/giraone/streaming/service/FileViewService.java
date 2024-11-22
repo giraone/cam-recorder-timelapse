@@ -15,6 +15,7 @@ import reactor.core.publisher.Mono;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -25,11 +26,15 @@ public class FileViewService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileViewService.class);
 
+    public static String DIR_NAME_THUMBS = ".thumbs";
+    public static String DIR_NAME_META = ".meta";
     public static File STORAGE_BASE = new File("../STORAGE");
     public static File IMAGES_BASE = new File(STORAGE_BASE, "IMAGES");
-    public static File IMAGES_THUMBS = new File(IMAGES_BASE, ".thumbs");
+    public static File IMAGES_THUMBS = new File(IMAGES_BASE, DIR_NAME_THUMBS);
+    public static File IMAGES_META = new File(IMAGES_BASE, DIR_NAME_META);
     public static File VIDEOS_BASE = new File(STORAGE_BASE, "VIDEOS");
-    public static File VIDEOS_THUMBS = new File(VIDEOS_BASE, ".thumbs");
+    public static File VIDEOS_THUMBS = new File(VIDEOS_BASE, DIR_NAME_THUMBS);
+    public static File VIDEOS_META = new File(VIDEOS_BASE, DIR_NAME_META);
 
     static {
         try {
@@ -52,6 +57,16 @@ public class FileViewService {
         } catch (IOException ioe) {
             LOGGER.debug("Cannot canonicalize: {}", VIDEOS_THUMBS, ioe);
         }
+        try {
+            IMAGES_META = IMAGES_META.getCanonicalFile();
+        } catch (IOException ioe) {
+            LOGGER.debug("Cannot canonicalize: {}", IMAGES_META, ioe);
+        }
+        try {
+            VIDEOS_META = VIDEOS_META.getCanonicalFile();
+        } catch (IOException ioe) {
+            LOGGER.debug("Cannot canonicalize: {}", VIDEOS_META, ioe);
+        }
     }
 
     private final ApplicationProperties applicationProperties;
@@ -66,6 +81,14 @@ public class FileViewService {
 
     public File getVideosThumbDir() {
         return VIDEOS_THUMBS;
+    }
+
+    public File getImagesMetaDir() {
+        return IMAGES_META;
+    }
+
+    public File getVideosMetaDir() {
+        return VIDEOS_META;
     }
 
     public String getThumbUrl(FileInfo fileInfo) {
@@ -93,14 +116,24 @@ public class FileViewService {
             .toList();
     }
 
-    public void deleteImage(FileInfo fileInfo) {
-        new File(IMAGES_BASE, fileInfo.fileName()).delete();
-        new File(IMAGES_THUMBS, fileInfo.fileName()).delete();
+    public boolean renameImage(FileInfo fileInfo, String name) {
+        return waitFor(webClient().put().uri("/videos/{filename}", fileInfo.fileName())
+            .exchangeToMono(clientResponse -> clientResponse.bodyToMono(Boolean.class)));
     }
 
-    public void deleteVideo(FileInfo fileInfo) {
-        new File(VIDEOS_BASE, fileInfo.fileName()).delete();
-        new File(VIDEOS_THUMBS, fileInfo.fileName()).delete();
+    public boolean renameVideo(FileInfo fileInfo, String name) {
+        return waitFor(webClient().put().uri("/videos/{filename}", fileInfo.fileName())
+            .exchangeToMono(clientResponse -> clientResponse.bodyToMono(Boolean.class)));
+    }
+
+    public boolean deleteImage(FileInfo fileInfo) {
+        return waitFor(webClient().delete().uri("/videos/{filename}", fileInfo.fileName())
+            .exchangeToMono(clientResponse -> clientResponse.bodyToMono(Boolean.class)));
+    }
+
+    public boolean deleteVideo(FileInfo fileInfo) {
+        return waitFor(webClient().delete().uri("/images/{filename}", fileInfo.fileName())
+            .exchangeToMono(clientResponse -> clientResponse.bodyToMono(Boolean.class)));
     }
 
     public void deleteImages(Set<FileInfo> selectedItems) {
@@ -112,19 +145,23 @@ public class FileViewService {
     }
 
     public Mono<TimelapseResult> makeTimelapseVideo(TimelapseCommand timelapseCommand) {
-        WebClient client = WebClient.builder()
-            .baseUrl(applicationProperties.getHostUrl() + "/video/create-timelapse")
-            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .build();
-        return client.post().body(BodyInserters.fromValue(timelapseCommand))
+        return webClient().post().body(BodyInserters.fromValue(timelapseCommand))
             .exchangeToMono(clientResponse -> clientResponse.bodyToMono(TimelapseResult.class));
     }
 
     public Mono<String> downloadSelectedImages(List<String> imageNames) {
-        WebClient client = WebClient.builder()
-            .baseUrl(applicationProperties.getHostUrl() + "/image-admin/download-as-zip")
+        return webClient().post().body(BodyInserters.fromValue(imageNames)).exchangeToMono(clientResponse -> clientResponse.bodyToMono(String.class));
+    }
+
+    private WebClient webClient() {
+        return WebClient.builder()
+            .baseUrl(applicationProperties.getHostUrl() + "/videos")
             .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .build();
-        return client.post().body(BodyInserters.fromValue(imageNames)).exchangeToMono(clientResponse -> clientResponse.bodyToMono(String.class));
+    }
+
+    private boolean waitFor(Mono<Boolean> booleanMono) {
+        final Boolean ret = booleanMono.block(Duration.ofSeconds(20L));
+        return ret != null ? ret : false;
     }
 }

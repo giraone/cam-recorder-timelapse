@@ -6,6 +6,7 @@ import com.giraone.imaging.java2.ProviderJava2D;
 import com.giraone.streaming.config.ApplicationProperties;
 import com.giraone.streaming.service.model.FileInfo;
 import com.giraone.streaming.service.model.FileInfoAndContent;
+import com.giraone.streaming.service.model.VideoMetaInfo;
 import com.giraone.streaming.service.video.VideoService;
 import com.giraone.streaming.service.video.model.TimelapseCommand;
 import com.giraone.streaming.service.video.model.TimelapseResult;
@@ -35,12 +36,15 @@ public class FileService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileService.class);
 
-    private static final String THUMBS = ".thumbs";
-    private static final File STORAGE_BASE = new File(".." + File.separator + "STORAGE");
-    private static final File IMAGES_BASE = new File(STORAGE_BASE, "IMAGES");
-    private static final File IMAGES_THUMBS = new File(IMAGES_BASE, THUMBS);
-    private static final File VIDEOS_BASE = new File(STORAGE_BASE, "VIDEOS");
-    private static final File VIDEOS_THUMBS = new File(VIDEOS_BASE, THUMBS);
+    public static String DIR_NAME_THUMBS = ".thumbs";
+    public static String DIR_NAME_META = ".meta";
+    public static File STORAGE_BASE = new File("../STORAGE");
+    public static File IMAGES_BASE = new File(STORAGE_BASE, "IMAGES");
+    public static File IMAGES_THUMBS = new File(IMAGES_BASE, DIR_NAME_THUMBS);
+    public static File IMAGES_META = new File(IMAGES_BASE, DIR_NAME_META);
+    public static File VIDEOS_BASE = new File(STORAGE_BASE, "VIDEOS");
+    public static File VIDEOS_THUMBS = new File(VIDEOS_BASE, DIR_NAME_THUMBS);
+    public static File VIDEOS_META = new File(VIDEOS_BASE, DIR_NAME_META);
 
     private static final Pattern FILE_NAME_PATTERN = Pattern.compile("[a-zA-Z0-9-]+[.][a-z0-9]{3,4}");
 
@@ -52,6 +56,8 @@ public class FileService {
     static {
         createDirectory(IMAGES_THUMBS);
         createDirectory(VIDEOS_THUMBS);
+        createDirectory(IMAGES_META);
+        createDirectory(VIDEOS_META);
     }
 
     public FileService(VideoService videoService, ApplicationProperties applicationProperties) {
@@ -62,7 +68,7 @@ public class FileService {
     public Mono<FileInfo> storeFile(Media type, String filename, Flux<ByteBuffer> content, long contentLength) {
 
         if (isFileNameInvalid(filename)) {
-            return Mono.error(new IllegalArgumentException("Invalid target filename \"" + filename + "\"!"));
+            return Mono.error(new IllegalArgumentException("Invalid filename \"" + filename + "\"!"));
         }
         final File file = getFile(type, filename);
         final AsynchronousFileChannel channel;
@@ -93,13 +99,13 @@ public class FileService {
                 }
             })
             .thenReturn(new FileInfo(filename, writtenBytes.get(),
-                FileInfo.mediaTypeFromFileName(filename), FileInfo.ofEpochSecond(file.lastModified())));
+                FileInfo.mediaTypeFromFileName(filename), FileInfo.ofEpochSecond(file.lastModified()), "?"));
     }
 
     public FileInfoAndContent downloadFile(Media type, String filename) throws IOException {
 
         if (isFileNameInvalid(filename)) {
-            throw new IllegalArgumentException("Invalid download filename \"" + filename + "\"!");
+            throw new IllegalArgumentException("Invalid filename \"" + filename + "\"!");
         }
         final File file = new File(getBaseOf(type), filename);
         final AsynchronousFileChannel channel;
@@ -124,6 +130,33 @@ public class FileService {
         return Arrays.stream(files).map(FileInfo::fromFile).toList();
     }
 
+    public boolean rename(Media type, String filename, String newName) {
+        if (isFileNameInvalid(filename)) {
+            throw new IllegalArgumentException("Invalid filename \"" + filename + "\"!");
+        }
+        final File oldFile = new File(getBaseOf(type), filename);
+        final File newFile = new File(getBaseOf(type), newName);
+        final boolean ret = oldFile.renameTo(newFile);
+        if (ret) {
+            final File oldThumbnailFile = buildThumbnailFile(type, filename);
+            final File newThumbnailFile = buildThumbnailFile(type, newName);
+            oldThumbnailFile.renameTo(newThumbnailFile);
+        }
+        return ret;
+    }
+
+    public boolean delete(Media type, String filename) {
+        if (isFileNameInvalid(filename)) {
+            throw new IllegalArgumentException("Invalid filename \"" + filename + "\"!");
+        }
+        final File file = new File(getBaseOf(type), filename);
+        final boolean ret = file.delete();
+        if (ret) {
+            final File thumbnailFile = buildThumbnailFile(type, filename);
+            thumbnailFile.delete();
+        }
+        return ret;
+    }
 
     public int rebuildThumbnails(Media type) {
         File[] files = getBaseOf(type).listFiles((dir, name) -> !name.startsWith("."));
@@ -134,6 +167,21 @@ public class FileService {
         Arrays.stream(files).forEach(file -> {
             LOGGER.info("Creating thumbnail for {}", file.getAbsolutePath());
             if (createThumbnail(type, file)) {
+                ret.getAndIncrement();
+            }
+        });
+        return ret.get();
+    }
+
+    public int rebuildMeta(Media type) {
+        File[] files = getBaseOf(type).listFiles((dir, name) -> !name.startsWith("."));
+        if (files == null) {
+            return 0;
+        }
+        AtomicInteger ret = new AtomicInteger(0);
+        Arrays.stream(files).forEach(file -> {
+            LOGGER.info("Creating meta data for {}", file.getAbsolutePath());
+            if (createMetaData(type, file)) {
                 ret.getAndIncrement();
             }
         });
@@ -166,6 +214,10 @@ public class FileService {
         return replaceFileExtension(fileName, ".jpg");
     }
 
+    public static String buildMetaFileName(String fileName) {
+        return replaceFileExtension(fileName, ".json");
+    }
+
     public Mono<TimelapseResult> createTimelapseVideo(TimelapseCommand timelapseCommand) {
 
         final File outputVideoFile;
@@ -190,9 +242,7 @@ public class FileService {
     //------------------------------------------------------------------------------------------------------------------
 
     boolean createThumbnail(Media type, File originalFile) {
-
-        final String thumbnailFileName = buildThumbnailFileName(originalFile.getName());
-        final File thumbnailFile = new File(getBaseOf(type) + File.separator + THUMBS, thumbnailFileName);
+        final File thumbnailFile = buildThumbnailFile(type, originalFile.getName());
         if (type == Media.IMAGES) {
             return createThumbnailForImage(originalFile, thumbnailFile);
         } else {
@@ -221,12 +271,37 @@ public class FileService {
         return true;
     }
 
+    boolean createMetaData(Media type, File originalFile) {
+        final File metaFile = buildMetaFile(type, originalFile.getName());
+        try {
+            if (type == Media.VIDEOS) {
+                final VideoMetaInfo videoMetaInfo = videoService.extractVideoMetaInfo(originalFile);
+                return videoService.storeVideoMetaInfo(videoMetaInfo, metaFile);
+            } else {
+                return false;
+            }
+        } catch (Exception exc) {
+            LOGGER.warn("Cannot create meta data for \"{}\"! {}", originalFile.getAbsolutePath(), exc.getMessage());
+            return false;
+        }
+    }
+
     private static boolean isFileNameInvalid(String filename) {
         return !FILE_NAME_PATTERN.matcher(filename).matches();
     }
 
     private static File getBaseOf(Media type) {
         return type == Media.IMAGES ? IMAGES_BASE : VIDEOS_BASE;
+    }
+
+    private static File buildThumbnailFile(Media type, String filename) {
+        final String thumbnailFileName = buildThumbnailFileName(filename);
+        return new File(getBaseOf(type) + File.separator + DIR_NAME_THUMBS, thumbnailFileName);
+    }
+
+    private static File buildMetaFile(Media type, String filename) {
+        final String metaFileName = buildMetaFileName(filename);
+        return new File(getBaseOf(type) + File.separator + DIR_NAME_META, metaFileName);
     }
 
     @SuppressWarnings("SameParameterValue")

@@ -127,13 +127,13 @@ class FileStorageControllerIT {
     @Test
     void test4_uploadVideoFile() throws IOException {
 
-        File file = ResourceUtils.getFile("classpath:testdata/video-720x480-1MB.mp4");
+        File file = ResourceUtils.getFile("classpath:testdata/video-640x480-1MB.mp4");
         assertThat(file).isNotNull();
         try (FileInputStream fileInputStream = new FileInputStream(file)) {
             var bodyInserter = BodyInserters.fromResource(new InputStreamResource(fileInputStream));
             LOGGER.info("Read upload image from {}", file.getAbsolutePath());
             webTestClient.post()
-                .uri("/images/{file}", FILENAME_VIDEO)
+                .uri("/videos/{file}", FILENAME_VIDEO)
                 .contentType(MediaType.parseMediaType("video/mp4"))
                 .body(bodyInserter)
                 .exchange()
@@ -168,24 +168,19 @@ class FileStorageControllerIT {
         AsynchronousFileChannel channel = AsynchronousFileChannel.open(downloadedFile.toPath(), CREATE, WRITE);
         FluxUtil.writeFile(content, channel).block();
         assertThat(downloadedFile).exists().hasSize(EXPECTED_VIDEO_FILE_SIZE);
-        // Now delete the uploaded file and thumbnail
-        File uploadedFile = new File(FileService.getFileDirImages(), FILENAME_VIDEO);
-        assertThat(uploadedFile.delete()).isTrue();
-        File thumbFile = new File(FileService.getThumbDirImages(), FileService.buildThumbnailFileName(FILENAME_VIDEO));
-        assertThat(thumbFile.delete()).isTrue();
     }
 
     @Test
     void test6_listVideoFiles() {
 
         // act/assert
-        webTestClient.get().uri("/video-infos?filter=0")
+        webTestClient.get().uri("/video-infos")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk()
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
             .expectBody()
-            .jsonPath("$.[0].fileName").isEqualTo("video-720x480-1MB.mp4")
+            .jsonPath("$.[0].fileName").isEqualTo("video-640x480-1MB.mp4")
             .jsonPath("$.[0].sizeInBytes").isEqualTo(1057149L)
             .jsonPath("$.[0].mediaType").isEqualTo("video/mp4")
         ;
@@ -197,8 +192,8 @@ class FileStorageControllerIT {
         // arrange
         String wantedFilename = "test.mp4";
         List<String> imageFiles = buildInputFiles();
-        TimelapseCommand timelapseCommand = new TimelapseCommand(wantedFilename, imageFiles, 2);
-        String jsonPostBody = MAPPER.writeValueAsString(imageFiles);
+        TimelapseCommand timelapseCommand = new TimelapseCommand(wantedFilename, imageFiles, 2, 15);
+        String jsonPostBody = MAPPER.writeValueAsString(timelapseCommand);
         // act/assert
         String result = webTestClient.post().uri("video/create-timelapse}")
             .bodyValue(jsonPostBody)
@@ -217,6 +212,25 @@ class FileStorageControllerIT {
             .expectStatus().isOk()
             .expectHeader().contentType(mp4)
             .expectHeader().contentLength(111L)
+        ;
+    }
+
+    @Test
+    void test8_renameVideo() {
+        String wantedFilename = "test.mp4";
+        String newName = "new.mp4";
+        webTestClient.put().uri("/videos/{filename}", wantedFilename)
+            .bodyValue(newName)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody()
+            .jsonPath("$").isEqualTo("true")
+        ;
+        webTestClient.delete().uri("/videos/{filename}", newName)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody()
+            .jsonPath("$").isEqualTo("true")
         ;
     }
 }

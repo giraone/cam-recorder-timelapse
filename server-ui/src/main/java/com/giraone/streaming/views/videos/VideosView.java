@@ -4,6 +4,7 @@ import com.giraone.streaming.config.ApplicationProperties;
 import com.giraone.streaming.service.FileViewService;
 import com.giraone.streaming.service.model.FileInfo;
 import com.giraone.streaming.views.MainLayout;
+import com.giraone.streaming.views.components.TextPromptDialog;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
@@ -16,6 +17,7 @@ import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.IFrame;
 import com.vaadin.flow.component.html.Image;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -36,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Scope;
 import org.vaadin.lineawesome.LineAwesomeIcon;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -60,6 +61,7 @@ public class VideosView extends VerticalLayout {
     private Button halfButton;
     private Button previousButton;
     private Button nextButton;
+    private Paragraph itemsLabel;
 
     private final FileViewService fileViewService;
     private final ApplicationProperties applicationProperties;
@@ -103,7 +105,10 @@ public class VideosView extends VerticalLayout {
             final Button deleteButton = new Button("");
             deleteButton.setIcon(LineAwesomeIcon.CUT_SOLID.create());
             deleteButton.addClickListener(event -> deleteFile(fileInfo));
-            HorizontalLayout ret = new HorizontalLayout(displayButton, deleteButton);
+            final Button renameButton = new Button("");
+            renameButton.setIcon(LineAwesomeIcon.PEN_SOLID.create());
+            renameButton.addClickListener(event -> renameFile(fileInfo));
+            HorizontalLayout ret = new HorizontalLayout(displayButton, deleteButton, renameButton);
             ret.setWidth(64, Unit.PIXELS);
             return ret;
         }).setHeader("Action").setAutoWidth(false);
@@ -117,7 +122,7 @@ public class VideosView extends VerticalLayout {
         grid.addColumn(FileInfo::fileName).setSortable(true).setHeader("File Name").setAutoWidth(true);
         grid.addColumn(FileInfo::toDisplayShort).setSortable(true).setHeader("Last Modified").setAutoWidth(true);
         grid.addColumn(FileInfo::sizeInBytes).setSortable(true).setHeader("Size").setAutoWidth(true);
-        grid.addColumn(FileInfo::resolution).setSortable(true).setHeader("Resolution").setAutoWidth(true);
+        grid.addColumn(FileInfo::infos).setSortable(true).setHeader("Info").setAutoWidth(true);
         grid.sort(List.of(new GridSortOrder<>(grid.getColumns().get(3), SortDirection.DESCENDING))); // lastModified
     }
 
@@ -176,10 +181,32 @@ public class VideosView extends VerticalLayout {
         deleteSelectedButton.setIcon(LineAwesomeIcon.CUT_SOLID.create());
         deleteSelectedButton.addClickListener(click -> deleteSelected());
 
-        return new HorizontalLayout(filterText, reloadButton, deleteSelectedButton);
+        itemsLabel = new Paragraph("0 items");
+        itemsLabel.setMinWidth(100, Unit.PIXELS);
+
+        return new HorizontalLayout(filterText, reloadButton, deleteSelectedButton, itemsLabel);
     }
 
     //-- actions --
+
+    private void renameFile(FileInfo fileInfo) {
+        final TextPromptDialog textPromptDialog = new TextPromptDialog(
+            "Rename", "New name:",
+            fileInfo.fileName(), "New name",
+            name -> renameFile(fileInfo, name));
+        textPromptDialog.open();
+    }
+
+    private void renameFile(FileInfo fileInfo, String name) {
+        try {
+            fileViewService.renameVideo(fileInfo, name);
+        } catch (Exception e) {
+            LOGGER.warn("renameFile {} failed!", fileInfo, e);
+            showError("renameFile {} failed! " + e.getMessage());
+            return;
+        }
+        updateList();
+    }
 
     private void deleteFile(FileInfo fileInfo) {
         confirm("Delete file \"" + fileInfo.fileName() + "\"?", () -> deleteFileConfirmed(fileInfo));
@@ -216,9 +243,7 @@ public class VideosView extends VerticalLayout {
     private void updateList() {
         items = fileViewService.listVideoInfos(filterText.getValue());
         grid.setItems(items);
-        final boolean enabled = !items.isEmpty();
-        previousButton.setEnabled(enabled);
-        nextButton.setEnabled(enabled);
+        activation(false);
     }
 
     private List<FileInfo> getItemsWithSortOrder() {
@@ -246,7 +271,7 @@ public class VideosView extends VerticalLayout {
     private void displayFile(FileInfo fileInfo) {
         currentItem = fileInfo;
         String url = applicationProperties.getHostUrl() + "/videos/" + fileInfo.fileName();
-        openFileViewer(url, fileInfo.fileName() + "  (" + fileInfo.resolution() + ", " + fileInfo.sizeInBytes() + " Bytes)");
+        openFileViewer(url, fileInfo.fileName() + "  (" + fileInfo.infos() + ", " + fileInfo.sizeInBytes() + " Bytes)");
     }
 
     private void openFileViewer(String url, String label) {
@@ -318,5 +343,28 @@ public class VideosView extends VerticalLayout {
             dialog.close();
         });
         dialog.open();
+    }
+
+    private void activation(boolean selected) {
+        final boolean entries = !items.isEmpty();
+        previousButton.setEnabled(entries);
+        nextButton.setEnabled(entries);
+        itemsLabel.setText(String.format("%d items", items.size()));
+    }
+
+    private void showError(String text) {
+        Notification notification = new Notification();
+        notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+        Div divText = new Div(new Text(text));
+        Button closeButton = new Button(new Icon("lumo", "cross"));
+        closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+        closeButton.setAriaLabel("Close");
+        closeButton.addClickListener(event -> {
+            notification.close();
+        });
+        HorizontalLayout layout = new HorizontalLayout(divText, closeButton);
+        layout.setAlignItems(Alignment.CENTER);
+        notification.add(layout);
+        notification.open();
     }
 }

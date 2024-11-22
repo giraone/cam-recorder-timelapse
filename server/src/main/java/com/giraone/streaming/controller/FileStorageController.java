@@ -11,9 +11,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -61,6 +63,20 @@ public class FileStorageController {
     }
 
     @SuppressWarnings("unused")
+    @PutMapping("images/{filename}")
+    ResponseEntity<Boolean> renamImage(@PathVariable String filename, @RequestBody String newName) {
+        boolean ok = fileService.rename(FileService.Media.IMAGES, filename, newName);
+        return ok ? ResponseEntity.ok(ok) : ResponseEntity.unprocessableEntity().build();
+    }
+
+    @SuppressWarnings("unused")
+    @DeleteMapping("images/{filename}")
+    ResponseEntity<Boolean> deleteImage(@PathVariable String filename) {
+        boolean ok = fileService.delete(FileService.Media.IMAGES, filename);
+        return ok ? ResponseEntity.ok(ok) : ResponseEntity.unprocessableEntity().build();
+    }
+
+    @SuppressWarnings("unused")
     @GetMapping("image-infos")
     List<FileInfo> listImageFiles(@RequestParam(required = false) String filter) {
         return fileService.listFileInfos(FileService.Media.IMAGES, filter);
@@ -73,6 +89,12 @@ public class FileStorageController {
     }
 
     @SuppressWarnings("unused")
+    @GetMapping("image/rebuild-meta")
+    int rebuildImageMeta() {
+        return fileService.rebuildMeta(FileService.Media.IMAGES);
+    }
+
+    @SuppressWarnings("unused")
     @PostMapping("image/download-as-zip")
     Flux<ByteBuffer> downloadImagesAsZip(@RequestBody Flux<String> fileNames) {
         return fileService.downloadImagesAsZip(fileNames);
@@ -81,7 +103,7 @@ public class FileStorageController {
     //------------------------------------------------------------------------------------------------------------------
 
     @SuppressWarnings("unused")
-    @PostMapping(value = "images/{filename}", consumes = {"video/mp4"})
+    @PostMapping(value = "videos/{filename}", consumes = {"video/mp4"})
     Mono<ResponseEntity<UploadStatus>> uploadVideo(@PathVariable String filename,
                                                    @RequestBody Flux<ByteBuffer> content,
                                                    @RequestHeader("Content-Length") Optional<String> contentLengthString) {
@@ -93,6 +115,20 @@ public class FileStorageController {
     @GetMapping("videos/{filename}")
     ResponseEntity<Flux<ByteBuffer>> downloadVideo(@PathVariable String filename) {
         return download(FileService.Media.VIDEOS, filename);
+    }
+
+    @SuppressWarnings("unused")
+    @PutMapping("videos/{filename}")
+    ResponseEntity<Boolean> renameVideo(@PathVariable String filename, @RequestBody String newName) {
+        boolean ok = fileService.rename(FileService.Media.VIDEOS, filename, newName);
+        return ok ? ResponseEntity.ok(ok) : ResponseEntity.unprocessableEntity().build();
+    }
+
+    @SuppressWarnings("unused")
+    @DeleteMapping("videos/{filename}")
+    ResponseEntity<Boolean> deleteVideo(@PathVariable String filename) {
+        boolean ok = fileService.delete(FileService.Media.VIDEOS, filename);
+        return ok ? ResponseEntity.ok(ok) : ResponseEntity.unprocessableEntity().build();
     }
 
     @SuppressWarnings("unused")
@@ -113,7 +149,11 @@ public class FileStorageController {
         return fileService.rebuildThumbnails(FileService.Media.VIDEOS);
     }
 
-
+    @SuppressWarnings("unused")
+    @GetMapping("video/rebuild-meta")
+    int rebuildVideoMeta() {
+        return fileService.rebuildMeta(FileService.Media.VIDEOS);
+    }
 
     //------------------------------------------------------------------------------------------------------------------
 

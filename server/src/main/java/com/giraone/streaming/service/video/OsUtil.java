@@ -11,6 +11,39 @@ import java.util.concurrent.TimeUnit;
 public class OsUtil {
     private final static Logger LOGGER = LoggerFactory.getLogger(OsUtil.class);
 
+    public static OsCommandResult runCommand(String[] command) {
+        return runCommand(command, 30);
+    }
+
+    public static OsCommandResult runCommand(String[] command, int maxWaitTimeinSeconds) {
+        Process p = null;
+        LOGGER.info("OsCommandResult.runCommand: {}", commandStringFromArray(command));
+        final long start = System.currentTimeMillis();
+        try {
+            p = Runtime.getRuntime().exec(command);
+            try {
+                if (!p.waitFor(maxWaitTimeinSeconds, TimeUnit.SECONDS)) {
+                    return new OsCommandResult(-3, "Command " + commandStringFromArray(command) + " timed out after 30 seconds!", null);
+                }
+            } catch (InterruptedException interruptedException) {
+                LOGGER.error("Interupt when running {}", commandStringFromArray(command), interruptedException);
+                return new OsCommandResult(-2, null, interruptedException);
+            }
+
+            if (LOGGER.isDebugEnabled()) {
+                final long end = System.currentTimeMillis();
+                LOGGER.debug("OsCommandResult.runCommand: ExitCode = {}}, Time = {} ms", p.exitValue(), (end - start));
+            }
+            return new OsCommandResult(p.exitValue(), null, null);
+        } catch (IOException ioe) {
+            LOGGER.error("IO Error running {}", commandStringFromArray(command), ioe);
+            if (p != null)
+                return new OsCommandResult(p.exitValue(), null, ioe);
+            else
+                return new OsCommandResult(-1, null, ioe);
+        }
+    }
+
     public static OsCommandResult runCommandAndReadOutput(String[] command) {
         return runCommandAndReadOutput(command, 30);
     }
