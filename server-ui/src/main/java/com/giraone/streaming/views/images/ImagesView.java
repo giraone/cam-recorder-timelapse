@@ -139,7 +139,7 @@ public class ImagesView extends VerticalLayout {
     private Component buildToolbar() {
         filterText.setPlaceholder("Filter by name...");
         filterText.setClearButtonVisible(true);
-        filterText.setMinWidth("40%");
+        filterText.setMinWidth("20%");
         filterText.setPrefixComponent(new Icon(VaadinIcon.SEARCH));
         filterText.setValueChangeMode(ValueChangeMode.LAZY);
         filterText.addValueChangeListener(e -> updateList(e.getValue()));
@@ -148,7 +148,7 @@ public class ImagesView extends VerticalLayout {
         reloadButton.setIcon(LineAwesomeIcon.SYNC_SOLID.create());
         reloadButton.addClickListener(click -> updateList(filterText.getValue()));
 
-        deleteSelectedButton = new Button("Delete selected");
+        deleteSelectedButton = new Button("Delete");
         deleteSelectedButton.setIcon(LineAwesomeIcon.CUT_SOLID.create());
         deleteSelectedButton.addClickListener(click -> deleteSelected());
         deleteSelectedButton.setEnabled(!gridFileInfo.itemsIsEmpty());
@@ -331,6 +331,8 @@ public class ImagesView extends VerticalLayout {
         makeVideoButton.setEnabled(entries && selected);
         previousButton.setEnabled(entries);
         nextButton.setEnabled(entries);
+        fullButton.setEnabled(entries);
+        halfButton.setEnabled(entries);
         itemsLabel.setText(String.format("%d of %d items", itemsSize, totalCount));
     }
 
