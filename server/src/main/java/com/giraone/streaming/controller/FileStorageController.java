@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.giraone.streaming.service.FileService;
 import com.giraone.streaming.service.model.FileInfo;
 import com.giraone.streaming.service.model.FileInfoAndContent;
+import com.giraone.streaming.service.model.FileInfoOrder;
+import com.giraone.streaming.service.model.FileInfoQuery;
 import com.giraone.streaming.service.video.model.TimelapseCommand;
 import com.giraone.streaming.service.video.model.TimelapseResult;
 import org.slf4j.Logger;
@@ -59,7 +61,13 @@ public class FileStorageController {
     @SuppressWarnings("unused")
     @GetMapping("images/{filename}")
     ResponseEntity<Flux<ByteBuffer>> downloadImage(@PathVariable String filename) {
-        return download(FileService.Media.IMAGES, filename);
+        return downloadOriginal(FileService.Media.IMAGES, filename);
+    }
+
+    @SuppressWarnings("unused")
+    @GetMapping("image-thumbs/{filename}")
+    ResponseEntity<Flux<ByteBuffer>> downloadImageThumb(@PathVariable String filename) {
+        return downloadThumb(FileService.Media.IMAGES, filename);
     }
 
     @SuppressWarnings("unused")
@@ -84,8 +92,26 @@ public class FileStorageController {
 
     @SuppressWarnings("unused")
     @GetMapping("image-infos")
-    List<FileInfo> listImageFiles(@RequestParam(required = false) String filter) {
-        return fileService.listFileInfos(FileService.Media.IMAGES, filter);
+    List<FileInfo> listImageFiles(
+        @RequestParam(required = false) String prefixFilter,
+        @RequestParam(required = false, defaultValue = "0") int offset,
+        @RequestParam(required = false, defaultValue = "50") int limit,
+        @RequestParam(required = false, defaultValue = "fileName") String orderAttribute,
+        @RequestParam(required = false, defaultValue = "false") boolean orderDesc
+    ) {
+        return fileService.listFileInfos(FileService.Media.IMAGES,
+            new FileInfoQuery(prefixFilter, offset, limit, new FileInfoOrder(orderAttribute, orderDesc)));
+    }
+
+    @SuppressWarnings("unused")
+    @GetMapping("image-count")
+    int countImageFiles(
+        @RequestParam(required = false) String prefixFilter,
+        @RequestParam(required = false, defaultValue = "0") int offset,
+        @RequestParam(required = false, defaultValue = "50") int limit
+    ) {
+        return fileService.countFileInfos(FileService.Media.IMAGES,
+            new FileInfoQuery(prefixFilter, offset, limit, null));
     }
 
     @SuppressWarnings("unused")
@@ -120,7 +146,13 @@ public class FileStorageController {
     @SuppressWarnings("unused")
     @GetMapping("videos/{filename}")
     ResponseEntity<Flux<ByteBuffer>> downloadVideo(@PathVariable String filename) {
-        return download(FileService.Media.VIDEOS, filename);
+        return downloadOriginal(FileService.Media.VIDEOS, filename);
+    }
+
+    @SuppressWarnings("unused")
+    @GetMapping("video-thumbs/{filename}")
+    ResponseEntity<Flux<ByteBuffer>> downloadVideoThumb(@PathVariable String filename) {
+        return downloadThumb(FileService.Media.VIDEOS, filename);
     }
 
     @SuppressWarnings("unused")
@@ -145,8 +177,26 @@ public class FileStorageController {
 
     @SuppressWarnings("unused")
     @GetMapping("video-infos")
-    List<FileInfo> listVideoFiles(@RequestParam(required = false) String filter) {
-        return fileService.listFileInfos(FileService.Media.VIDEOS, filter);
+    List<FileInfo> listVideoFiles(
+        @RequestParam(required = false) String prefixFilter,
+        @RequestParam(required = false, defaultValue = "0") int offset,
+        @RequestParam(required = false, defaultValue = "50") int limit,
+        @RequestParam(required = false, defaultValue = "fileName") String orderAttribute,
+        @RequestParam(required = false, defaultValue = "false") boolean orderDesc
+    ) {
+        return fileService.listFileInfos(FileService.Media.VIDEOS,
+            new FileInfoQuery(prefixFilter, offset, limit, new FileInfoOrder(orderAttribute, orderDesc)));
+    }
+
+    @SuppressWarnings("unused")
+    @GetMapping("video-count")
+    int countVideoFiles(
+        @RequestParam(required = false) String prefixFilter,
+        @RequestParam(required = false, defaultValue = "0") int offset,
+        @RequestParam(required = false, defaultValue = "50") int limit
+    ) {
+        return fileService.countFileInfos(FileService.Media.VIDEOS,
+            new FileInfoQuery(prefixFilter, offset, limit, null));
     }
 
     @SuppressWarnings("unused")
@@ -201,11 +251,26 @@ public class FileStorageController {
                 .body(new UploadStatus(false, contentLength, true, exc.getMessage()))));
     }
 
-    private ResponseEntity<Flux<ByteBuffer>> download(FileService.Media type, String filename) {
+    private ResponseEntity<Flux<ByteBuffer>> downloadOriginal(FileService.Media type, String filename) {
 
         final FileInfoAndContent fileInfoAndContent;
         try {
             fileInfoAndContent = fileService.downloadFile(type, filename);
+        } catch (NoSuchFileException nsfe) {
+            return ResponseEntity.notFound().header(X_HEADER_ERROR, nsfe.getMessage()).build();
+        } catch (IOException ioe) {
+            return ResponseEntity.badRequest().header(X_HEADER_ERROR, ioe.getMessage()).build();
+        }
+        final String mediaType = fileInfoAndContent.fileInfo().mediaType();
+        final long contentLength = fileInfoAndContent.fileInfo().sizeInBytes();
+        return streamToWebClient(fileInfoAndContent.content(), mediaType, contentLength);
+    }
+
+    private ResponseEntity<Flux<ByteBuffer>> downloadThumb(FileService.Media type, String filename) {
+
+        final FileInfoAndContent fileInfoAndContent;
+        try {
+            fileInfoAndContent = fileService.downloadThumb(type, filename);
         } catch (NoSuchFileException nsfe) {
             return ResponseEntity.notFound().header(X_HEADER_ERROR, nsfe.getMessage()).build();
         } catch (IOException ioe) {

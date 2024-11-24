@@ -19,7 +19,7 @@ public class CustomEnumDeserializerWhiteBalanceMode extends StdDeserializer<Came
         throws IOException {
         JsonNode node = jsonParser.getCodec().readTree(jsonParser);
         int value = Integer.parseInt(node.asText());
-        for (CameraSettings.WhiteBalanceMode e: CameraSettings.WhiteBalanceMode.ALL) {
+        for (CameraSettings.WhiteBalanceMode e : CameraSettings.WhiteBalanceMode.ALL) {
             if (e.ordinal() == value) {
                 return e;
             }

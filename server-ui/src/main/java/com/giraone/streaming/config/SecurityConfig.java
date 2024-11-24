@@ -5,7 +5,6 @@ import com.vaadin.flow.spring.security.VaadinWebSecurity;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
@@ -23,11 +22,11 @@ public class SecurityConfig extends VaadinWebSecurity {
 
         http.headers(configurer -> configurer.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
         http.authorizeHttpRequests(auth ->
-                auth.requestMatchers(
-                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/images/*.png"),
-                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/actuator"),
-                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/actuator/**")
-                ).permitAll());
+            auth.requestMatchers(
+                AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/images/*.png"),
+                AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/actuator"),
+                AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/actuator/**")
+            ).permitAll());
         super.configure(http);
         setLoginView(http, LoginView.class);
     }

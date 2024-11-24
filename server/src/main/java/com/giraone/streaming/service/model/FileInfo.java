@@ -27,16 +27,15 @@ public record FileInfo(String fileName, long sizeInBytes, String mediaType, Loca
     private static final VideoService videoService = new VideoService();
     private static final ObjectMapper objectMapper = ObjectMapperBuilder.build();
 
-    public String toDisplayShort() {
-        return DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(lastModified);
-    }
-
     public static FileInfo fromFile(File file) {
         final String fileName = file.getName();
         final String mediaType = mediaTypeFromFileName(fileName);
         return new FileInfo(file.getName(), file.length(), mediaType,
             ofEpochSecond(file.lastModified() / 1000),
-            mediaType.startsWith("image") ? fetchImageInfos(file) : fetchVideoInfos(file));
+            mediaType.startsWith("image")
+                ? fetchImageInfos(file)
+                : fetchVideoInfos(file)
+        );
     }
 
     public static String mediaTypeFromFileName(String filename) {

@@ -15,22 +15,16 @@ import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
-import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.IFrame;
-import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.provider.DataCommunicator;
-import com.vaadin.flow.data.provider.ListDataProvider;
-import com.vaadin.flow.data.provider.Query;
-import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -45,8 +39,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @SpringComponent
 @Scope("prototype")
@@ -57,7 +49,7 @@ public class ImagesView extends VerticalLayout {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ImagesView.class);
 
-    private final Grid<FileInfo> grid = new Grid<>(FileInfo.class);
+    private final GridFileInfo gridFileInfo;
     private final TextField filterText = new TextField();
     private VerticalLayout gridWithToolbar;
     private VerticalLayout displayForm;
@@ -66,14 +58,12 @@ public class ImagesView extends VerticalLayout {
     private Button previousButton;
     private Button nextButton;
     private Button deleteSelectedButton;
-    private Button downloadSelectedButton;
     private Button makeVideoButton;
     private Paragraph itemsLabel;
 
     private final FileViewService fileViewService;
     private final ApplicationProperties applicationProperties;
 
-    private List<FileInfo> items = List.of();
     private FileInfo currentItem = null;
     private boolean firstDisplay = true;
 
@@ -81,17 +71,24 @@ public class ImagesView extends VerticalLayout {
 
         this.fileViewService = fileViewService;
         this.applicationProperties = applicationProperties;
+        this.gridFileInfo = new GridFileInfo(
+            false,
+            fileViewService,
+            this::displayFile,
+            this::deleteFile,
+            this::renameFile,
+            selectedItems -> activation(!selectedItems.isEmpty()),
+            itemCount -> activation(false)
+        );
         addClassName("images-view");
         setSizeFull();
-        configureGrid();
         configureDisplay();
         add(getContent());
-        updateList();
         closeFileViewer();
     }
 
     private HorizontalLayout getContent() {
-        gridWithToolbar = new VerticalLayout(buildToolbar(), grid);
+        gridWithToolbar = new VerticalLayout(buildToolbar(), gridFileInfo);
         HorizontalLayout content = new HorizontalLayout(gridWithToolbar, displayForm);
         content.setFlexGrow(2, gridWithToolbar);
         content.setFlexGrow(1, displayForm);
@@ -99,49 +96,12 @@ public class ImagesView extends VerticalLayout {
         return content;
     }
 
-    private void configureGrid() {
-        grid.addClassNames("images-grid");
-        grid.setSizeFull();
-        grid.setSelectionMode(Grid.SelectionMode.MULTI);
-        grid.addSelectionListener(selection -> {
-            LOGGER.debug("Number of selected images: {}", selection.getAllSelectedItems().size());
-            activation(!selection.getAllSelectedItems().isEmpty());
-        });
-        grid.removeAllColumns();
-        grid.addComponentColumn(fileInfo -> {
-            final Button displayButton = new Button("");
-            displayButton.setIcon(LineAwesomeIcon.LAPTOP_SOLID.create());
-            displayButton.addClickListener(event -> displayFile(fileInfo));
-            final Button deleteButton = new Button("");
-            deleteButton.setIcon(LineAwesomeIcon.CUT_SOLID.create());
-            deleteButton.addClickListener(event -> deleteFile(fileInfo));
-            final Button renameButton = new Button("");
-            renameButton.setIcon(LineAwesomeIcon.PEN_SOLID.create());
-            renameButton.addClickListener(event -> renameFile(fileInfo));
-            HorizontalLayout ret = new HorizontalLayout(displayButton, deleteButton, renameButton);
-            ret.setWidth(64, Unit.PIXELS);
-            return ret;
-        }).setHeader("Action").setAutoWidth(false);
-        grid.addComponentColumn(fileInfo -> {
-            final Image image = new Image(fileViewService.getThumbUrl(fileInfo), "no thubnail!");
-            image.setWidth(64, Unit.PIXELS);
-            image.setHeight(48, Unit.PIXELS);
-            image.setClassName("no-padding");
-            return image;
-        }).setHeader("Image").setAutoWidth(false);
-        grid.addColumn(FileInfo::fileName).setSortable(true).setHeader("File Name").setAutoWidth(true);
-        grid.addColumn(FileInfo::toDisplayShort).setSortable(true).setHeader("Last Modified").setAutoWidth(true);
-        grid.addColumn(FileInfo::sizeInBytes).setSortable(true).setHeader("Size").setAutoWidth(true);
-        grid.addColumn(FileInfo::infos).setSortable(true).setHeader("Info").setAutoWidth(true);
-        grid.sort(List.of(new GridSortOrder<>(grid.getColumns().get(3), SortDirection.DESCENDING))); // lastModified
-    }
-
     private void configureDisplay() {
         fullButton = new Button("Maximize");
         fullButton.setClassName("no-padding");
         fullButton.setIcon(LineAwesomeIcon.CARET_SQUARE_LEFT_SOLID.create());
         fullButton.addClickListener(event -> fullFileViewer());
-        fullButton.setEnabled(!items.isEmpty());
+        fullButton.setEnabled(!gridFileInfo.itemsIsEmpty());
         halfButton = new Button("Normal");
         halfButton.setClassName("no-padding");
         halfButton.setIcon(LineAwesomeIcon.CARET_SQUARE_RIGHT_SOLID.create());
@@ -155,12 +115,12 @@ public class ImagesView extends VerticalLayout {
         previousButton.setClassName("no-padding");
         previousButton.setIcon(LineAwesomeIcon.BACKWARD_SOLID.create());
         previousButton.addClickListener(event -> viewPreviousFile());
-        previousButton.setEnabled(!items.isEmpty());
+        previousButton.setEnabled(!gridFileInfo.itemsIsEmpty());
         nextButton = new Button("Next");
         nextButton.setClassName("no-padding");
         nextButton.setIcon(LineAwesomeIcon.FORWARD_SOLID.create());
         nextButton.addClickListener(event -> viewNextFile());
-        nextButton.setEnabled(!items.isEmpty());
+        nextButton.setEnabled(!gridFileInfo.itemsIsEmpty());
         IFrame displayIframe = new IFrame("components/image-viewer/image-viewer.html");
         displayIframe.setWidth("100%");
         displayIframe.setHeight("100vh");
@@ -180,30 +140,31 @@ public class ImagesView extends VerticalLayout {
         filterText.setPlaceholder("Filter by name...");
         filterText.setClearButtonVisible(true);
         filterText.setMinWidth("40%");
+        filterText.setPrefixComponent(new Icon(VaadinIcon.SEARCH));
         filterText.setValueChangeMode(ValueChangeMode.LAZY);
-        filterText.addValueChangeListener(e -> updateList());
+        filterText.addValueChangeListener(e -> updateList(e.getValue()));
 
         Button reloadButton = new Button("Reload");
         reloadButton.setIcon(LineAwesomeIcon.SYNC_SOLID.create());
-        reloadButton.addClickListener(click -> updateList());
+        reloadButton.addClickListener(click -> updateList(filterText.getValue()));
 
         deleteSelectedButton = new Button("Delete selected");
         deleteSelectedButton.setIcon(LineAwesomeIcon.CUT_SOLID.create());
         deleteSelectedButton.addClickListener(click -> deleteSelected());
-        deleteSelectedButton.setEnabled(!items.isEmpty());
+        deleteSelectedButton.setEnabled(!gridFileInfo.itemsIsEmpty());
 
-        downloadSelectedButton = new Button("Donwload");
+        Button downloadSelectedButton = new Button("Donwload");
         downloadSelectedButton.setIcon(LineAwesomeIcon.DOWNLOAD_SOLID.create());
         downloadSelectedButton.addClickListener(click -> downloadSelected());
-        downloadSelectedButton.setEnabled(!items.isEmpty());
+        downloadSelectedButton.setEnabled(!gridFileInfo.itemsIsEmpty());
 
         makeVideoButton = new Button("Create video");
         makeVideoButton.setIcon(LineAwesomeIcon.VIDEO_SOLID.create());
         makeVideoButton.addClickListener(click -> makeTimelapseVideo());
-        makeVideoButton.setEnabled(!items.isEmpty());
+        makeVideoButton.setEnabled(!gridFileInfo.itemsIsEmpty());
 
-        itemsLabel = new Paragraph("0 items");
-        itemsLabel.setMinWidth(100, Unit.PIXELS);
+        itemsLabel = new Paragraph("0 of 0 items");
+        itemsLabel.setMinWidth(150, Unit.PIXELS);
 
         // specific
         return new HorizontalLayout(filterText, reloadButton, deleteSelectedButton, makeVideoButton, itemsLabel);
@@ -230,7 +191,7 @@ public class ImagesView extends VerticalLayout {
             showError("renameFile {} failed! " + e.getMessage());
             return;
         }
-        updateList();
+        updateList(filterText.getValue());
     }
 
     private void deleteFile(FileInfo fileInfo) {
@@ -247,13 +208,13 @@ public class ImagesView extends VerticalLayout {
             LOGGER.warn("deleteFile {} failed!", fileInfo, e);
             return e.getMessage();
         }
-        updateList();
+        updateList(filterText.getValue());
         return null;
     }
 
     private void deleteSelected() {
-        Set<FileInfo> selectedItems = grid.getSelectedItems();
-        confirm("Delete " + selectedItems.size() + " selected images?", () -> deleteSelectedConfirm(selectedItems));
+        Set<FileInfo> selectedItems = gridFileInfo.getSelectedItems();
+        confirm("Delete " + selectedItems.size() + " selected files?", () -> deleteSelectedConfirm(selectedItems));
     }
 
     private String deleteSelectedConfirm(Set<FileInfo> itemsToDelete) {
@@ -263,28 +224,14 @@ public class ImagesView extends VerticalLayout {
             LOGGER.warn("deleteSelected failed!", e);
             return e.getMessage();
         }
-        grid.asMultiSelect().clear();
-        updateList();
+        gridFileInfo.clearSelection();
+        updateList(filterText.getValue());
         return null;
     }
 
-    private void updateList() {
-        items = fileViewService.listImageInfos(filterText.getValue());
-        grid.setItems(items);
+    private void updateList(String filterValue) {
+        gridFileInfo.setFilter(filterValue);
         activation(false);
-    }
-
-    private List<FileInfo> getItemsWithSortOrder() {
-        ListDataProvider<FileInfo> dataProvider = (ListDataProvider<FileInfo>) grid.getDataProvider();
-        int totalSize = dataProvider.getItems().size();
-        DataCommunicator<FileInfo> dataCommunicator = grid.getDataCommunicator();
-        Stream<FileInfo> stream = dataProvider.fetch(new Query<>(
-            0,
-            totalSize,
-            dataCommunicator.getBackEndSorting(),
-            dataCommunicator.getInMemorySorting(),
-            dataProvider.getFilter()));
-        return stream.collect(Collectors.toList());
     }
 
     private static int findIndexOfItem(List<FileInfo> items, FileInfo wanted) {
@@ -314,23 +261,25 @@ public class ImagesView extends VerticalLayout {
     }
 
     private void viewPreviousFile() {
-        if (items.isEmpty()) {
+        final int size = gridFileInfo.getItemsSize();
+        if (size == 0) {
             return;
         }
-        final List<FileInfo> sortedItems = getItemsWithSortOrder();
+        final List<FileInfo> sortedItems = gridFileInfo.getItems();
         final int currentIndex = findIndexOfItem(sortedItems, currentItem);
-        final int nextIndex = currentIndex == 0 ? items.size() - 1 : currentIndex - 1;
+        final int nextIndex = currentIndex == 0 ? size - 1 : currentIndex - 1;
         final FileInfo fileInfo = sortedItems.get(nextIndex);
         displayFile(fileInfo);
     }
 
     private void viewNextFile() {
-        if (items.isEmpty()) {
+        final int size = gridFileInfo.getItemsSize();
+        if (size == 0) {
             return;
         }
-        final List<FileInfo> sortedItems = getItemsWithSortOrder();
+        final List<FileInfo> sortedItems = gridFileInfo.getItems();
         final int currentIndex = findIndexOfItem(sortedItems, currentItem);
-        final int nextIndex =currentIndex == items.size() - 1 ? 0 : currentIndex + 1;
+        final int nextIndex = currentIndex == size - 1 ? 0 : currentIndex + 1;
         final FileInfo fileInfo = sortedItems.get(nextIndex);
         displayFile(fileInfo);
     }
@@ -338,7 +287,7 @@ public class ImagesView extends VerticalLayout {
     private void closeFileViewer() {
         displayForm.setVisible(false);
         gridWithToolbar.setVisible(true);
-        fullButton.setEnabled(!items.isEmpty());
+        fullButton.setEnabled(!gridFileInfo.itemsIsEmpty());
         fullButton.setVisible(true);
         removeClassName("editing");
     }
@@ -374,31 +323,33 @@ public class ImagesView extends VerticalLayout {
     }
 
     private void activation(boolean selected) {
-        final boolean entries = !items.isEmpty();
+        final int itemsSize = gridFileInfo.getItemsSize();
+        final int totalCount = gridFileInfo.getTotalCount();
+        LOGGER.warn("activation selected={} itemsSize={} totalCount={}", selected, itemsSize, totalCount);
+        final boolean entries = itemsSize > 0;
         deleteSelectedButton.setEnabled(entries && selected);
         makeVideoButton.setEnabled(entries && selected);
         previousButton.setEnabled(entries);
         nextButton.setEnabled(entries);
-        itemsLabel.setText(String.format("%d items", items.size()));
+        itemsLabel.setText(String.format("%d of %d items", itemsSize, totalCount));
     }
 
-    // specific
-
     private void downloadSelected() {
-        Set<FileInfo> selectedItems = grid.getSelectedItems();
+        Set<FileInfo> selectedItems = gridFileInfo.getSelectedItems();
         List<String> names = selectedItems.stream().map(FileInfo::fileName).sorted().toList();
         try {
             String result = fileViewService.downloadSelectedImages(names).block(Duration.ofSeconds(120));
             Notification notification = Notification.show(result);
             notification.addThemeVariants(NotificationVariant.LUMO_PRIMARY);
         } catch (Exception e) {
-            LOGGER.warn("makeTimelapseVideo failed!", e);
+            LOGGER.warn("downloadSelected failed!", e);
             showError(e.getMessage());
         }
     }
 
+    // specific
     private void makeTimelapseVideo() {
-        Set<FileInfo> selectedItems = grid.getSelectedItems();
+        Set<FileInfo> selectedItems = gridFileInfo.getSelectedItems();
         if (selectedItems.isEmpty()) {
             return;
         }

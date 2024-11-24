@@ -2,6 +2,7 @@ package com.giraone.streaming.service;
 
 import com.giraone.streaming.config.ApplicationProperties;
 import com.giraone.streaming.service.model.FileInfo;
+import com.giraone.streaming.service.model.FileInfoQuery;
 import com.giraone.streaming.service.model.Status;
 import com.giraone.streaming.service.model.timelapse.TimelapseCommand;
 import com.giraone.streaming.service.model.timelapse.TimelapseResult;
@@ -12,13 +13,12 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -84,37 +84,50 @@ public class FileViewService {
         return VIDEOS_THUMBS;
     }
 
-    public File getImagesMetaDir() {
-        return IMAGES_META;
-    }
-
-    public File getVideosMetaDir() {
-        return VIDEOS_META;
-    }
-
     public String getThumbUrl(FileInfo fileInfo) {
         return fileInfo.isVideo()
-            ? "api/videos/thumbs/" +  fileInfo.fileName().replace(".mp4", ".jpg")
-            : "api/images/thumbs/" + fileInfo.fileName();
+            ? applicationProperties.getHostUrl() + "/video-thumbs/" + fileInfo.fileName().replace(".mp4", ".jpg")
+            : applicationProperties.getHostUrl() + "/image-thumbs/" + fileInfo.fileName();
     }
 
-    public List<FileInfo> listImageInfos(String prefixFilter) {
-        return listFileInfos(IMAGES_BASE, prefixFilter);
+    public int countImageInfos(FileInfoQuery fileInfoQuery) {
+        return countFileInfos("image", fileInfoQuery);
     }
 
-    public List<FileInfo> listVideoInfos(String prefixFilter) {
-        return listFileInfos(VIDEOS_BASE, prefixFilter);
+    public int countVideoInfos(FileInfoQuery fileInfoQuery) {
+        return countFileInfos("video", fileInfoQuery);
     }
 
-    public List<FileInfo> listFileInfos(File base, String prefixFilter) {
-        File[] files = base.listFiles((dir, name) -> !name.startsWith(".") && name.startsWith(prefixFilter));
-        if (files == null) {
-            return Collections.emptyList();
-        }
-        return Arrays.stream(files)
-            .map(FileInfo::fromFile)
-            .sorted((o1, o2) -> o1.lastModified().isBefore(o2.lastModified()) ? 1 : o1.lastModified().isAfter(o2.lastModified()) ? -1 : 0)
-            .toList();
+    public int countFileInfos(String type, FileInfoQuery fileInfoQuery) {
+        LOGGER.debug("countFileInfos {} {}", type, fileInfoQuery);
+        return webClient().get().uri(uriBuilder -> uriBuilder
+                .path("/" + type + "-count")
+                .queryParam("prefixFilter", fileInfoQuery.prefixFilter())
+                .queryParam("offset", fileInfoQuery.offset())
+                .queryParam("limit", fileInfoQuery.limit())
+                .build())
+            .exchangeToMono(clientResponse -> clientResponse.bodyToMono(Integer.class)).block();
+    }
+
+    public List<FileInfo> listImageInfos(FileInfoQuery fileInfoQuery) {
+        return listFileInfos("image", fileInfoQuery);
+    }
+
+    public List<FileInfo> listVideoInfos(FileInfoQuery fileInfoQuery) {
+        return listFileInfos("video", fileInfoQuery);
+    }
+
+    public List<FileInfo> listFileInfos(String type, FileInfoQuery fileInfoQuery) {
+        LOGGER.debug("listFileInfos {} {}", type, fileInfoQuery);
+        return waitFor(webClient().get().uri(uriBuilder -> uriBuilder
+                .path("/" + type + "-infos")
+                .queryParam("prefixFilter", fileInfoQuery.prefixFilter())
+                .queryParam("offset", fileInfoQuery.offset())
+                .queryParam("limit", fileInfoQuery.limit())
+                .queryParam("orderAttribute", fileInfoQuery.order().attribute())
+                .queryParam("orderDesc", fileInfoQuery.order().desc())
+                .build())
+            .exchangeToFlux(clientResponse -> clientResponse.bodyToFlux(FileInfo.class)));
     }
 
     public Status renameImage(FileInfo fileInfo, String name) {
@@ -169,5 +182,11 @@ public class FileViewService {
         final Status ret = statusMono.block(Duration.ofSeconds(20L));
         LOGGER.debug("waitFor {}", ret);
         return ret != null ? ret : new Status(false, "Timeout (block)!");
+    }
+
+    private List<FileInfo> waitFor(Flux<FileInfo> fileInfoFlux) {
+        final List<FileInfo> ret = fileInfoFlux.collectList().block(Duration.ofSeconds(20L));
+        LOGGER.debug("waitFor {}", ret);
+        return ret != null ? ret : List.of();
     }
 }

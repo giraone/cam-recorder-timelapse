@@ -52,12 +52,18 @@ public class CameraSettings {
     private boolean exposureCtrlSensor = true;
     private boolean exposureCtrlDsp;
     private Level autoExposureLevel;
-    /** 0 - 1024 **/
+    /**
+     * 0 - 1024
+     **/
     private int autoExposureValue = 1000;
     private boolean autoExposureGainControl;
-    /** 0 - 30 **/
+    /**
+     * 0 - 30
+     **/
     private int autoExposureGainValue = 25;
-    /** 0=2x, 1=4x, 2=8x, 3=16x, 4=32x, 5=64x, 6=128x **/
+    /**
+     * 0=2x, 1=4x, 2=8x, 3=16x, 4=32x, 5=64x, 6=128x
+     **/
     private int autoExposureGainCeiling = 2;
 
     public boolean isPaused() {

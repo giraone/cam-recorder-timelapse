@@ -19,7 +19,7 @@ public class CustomEnumDeserializerFrameSize extends StdDeserializer<CameraSetti
         throws IOException {
         JsonNode node = jsonParser.getCodec().readTree(jsonParser);
         int value = Integer.parseInt(node.asText());
-        for (CameraSettings.FrameSize e: CameraSettings.FrameSize.ALL) {
+        for (CameraSettings.FrameSize e : CameraSettings.FrameSize.ALL) {
             if (e.ordinal() == value) {
                 return e;
             }

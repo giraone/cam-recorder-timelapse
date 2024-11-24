@@ -7,6 +7,7 @@ import com.giraone.imaging.java2.ProviderJava2D;
 import com.giraone.streaming.config.ApplicationProperties;
 import com.giraone.streaming.service.model.FileInfo;
 import com.giraone.streaming.service.model.FileInfoAndContent;
+import com.giraone.streaming.service.model.FileInfoQuery;
 import com.giraone.streaming.service.model.VideoMetaInfo;
 import com.giraone.streaming.service.video.VideoService;
 import com.giraone.streaming.service.video.model.TimelapseCommand;
@@ -104,31 +105,65 @@ public class FileService {
     }
 
     public FileInfoAndContent downloadFile(Media type, String filename) throws IOException {
-
         if (isFileNameInvalid(filename)) {
             throw new IllegalArgumentException("Invalid filename \"" + filename + "\"!");
         }
         final File file = new File(getBaseOf(type), filename);
-        final AsynchronousFileChannel channel;
-        try {
-            channel = AsynchronousFileChannel.open(file.toPath(), READ);
-        } catch (NoSuchFileException nsfe) {
-            LOGGER.warn("File \"{}\" does not exist! {}", file.getAbsolutePath(), nsfe.getMessage());
-            throw nsfe;
-        } catch (IOException ioe) {
-            LOGGER.warn("Cannot open file to read from \"{}\"! {}", file.getAbsolutePath(), ioe.getMessage());
-            throw ioe;
-        }
-        final Flux<ByteBuffer> content = FluxUtil.readFile(channel);
-        return new FileInfoAndContent(content, FileInfo.fromFile(file));
+        return downloadFile(file);
     }
 
-    public List<FileInfo> listFileInfos(Media type, String prefixFilter) {
-        File[] files = getBaseOf(type).listFiles((dir, name) -> !name.startsWith(".") && prefixFilter != null && name.startsWith(prefixFilter));
+    public FileInfoAndContent downloadThumb(Media type, String filename) throws IOException {
+        if (isFileNameInvalid(filename)) {
+            throw new IllegalArgumentException("Invalid filename \"" + filename + "\"!");
+        }
+        final File file = new File(getThumbOf(type), filename);
+        return downloadFile(file);
+    }
+
+    public FileInfoAndContent downloadMeta(Media type, String filename) throws IOException {
+        if (isFileNameInvalid(filename)) {
+            throw new IllegalArgumentException("Invalid filename \"" + filename + "\"!");
+        }
+        final File file = new File(getMetaOf(type), filename);
+        return downloadFile(file);
+    }
+
+    public List<FileInfo> listFileInfos(Media type, FileInfoQuery query) {
+        final File[] files = getBaseOf(type)
+            .listFiles(file -> file.isFile()
+                && !file.getName().startsWith(".")
+                && (query.prefixFilter() == null || file.getName().startsWith(query.prefixFilter()))
+            );
         if (files == null) {
+            LOGGER.info("listFileInfos {} {} = -1", type, query);
             return Collections.emptyList();
         }
-        return Arrays.stream(files).map(FileInfo::fromFile).toList();
+        List<FileInfo> ret = Arrays.stream(files)
+            .skip(query.offset())
+            .limit(query.limit())
+            .map(FileInfo::fromFile)
+            .sorted(query.order().getComparator())
+            .toList();
+        LOGGER.info("listFileInfos {} {} = {}", type, query, ret.size());
+        return ret;
+    }
+
+    public int countFileInfos(Media type, FileInfoQuery query) {
+
+        final File[] files = getBaseOf(type)
+            .listFiles(file -> file.isFile()
+                && !file.getName().startsWith(".")
+                && (query.prefixFilter() == null || file.getName().startsWith(query.prefixFilter()))
+            );
+        if (files == null) {
+            return 0;
+        }
+        int ret = (int) Arrays.stream(files)
+            .skip(query.offset())
+            .limit(query.limit())
+            .count();
+        LOGGER.info("countFileInfos {} {} = {}", type, query, ret);
+        return ret;
     }
 
     public Status rename(Media type, String filename, String newName) {
@@ -300,6 +335,22 @@ public class FileService {
         }
     }
 
+    private FileInfoAndContent downloadFile(File file) throws IOException {
+
+        final AsynchronousFileChannel channel;
+        try {
+            channel = AsynchronousFileChannel.open(file.toPath(), READ);
+        } catch (NoSuchFileException nsfe) {
+            LOGGER.warn("File \"{}\" does not exist! {}", file.getAbsolutePath(), nsfe.getMessage());
+            throw nsfe;
+        } catch (IOException ioe) {
+            LOGGER.warn("Cannot open file to read from \"{}\"! {}", file.getAbsolutePath(), ioe.getMessage());
+            throw ioe;
+        }
+        final Flux<ByteBuffer> content = FluxUtil.readFile(channel);
+        return new FileInfoAndContent(content, FileInfo.fromFile(file));
+    }
+
     private static boolean isFileNameInvalid(String filename) {
         return !FILE_NAME_PATTERN.matcher(filename).matches();
     }
@@ -308,14 +359,22 @@ public class FileService {
         return type == Media.IMAGES ? IMAGES_BASE : VIDEOS_BASE;
     }
 
+    private static File getThumbOf(Media type) {
+        return type == Media.IMAGES ? IMAGES_THUMBS : VIDEOS_THUMBS;
+    }
+
+    private static File getMetaOf(Media type) {
+        return type == Media.IMAGES ? IMAGES_META : VIDEOS_META;
+    }
+
     private static File buildThumbnailFile(Media type, String filename) {
         final String thumbnailFileName = buildThumbnailFileName(filename);
-        return new File(getBaseOf(type) + File.separator + DIR_NAME_THUMBS, thumbnailFileName);
+        return new File(getThumbOf(type), thumbnailFileName);
     }
 
     private static File buildMetaFile(Media type, String filename) {
         final String metaFileName = buildMetaFileName(filename);
-        return new File(getBaseOf(type) + File.separator + DIR_NAME_META, metaFileName);
+        return new File(getMetaOf(type), metaFileName);
     }
 
     @SuppressWarnings("SameParameterValue")

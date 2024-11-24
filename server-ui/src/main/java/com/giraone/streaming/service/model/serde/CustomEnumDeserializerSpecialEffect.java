@@ -19,7 +19,7 @@ public class CustomEnumDeserializerSpecialEffect extends StdDeserializer<CameraS
         throws IOException {
         JsonNode node = jsonParser.getCodec().readTree(jsonParser);
         int value = Integer.parseInt(node.asText());
-        for (CameraSettings.SpecialEffect e: CameraSettings.SpecialEffect.ALL) {
+        for (CameraSettings.SpecialEffect e : CameraSettings.SpecialEffect.ALL) {
             if (e.ordinal() == value) {
                 return e;
             }
