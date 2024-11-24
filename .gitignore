@@ -1,5 +1,9 @@
-FILES/cam*.jpg
-FILES/.thumbs/cam*.jpg
+STORAGE/IMAGES/cam*.jpg
+STORAGE/IMAGES/.thumbs/cam*.jpg
+STORAGE/IMAGES/.meta/cam*.jpg
+STORAGE/VIDEOS/cam*.mp4
+STORAGE/VIDEOS/.thumbs/cam*.jpg
+STORAGE/VIDEOS/.meta/cam*.jpg
 
 ### IntelliJ IDEA ###
 .idea
