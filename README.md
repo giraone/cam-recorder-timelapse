@@ -10,7 +10,7 @@ Form for Camera Settings
 
 ![camera-settings](docs/images/camera-settings.png)
 
-List of captures images
+List of captured images
 
 ![images](docs/images/images.png)
 
@@ -18,7 +18,7 @@ List of created timelapse videos
 
 ![videos](docs/images/videos.png)
 
-Captures image list with image display side-by-side
+Captured image list with image display side-by-side
 
 ![images-half-viewer](docs/images/images-half-viewer.png)
 
