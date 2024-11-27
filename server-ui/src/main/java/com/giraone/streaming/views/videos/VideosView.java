@@ -6,7 +6,7 @@ import com.giraone.streaming.service.model.FileInfo;
 import com.giraone.streaming.service.model.Status;
 import com.giraone.streaming.views.MainLayout;
 import com.giraone.streaming.views.components.TextPromptDialog;
-import com.giraone.streaming.views.images.GridFileInfo;
+import com.giraone.streaming.views.components.GridFileInfo;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;

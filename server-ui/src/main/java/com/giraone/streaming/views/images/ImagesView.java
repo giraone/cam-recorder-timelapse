@@ -7,6 +7,7 @@ import com.giraone.streaming.service.model.Status;
 import com.giraone.streaming.service.model.timelapse.TimelapseCommand;
 import com.giraone.streaming.service.model.timelapse.TimelapseResult;
 import com.giraone.streaming.views.MainLayout;
+import com.giraone.streaming.views.components.GridFileInfo;
 import com.giraone.streaming.views.components.TextPromptDialog;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;

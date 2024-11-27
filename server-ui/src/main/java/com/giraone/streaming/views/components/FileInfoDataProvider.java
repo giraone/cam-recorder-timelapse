@@ -1,4 +1,4 @@
-package com.giraone.streaming.views.images;
+package com.giraone.streaming.views.components;
 
 import com.giraone.streaming.service.FileViewService;
 import com.giraone.streaming.service.model.FileInfo;

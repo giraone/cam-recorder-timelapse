@@ -1,4 +1,4 @@
-package com.giraone.streaming.views.images;
+package com.giraone.streaming.views.components;
 
 import com.giraone.streaming.service.FileViewService;
 import com.giraone.streaming.service.model.FileInfo;
@@ -42,6 +42,8 @@ public class GridFileInfo extends Grid<FileInfo> {
         this.addClassNames(video ? "videos-grid" : "images-grid");
         this.setSizeFull();
         this.setSelectionMode(Grid.SelectionMode.MULTI);
+        ((GridMultiSelectionModel<?>) this.getSelectionModel())
+            .setSelectAllCheckboxVisibility(GridMultiSelectionModel.SelectAllCheckboxVisibility.VISIBLE);
         final GridMultiSelectionModel<FileInfo> selectionModel = (GridMultiSelectionModel<FileInfo>) this.getSelectionModel();
         selectionModel.setDragSelect(true);
         if (selectionChangedListener != null) {
