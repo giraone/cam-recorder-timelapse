@@ -45,8 +45,11 @@ public class CameraSettingsForm extends FormLayout {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CameraSettingsForm.class);
 
-    Checkbox paused = new Checkbox("Paused");
+    Checkbox restartNow = new Checkbox("Restart now");
     IntegerField restartAfterAmount = new IntegerField("Restart device after n images");
+
+    Checkbox paused = new Checkbox("Paused");
+    Checkbox sendStatus = new Checkbox("Send Status");
 
     Checkbox blinkOnSuccess = new Checkbox("Blink on success");
     IntegerField loopDelaySeconds = new IntegerField("Delay between each picture");
@@ -96,9 +99,12 @@ public class CameraSettingsForm extends FormLayout {
         addClassName("camera-settings-form");
         binder.bindInstanceFields(this);
 
-        paused.setHelperText("Device/camera will be paused also on start/restart.");
+        restartNow.setHelperText("Restart after next image upload.");
         restartAfterAmount.setMin(1);
         restartAfterAmount.setMax(1000);
+
+        paused.setHelperText("Device/camera will be paused.");
+        sendStatus.setHelperText("Force camera to deliver its status information.");
 
         loopDelaySeconds.setMin(1);
         loopDelaySeconds.setMax(3600);
@@ -148,7 +154,8 @@ public class CameraSettingsForm extends FormLayout {
         FormLayout formLayout = new FormLayout();
         formLayout.setMinWidth(98, Unit.PERCENTAGE);
         formLayout.add(
-            new Paragraph("Operation Modes"), paused, restartAfterAmount,
+            new Paragraph("Restart"), restartNow, restartAfterAmount,
+            new Paragraph("Pause and Status"), paused, sendStatus,
             new Paragraph(""), blinkOnSuccess, loopDelaySeconds,
             new Hr(), new Hr(), new Hr(),
             new Paragraph("Image Size and Quality"), frameSize, jpegQuality,

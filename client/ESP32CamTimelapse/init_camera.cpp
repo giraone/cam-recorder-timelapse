@@ -142,7 +142,7 @@ gainceiling_t gainceilingFromInt(int value) {
   }
 }
 
-void initCameraWithSettings(JSONVar settingsJson) {
+void initCameraWithSettings(JsonDocument settings) {
   static const int8_t PWDN_GPIO_NUM = 32;
   static const int8_t RESET_GPIO_NUM = -1;
   static const int8_t XCLK_GPIO_NUM = 0;
@@ -180,14 +180,14 @@ void initCameraWithSettings(JSONVar settingsJson) {
 
     // Frequency of XCLK signal, in Hz. Default: 20000000
     // Set to 16MHz on ESP32-S2 or ESP32-S3 to enable EDMA mode
-    .xclk_freq_hz = settingsJson["clockFrequencyHz"],
+    .xclk_freq_hz = settings["clockFrequencyHz"],
     .ledc_timer = LEDC_TIMER_0,
     .ledc_channel = LEDC_CHANNEL_0,
     .pixel_format = PIXFORMAT_JPEG,
     // QVGA|CIF|VGA|SVGA|XGA|SXGA|UXGA
-    .frame_size = framesizeFromInt(settingsJson["frameSize"]),
+    .frame_size = framesizeFromInt(settings["frameSize"]),
     // 0 - 63 (smaller is less compression and better)
-    .jpeg_quality = settingsJson["jpegQuality"],
+    .jpeg_quality = settings["jpegQuality"],
     .fb_count = 2,
     .grab_mode = CAMERA_GRAB_LATEST
   };
@@ -203,54 +203,54 @@ void initCameraWithSettings(JSONVar settingsJson) {
   sensor_t* sensor = esp_camera_sensor_get();
 
   // Brightness - -2,-1,0,1,2
-  sensor->set_brightness(sensor, settingsJson["brightness"]);
+  sensor->set_brightness(sensor, settings["brightness"]);
   // Contrast - -2,-1,0,1,2
-  sensor->set_contrast(sensor, settingsJson["contrast"]);
+  sensor->set_contrast(sensor, settings["contrast"]);
   // Sharpness - -2,-1,0,1,2
-  sensor->set_sharpness(sensor, settingsJson["sharpness"]);
+  sensor->set_sharpness(sensor, settings["sharpness"]);
   // Saturation - -2,-1,0,1,2
-  sensor->set_saturation(sensor, settingsJson["saturation"]);
+  sensor->set_saturation(sensor, settings["saturation"]);
   // Denoise - -2,-1,0,1,2
-  sensor->set_denoise(sensor, settingsJson["denoise"]);
+  sensor->set_denoise(sensor, settings["denoise"]);
 
   // Special color effects - 0=None|1=Negative|2=Grayscale|3=Red Tint|4=Green Tint|5=Blue Int|6=Sepia
-  sensor->set_special_effect(sensor, settingsJson["specialEffect"]);
+  sensor->set_special_effect(sensor, settings["specialEffect"]);
 
   // Auto White Balance - 0: no, 1: yes
-  sensor->set_whitebal(sensor, settingsJson["autoWhitebalance"]);
+  sensor->set_whitebal(sensor, settings["autoWhitebalance"]);
   // Auto White Balance Gain - 0: no, 1: yes - nur bei yes kann man set_wb_mode nutzen
-  sensor->set_awb_gain(sensor, settingsJson["autoWhitebalanceGain"]);
+  sensor->set_awb_gain(sensor, settings["autoWhitebalanceGain"]);
   // White Balance Mode - 0=Auto|1=Sunny|2=Cloudy|3=Office|4=Home
-  sensor->set_wb_mode(sensor, settingsJson["whitebalanceMode"]);
+  sensor->set_wb_mode(sensor, settings["whitebalanceMode"]);
 
   // Auto Exposure Control (via Sensor) - 0: no, 1: yes
-  sensor->set_exposure_ctrl(sensor, settingsJson["exposureCtrlSensor"]);
+  sensor->set_exposure_ctrl(sensor, settings["exposureCtrlSensor"]);
   // Auto Exposure Control (via DSP) - 0: no, 1: yes
-  sensor->set_aec2(sensor, settingsJson["exposureCtrlDsp"]);
+  sensor->set_aec2(sensor, settings["exposureCtrlDsp"]);
   // Auto Exposure Level - -2,-1,0,1,2
-  sensor->set_ae_level(sensor, settingsJson["autoExposureLevel"]);
+  sensor->set_ae_level(sensor, settings["autoExposureLevel"]);
   // Auto Exposure Value - 0 - 1024
-  sensor->set_aec_value(sensor, settingsJson["autoExposureValue"]);
+  sensor->set_aec_value(sensor, settings["autoExposureValue"]);
   // Auto Gain Control - 0: no, 1: yes
-  sensor->set_gain_ctrl(sensor, settingsJson["autoExposureGainControl"]);
+  sensor->set_gain_ctrl(sensor, settings["autoExposureGainControl"]);
   // Auto Gain Control Gain - 0 - 30 - Mit 0 starten und erhöhen, wenn zu dunkel 
-  sensor->set_agc_gain(sensor, settingsJson["autoExposureGainValue"]);
+  sensor->set_agc_gain(sensor, settings["autoExposureGainValue"]);
   // Gain ceiling - 0=2x, 1=4x, 2=8x, 3=16x, 4=32x, 5=64x, 6=128x
-  sensor->set_gainceiling(sensor, gainceilingFromInt(settingsJson["autoExposureGainCeiling"]));
+  sensor->set_gainceiling(sensor, gainceilingFromInt(settings["autoExposureGainCeiling"]));
 
   // Black Pixel Correct - 0: no, 1: yes
-  sensor->set_bpc(sensor, settingsJson["blackPixelCorrect"]);
+  sensor->set_bpc(sensor, settings["blackPixelCorrect"]);
   // White Pixel Correct - 0: no, 1: yes
-  sensor->set_wpc(sensor, settingsJson["whitePixelCorrect"]);
+  sensor->set_wpc(sensor, settings["whitePixelCorrect"]);
   // Auto Gamma Correct: no, 1: yes - mit yes i.d.R. besser
-  sensor->set_raw_gma(sensor, settingsJson["gammaCorrect"]);
+  sensor->set_raw_gma(sensor, settings["gammaCorrect"]);
   // Auto Lens Correct - 0: no, 1: yes - mit yes i.d.R. besser
-  sensor->set_lenc(sensor, settingsJson["lensCorrect"]);
+  sensor->set_lenc(sensor, settings["lensCorrect"]);
 
   // Horizontal mirror image - 0: no, 1: yes
-  sensor->set_hmirror(sensor, settingsJson["horizontalMirror"]);
+  sensor->set_hmirror(sensor, settings["horizontalMirror"]);
   // Vertical flip image - 0: no, 1: yes 
-  sensor->set_vflip(sensor, settingsJson["verticalFlip"]);
+  sensor->set_vflip(sensor, settings["verticalFlip"]);
   // Downscale image - 0: no, 1: yes - Wenn eine andere Auflösung als UXGA gewählt ist, dann muss das 1 sein!
   sensor->set_dcw(sensor, 1);
   // Display Test Color-Bar

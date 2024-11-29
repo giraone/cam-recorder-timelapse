@@ -1,6 +1,6 @@
 #pragma once
 #include "esp_camera.h"
-#include <Arduino_JSON.h>
+#include <ArduinoJson.h>
 
 // A pimped version of framesize_t from esp_camera.h
 typedef enum {
@@ -18,8 +18,8 @@ typedef enum {
     EXT_FRAMESIZE_XGA,      // 1024x768
     EXT_FRAMESIZE_HD,       // 1280x720
     EXT_FRAMESIZE_SXGA,     // 1280x1024
-    EXT_FRAMESIZE_UXGA,     // 1600x1200 - up here with OV2640
-    EXT_FRAMESIZE_FHD,      // 1920x1080 - from here with OV5640
+    EXT_FRAMESIZE_UXGA,     // 1600x1200 - up to here possible with OV2640
+    EXT_FRAMESIZE_FHD,      // 1920x1080 - from here onyl possible with OV5640
     EXT_FRAMESIZE_P_HD,     // 720x1280
     EXT_FRAMESIZE_P_3MP,    // 864x1536
     EXT_FRAMESIZE_QXGA,     // 2048x1536
@@ -30,4 +30,4 @@ typedef enum {
 } ext_framesize_t;
 
 void initCamera();
-void initCameraWithSettings(JSONVar jsonObject);
+void initCameraWithSettings(JsonDocument settings);

@@ -5,12 +5,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 
 @SuppressWarnings("unused")
 @RestController
@@ -32,6 +35,14 @@ public class CameraSettingsController {
             LOGGER.warn("Cannot read \"{}\"", SETTINGS_FILE_PATH, e);
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
         }
+    }
+
+    @SuppressWarnings("unused")
+    @PutMapping("camera-status")
+    ResponseEntity<Map<String, Object>> uploadStatus(@RequestBody Map<String, Object> status) {
+
+        LOGGER.warn("Camera status = {}", status);
+        return ResponseEntity.ok(Map.of("success", true));
     }
 
     public static long getLastModified() {

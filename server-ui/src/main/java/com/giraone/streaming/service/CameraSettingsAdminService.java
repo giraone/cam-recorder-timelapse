@@ -44,6 +44,7 @@ public class CameraSettingsAdminService {
 
     public void storeSetting(File file) throws IOException {
         objectMapper.writeValue(file, settings);
+        settings.setRestartNow(false);
     }
 
     public void storeSetting() throws IOException {

@@ -16,8 +16,11 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class CameraSettings {
 
-    private boolean paused = false;
+    private boolean restartNow = false;
     private int restartAfterAmount = 100;
+    private boolean paused = false;
+    private boolean sendStatus = false;
+
     private boolean blinkOnSuccess = false;
     private int loopDelaySeconds = 10;
     private boolean flashLedForPicture = false;
@@ -66,12 +69,12 @@ public class CameraSettings {
      **/
     private int autoExposureGainCeiling = 2;
 
-    public boolean isPaused() {
-        return paused;
+    public boolean isRestartNow() {
+        return restartNow;
     }
 
-    public void setPaused(boolean paused) {
-        this.paused = paused;
+    public void setRestartNow(boolean restartNow) {
+        this.restartNow = restartNow;
     }
 
     public int getRestartAfterAmount() {
@@ -80,6 +83,22 @@ public class CameraSettings {
 
     public void setRestartAfterAmount(int restartAfterAmount) {
         this.restartAfterAmount = restartAfterAmount;
+    }
+
+    public boolean isPaused() {
+        return paused;
+    }
+
+    public void setPaused(boolean paused) {
+        this.paused = paused;
+    }
+
+    public boolean isSendStatus() {
+        return sendStatus;
+    }
+
+    public void setSendStatus(boolean sendStatus) {
+        this.sendStatus = sendStatus;
     }
 
     public boolean isBlinkOnSuccess() {

@@ -228,27 +228,26 @@ public class FileStorageController {
         return fileService.storeFile(type, filename, content, contentLength)
             .map(fileInfo -> {
                 boolean restartNow = false;
+                boolean readSettings = false;
                 if (type == FileService.Media.IMAGES) {
                     long newLastSettingsChange;
                     final int newNumberStored = photosStored.getAndIncrement();
-
                     if (newNumberStored >= (RESTART_EVERY_PHOTO - 1)) {
                         restartNow = true;
                         LOGGER.info("Forcing restart after {} photos.", RESTART_EVERY_PHOTO);
                         photosStored.set(0);
                     } else if ((newLastSettingsChange = CameraSettingsController.getLastModified()) > lastSettingsChange) {
-                        LOGGER.info("Forcing restart after setting changed.");
+                        LOGGER.info("Forcing to read settings.");
                         lastSettingsChange = newLastSettingsChange;
-                        restartNow = true;
+                        readSettings = true;
                     }
-                    return ResponseEntity.ok(new UploadStatus(true, contentLength, restartNow, null));
                 }
-                return ResponseEntity.ok(new UploadStatus(true, contentLength, restartNow, null));
+                return ResponseEntity.ok(new UploadStatus(true, contentLength, restartNow, readSettings, null));
             })
             .onErrorResume(IllegalArgumentException.class, exc -> Mono.just(ResponseEntity.badRequest()
-                .body(new UploadStatus(false, contentLength, true, exc.getMessage()))))
+                .body(new UploadStatus(false, contentLength, true, false, exc.getMessage()))))
             .onErrorResume(Exception.class, exc -> Mono.just(ResponseEntity.status(HttpStatusCode.valueOf(503))
-                .body(new UploadStatus(false, contentLength, true, exc.getMessage()))));
+                .body(new UploadStatus(false, contentLength, true, false, exc.getMessage()))));
     }
 
     private ResponseEntity<Flux<ByteBuffer>> downloadOriginal(FileService.Media type, String filename) {
@@ -291,7 +290,7 @@ public class FileStorageController {
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record UploadStatus(boolean success, long size, boolean restart, String error) {
+    public record UploadStatus(boolean success, long size, boolean restartNow, boolean readSettings, String error) {
     }
 
 }

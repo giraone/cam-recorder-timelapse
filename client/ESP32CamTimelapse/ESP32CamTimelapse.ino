@@ -3,8 +3,13 @@
  - This is done either in a loop or using "touch" on the PIN 12
  - The file name is build using the date (with base time fetched from an NTP server)
  - The camera settings are fetch on each restart from the server
- - The server can force a "restart" after each upload, so then all new settings are applied
- - The server can force pause/resume of the loop. If paused this software will still send requests, but without taking a photo.
+ - The server can force a "restartNow" after each upload, so then all new settings are applied
+ - The server can force pause/resume of the loop to take photo.
+ - If paused, this software will periodically send requests to the server to receive new commands.
+ - Besides sending photos, this software can transmit status information of the device to the server, e.g.
+   - Number of successful photo transmissions
+   - Number of unsuccessful photo transmissions
+   - WiFi signal strength (rssi) 
 
  See
   - [Make-Magazin ESP32C_Mailkamera](https://github.com/MakeMagazinDE/ESP32C_Mailkamera)
@@ -15,7 +20,7 @@
 
 #include "WiFi.h"
 #include <HTTPClient.h> // EspressIF HTTPClient
-#include <Arduino_JSON.h> // JSON processing of camera settings
+#include <ArduinoJson.h>
 #include "init_camera.h"
 
 //-- PICTURE mode -----------------------------------------------------------------
@@ -24,8 +29,20 @@
 int loopDelaySeconds = 30;
 // Is the camera in "paused mode". Start is always in paused mode to fetch the settings first.
 bool paused = true;
+// If true, read the camera settings before taking the next photo
+bool readSettings = false;
+// If true and in paused mode, send periodically the device status
+bool sendStatus = false;
+// true, when the paused mode should be left without a loop delay
+bool leavingPausedMode = false;
+// the WiFi signal strength
+int wifiRssi = 0;
 // count number of images taken
 int imageCounter = 0;
+// count number of errors to take an image
+int imageErrors = 0;
+// count number of errors to upload an image
+int uploadErrors = 0;
 // restart device after n images taken
 int restartAfterAmount = 100;
 // threshold for touch value
@@ -38,10 +55,13 @@ bool blinkOnSuccess = false;
 
 //-- HTTP -------------------------------------------------------------------------
 
-const char* TARGET_URL = "http://192.168.178.87:9001";
+// 45 (lenovo) or 87 (air)
+const char* TARGET_URL_PHOTO_UPLOAD = "http://192.168.178.45:9001/images/%s-%s.jpg";     // the 2 parameters are: filePrefix, timeString
+const char* TARGET_URL_SETTINGS_DOWNLOAD = "http://192.168.178.45:9001/camera-settings";
+const char* TARGET_URL_STATUS_UPLOAD = "http://192.168.178.45:9001/camera-status";
 const char* MIME_TYPE_JPEG = "image/jpeg";
 const char* MIME_TYPE_JSON = "application/json";
-const char* FILE_PREFIX = "cam-b";
+const char* FILE_PREFIX = "cam";
 
 //-- JSON -------------------------------------------------------------------------
 
@@ -75,18 +95,25 @@ void setup() {
   blinkLedOk();
   initNtp();
   blinkLedOk();
-  fetchAndApplySettings(true);
+  fetchAndApplySettings();
 }
 
 void loop() {
 
   if (loopDelaySeconds > 0) {
-    delay(loopDelaySeconds * 1000);
+    if (leavingPausedMode) {
+       leavingPausedMode = false;
+    } else {
+       delay(loopDelaySeconds * 1000);
+    }
+    if (sendStatus) {
+      uploadStatus();
+    }
     if (paused) {
-      fetchAndApplySettings(false);
+      fetchAndApplySettings();
     } else {
       shootAndSend();
-      if (++imageCounter > restartAfterAmount) {
+      if (imageCounter > restartAfterAmount) {
         Serial.printf(">>> Restarting after %d images!\n", restartAfterAmount);
         ESP.restart();
       }
@@ -101,9 +128,7 @@ void loop() {
 }
 
 void shootAndSend() {
-
   char* timeString = fetchTimeString();
-
   if (flashLedForPicture) {
     Serial.printf(">>> Flash wanted. Using GPIO %d.\n", FLASH_GPIO_NUM);
     digitalWrite(FLASH_GPIO_NUM, HIGH);
@@ -114,9 +139,11 @@ void shootAndSend() {
     digitalWrite(FLASH_GPIO_NUM, LOW);
   }
   if (!frameBuffer) {
+    imageErrors++;
     Serial.println(">>> No photo taken!");
     blinkLedError();
   } else {
+    imageCounter++;
     Serial.printf(">>> Photo %d taken with %d bytes.\n", imageCounter, frameBuffer->len);
     sendPhotoViaHttp(frameBuffer, timeString);
     esp_camera_fb_return(frameBuffer);
@@ -134,90 +161,112 @@ void initWiFi() {
   Serial.println();
   Serial.print(">>> IP address: ");
   Serial.println(WiFi.localIP());
+  delay(500);
+  wifiRssi = WiFi.RSSI();
+  Serial.print(">>> RSSI: ");
+  Serial.println(wifiRssi);
 }
 
 void initNtp() {
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
 }
 
-JSONVar parseJson(String jsonString) {
-
-  JSONVar jsonObject = JSON.parse(jsonString);
-  if (JSON.typeof(jsonObject) == "undefined") {
+JsonDocument parseJson(String jsonString) {
+  JsonDocument jsonDoc;
+  DeserializationError error = deserializeJson(jsonDoc, jsonString);
+  if (error) {
     Serial.println(">>> Parsing JSON input failed!");
-    return NULL;
+    jsonDoc["error"] = true;
   }
-  return jsonObject;
+  return jsonDoc;
 }
 
-bool sendPhotoViaHttp(camera_fb_t* frameBuffer, char* timeString) {
- 
+void sendPhotoViaHttp(camera_fb_t* frameBuffer, char* timeString) {
   char urlBuffer[128];
-  snprintf(urlBuffer, sizeof(urlBuffer), "%s/images/%s-%s.jpg", TARGET_URL, FILE_PREFIX, timeString);
+  snprintf(urlBuffer, sizeof(urlBuffer), TARGET_URL_PHOTO_UPLOAD, FILE_PREFIX, timeString);
   Serial.printf(">>> POST URL = \"%s\"\n", urlBuffer);
- 
   HTTPClient http;
   http.begin(urlBuffer);
   http.addHeader("Content-Type", MIME_TYPE_JPEG);
   int httpResponseCode = http.POST(frameBuffer->buf, frameBuffer->len);
-  
-  JSONVar jsonResponse;
-  bool ok = httpResponseCode == 200;
-  if (ok) {
+  JsonDocument jsonResponse;
+  if (httpResponseCode == 200) {
     String responseString = http.getString();
     Serial.print(">>> ");
     Serial.println(responseString);
     jsonResponse = parseJson(responseString);
-    blinkLedError();
-  } else {
-    Serial.printf(">>> HTTP Response code = %d\n", httpResponseCode);
-    jsonResponse = "{\"restart\":false}";
     blinkLedOk();
+  } else {
+    uploadErrors++;
+    Serial.printf(">>> HTTP Response code = %d\n", httpResponseCode);
+    jsonResponse["restartNow"] = false;
+    jsonResponse["readSettings"] = false;
+    jsonResponse["sendStatus"] = false;
+    blinkLedError();
   }
   http.end();
-
-  if (jsonResponse["restart"]) {
+  if (jsonResponse["restartNow"] || jsonResponse["error"]) {
     ESP.restart();
+  } else if (jsonResponse["readSettings"]) {
+    fetchAndApplySettings();
   }
-  return ok;
 }
 
-void fetchAndApplySettings(bool initCam) {
-  JSONVar settingsJson = fetchAndParseCameraSettings();
-  if (initCam) {
-    initCameraWithSettings(settingsJson);
-  }
-  loopDelaySeconds = settingsJson["loopDelaySeconds"];
-  if (paused && !settingsJson["paused"]) {
+void fetchAndApplySettings() {
+  JsonDocument settings = fetchAndParseCameraSettings();
+  loopDelaySeconds = settings["loopDelaySeconds"];
+  if (paused && !settings["paused"]) {
+    leavingPausedMode = true;
     Serial.println(">>> Leaving paused mode.");
-  } else if (!paused && settingsJson["paused"]) {
+  } else if (!paused && settings["paused"]) {
     Serial.println(">>> Going into paused mode.");
   }
-  paused = settingsJson["paused"];
-  restartAfterAmount = settingsJson["restartAfterAmount"];
-  blinkOnSuccess = settingsJson["blinkOnSuccess"]; 
-  flashLedForPicture = settingsJson["flashLedForPicture"]; 
-  flashDurationMs = settingsJson["flashDurationMs"]; 
+  paused = settings["paused"];
+  sendStatus = settings["sendStatus"];
+  restartAfterAmount = settings["restartAfterAmount"];
+  blinkOnSuccess = settings["blinkOnSuccess"]; 
+  flashLedForPicture = settings["flashLedForPicture"]; 
+  flashDurationMs = settings["flashDurationMs"];
+  if (leavingPausedMode) {
+    initCameraWithSettings(settings);
+  } 
 }
 
-JSONVar fetchAndParseCameraSettings() {
+void uploadStatus() {
+  wifiRssi = WiFi.RSSI();
+  JsonDocument data;
+  data["rssi"] = wifiRssi;
+  data["imageCounter"] = imageCounter;
+  data["imageErrors"] = imageErrors;
+  data["uploadErrors"] = uploadErrors;
+  char jsonCharBuffer[100];
+  serializeJson(data, jsonCharBuffer);
+  HTTPClient http;
+  http.begin(TARGET_URL_STATUS_UPLOAD);
+  http.addHeader("Accept", MIME_TYPE_JSON);
+  http.addHeader("Content-Type", MIME_TYPE_JSON);
+  int httpResponseCode = http.PUT(jsonCharBuffer);
+  Serial.printf(">>> HTTP Response code = %d\n", httpResponseCode);
+  if (httpResponseCode == 200) {
+    blinkLedOk();
+  } else {
+    blinkLedError();
+  }
+  http.end();
+}
+
+JsonDocument fetchAndParseCameraSettings() {
   String jsonString = fetchCameraSettings();
   return parseJson(jsonString);
 }
 
 String fetchCameraSettings() {
-  char urlBuffer[128];
-  snprintf(urlBuffer, sizeof(urlBuffer), "%s/camera-settings", TARGET_URL);
-  Serial.printf(">>> GET URL = \"%s\"\n", urlBuffer);
- 
   HTTPClient http;
-  http.begin(urlBuffer);
+  http.begin(TARGET_URL_SETTINGS_DOWNLOAD);
   http.addHeader("Accept", MIME_TYPE_JSON);
   int httpResponseCode = http.GET();
-  
-  bool ok = httpResponseCode == 200;
   String jsonString; 
-  if (ok) {
+  if (httpResponseCode == 200) {
     jsonString = http.getString();
     Serial.print(">>> settings = ");
     Serial.println(jsonString);
@@ -228,7 +277,6 @@ String fetchCameraSettings() {
     blinkLedError();
   }
   http.end();
-
   return jsonString;
 }
 
