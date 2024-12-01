@@ -29,5 +29,4 @@ typedef enum {
     EXT_FRAMESIZE_INVALID
 } ext_framesize_t;
 
-void initCamera();
-void initCameraWithSettings(JsonDocument settings);
+short initCameraWithSettings(JsonDocument cameraSetings);
