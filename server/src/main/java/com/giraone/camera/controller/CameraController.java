@@ -38,6 +38,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
+@SuppressWarnings("unused")
 @RestController
 public class CameraController {
 
@@ -64,7 +65,7 @@ public class CameraController {
             currentSettings = objectMapper.readValue(content, Settings.class);
             cameraSettingsJsonString = objectMapper.writeValueAsString(currentSettings.getCamera());
         } catch (Exception e) {
-           LOGGER.error("Cannot read settings file \"{}\"! Using default", SETTINGS_FILE_PATH, e);
+            LOGGER.error("Cannot read settings file \"{}\"! Using default", SETTINGS_FILE_PATH, e);
         }
         cameraSettingsJsonString = getCameraSettingsJson(currentSettings);
     }
@@ -101,12 +102,7 @@ public class CameraController {
     ResponseEntity<Settings> uploadStatus(@RequestBody CameraStatus status) {
         LOGGER.info("Camera status = {}", status);
         final Settings settingsToReturn = new Settings(currentSettings.getStatus(), currentSettings.getWorkflow(), null);
-        if (cameraSettingsChanged || status.imageCounter() == 0) {
-            LOGGER.info("Forcing to re-initialize camera settings.");
-            // return camera settings, when they were changed or no image was taken yet
-            settingsToReturn.setCamera(currentSettings.getCamera());
-            cameraSettingsChanged = false;
-        }
+        updateSettings(settingsToReturn, status.imageCounter());
         return ResponseEntity.ok(settingsToReturn);
     }
 
@@ -115,18 +111,14 @@ public class CameraController {
     @SuppressWarnings("unused")
     @PostMapping(value = "images/{filename}", consumes = {MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE})
     Mono<ResponseEntity<Settings>> uploadImage(@PathVariable String filename,
-                                                   @RequestBody Flux<ByteBuffer> content,
-                                                   @RequestHeader("Content-Length") Optional<String> contentLengthString) {
+                                               @RequestBody Flux<ByteBuffer> content,
+                                               @RequestHeader("Content-Length") Optional<String> contentLengthString) {
 
         final Settings settingsToReturn = new Settings(currentSettings.getStatus(), currentSettings.getWorkflow(), null);
         final long contentLength = contentLengthString.orElse("-1").transform(Long::parseLong);
         return fileService.storeFile(FileService.Media.IMAGES, filename, content, contentLength)
             .map(fileInfo -> {
-                    if (cameraSettingsChanged) {
-                        LOGGER.info("Forcing to re-initialize camera settings.");
-                        settingsToReturn.setCamera(currentSettings.getCamera()); // return camera settings, when they were changed
-                        cameraSettingsChanged = false;
-                    }
+                updateSettings(settingsToReturn, 1);
                 return ResponseEntity.ok(settingsToReturn);
             })
             .onErrorResume(IllegalArgumentException.class, iae -> Mono.just(ResponseEntity.badRequest()
@@ -214,8 +206,8 @@ public class CameraController {
     @SuppressWarnings("unused")
     @PostMapping(value = "videos/{filename}", consumes = {"video/mp4"})
     Mono<ResponseEntity<Status>> uploadVideo(@PathVariable String filename,
-                                               @RequestBody Flux<ByteBuffer> content,
-                                               @RequestHeader("Content-Length") Optional<String> contentLengthString) {
+                                             @RequestBody Flux<ByteBuffer> content,
+                                             @RequestHeader("Content-Length") Optional<String> contentLengthString) {
 
         final long contentLength = contentLengthString.orElse("-1").transform(Long::parseLong);
         return fileService.storeFile(FileService.Media.VIDEOS, filename, content, contentLength)
@@ -330,6 +322,15 @@ public class CameraController {
         final String mediaType = fileInfoAndContent.fileInfo().mediaType();
         final long contentLength = fileInfoAndContent.fileInfo().sizeInBytes();
         return streamToWebClient(fileInfoAndContent.content(), mediaType, contentLength);
+    }
+
+    private void updateSettings(Settings settingsToReturn, int imageCounter) {
+        if (cameraSettingsChanged || imageCounter == 0) {
+            LOGGER.info("Forcing to re-initialize camera settings.");
+            // return camera settings, when they were changed or no image was taken yet
+            settingsToReturn.setCamera(currentSettings.getCamera());
+            cameraSettingsChanged = false;
+        }
     }
 
     private static ResponseEntity<Flux<ByteBuffer>> streamToWebClient(Flux<ByteBuffer> content, String mediaType, long contentLength) {

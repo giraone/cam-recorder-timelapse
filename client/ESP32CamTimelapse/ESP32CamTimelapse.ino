@@ -1,6 +1,6 @@
 /*
- Continous loop to fetch camera settings from an image server using HTTP GET and send photos taken with these settings to the image server using HTTP POST.
- - The file name is build using the date (with base time fetched from an NTP server)
+ Continous loop to fetch camera settings from an image server and send photos taken with these settings to the image server using plain HTTP POST (no multipart).
+ - The file name is build using the camera name (derived rom IP address) and the current date and time (with a base time fetched from an NTP server)
  - The camera settings are fetch on each restart from the server
  - The server can force a "restartNow" after each upload, so then all new settings are applied
  - The server can force pause/resume of the loop to take photo.
@@ -10,11 +10,12 @@
    - Number of unsuccessful photo transmissions
    - WiFi signal strength (rssi) 
 
- See
+ See also
   - [Make-Magazin ESP32C_Mailkamera](https://github.com/MakeMagazinDE/ESP32C_Mailkamera)
   - https://RandomNerdTutorials.com/esp32-send-email-smtp-server-arduino-ide/
   - https://RandomNerdTutorials.com/esp32-http-get-post-arduino/
   - https://github.com/espressif/arduino-esp32/blob/master/libraries/HTTPClient/src/HTTPClient.h
+  - https://arduinojson.org/
 */
 
 #include "WiFi.h"
@@ -30,8 +31,8 @@ const char* PASSWORD = "<enter here>";
 //-- HTTP -------------------------------------------------------------------------
 
 // 45 (lenovo) or 87 (air)
-const char* TARGET_URL_IMAGE = "http://192.168.178.45:9001/images/%s-%s.jpg";     // the 2 parameters are: cameraName, timeLabel
-const char* TARGET_URL_STATUS = "http://192.168.178.45:9001/status";
+const char* TARGET_URL_IMAGE = "http://192.168.178.87:9001/images/%s-%s.jpg";     // the 2 parameters are: cameraName, timeLabel
+const char* TARGET_URL_STATUS = "http://192.168.178.87:9001/status";
 const char* MIME_TYPE_JPEG = "image/jpeg";
 const char* MIME_TYPE_JSON = "application/json";
 
@@ -67,8 +68,6 @@ int cameraInitErrors = 0;
 int uploadImageErrors = 0;
 // count number of errors to upload status
 int uploadStatusErrors = 0;
-// restart device after n images taken
-int restartAfterAmount = 100;
 
 //-- Camera (Flash LED) -----------------------------------------------------------
 
@@ -173,7 +172,7 @@ void initNtp() {
 void sendPhotoViaHttp(camera_fb_t* frameBuffer, char* timeLabel) {
   char urlBuffer[128];
   snprintf(urlBuffer, sizeof(urlBuffer), TARGET_URL_IMAGE, cameraName, timeLabel);
-  //S Serial.printf(">>> POST URL = \"%s\"\n", urlBuffer);
+  Serial.printf(">>> POST URL = \"%s\" %d\n", urlBuffer, cameraSettings["frameSize"]);
   HTTPClient http;
   http.begin(urlBuffer);
   http.addHeader("Content-Type", MIME_TYPE_JPEG);

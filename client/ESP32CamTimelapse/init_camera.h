@@ -19,13 +19,14 @@ typedef enum {
     EXT_FRAMESIZE_HD,       // 1280x720
     EXT_FRAMESIZE_SXGA,     // 1280x1024
     EXT_FRAMESIZE_UXGA,     // 1600x1200 - up to here possible with OV2640
-    EXT_FRAMESIZE_FHD,      // 1920x1080 - from here onyl possible with OV5640
+    EXT_FRAMESIZE_FHD,      // 1920x1080 - from here only possible with OV5640
     EXT_FRAMESIZE_P_HD,     // 720x1280
-    EXT_FRAMESIZE_P_3MP,    // 864x1536
+    EXT_FRAMESIZE_P_864,    // 864x1536
     EXT_FRAMESIZE_QXGA,     // 2048x1536
     EXT_FRAMESIZE_QHD,      // 2560x1440
     EXT_FRAMESIZE_WQXGA,    // 2560x1600
-    EXT_FRAMESIZE_5MP,      // 2592x1944
+    EXT_FRAMESIZE_P_1088,   // 1088x1920
+    EXT_FRAMESIZE_5MP,      // 2560x1920
     EXT_FRAMESIZE_INVALID
 } ext_framesize_t;
 

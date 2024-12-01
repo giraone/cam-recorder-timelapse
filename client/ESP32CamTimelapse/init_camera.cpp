@@ -89,12 +89,9 @@ short initCameraWithSettings(JsonDocument cameraSettings) {
   };
   
 
-  bool init = cameraSettings["clockFrequencyHz"] != lastClockFrequencyHz || 
-              cameraSettings["frameSize"] != lastFrameSize || 
-              cameraSettings["jpegQuality"] != lastJpegQuality;
-  lastClockFrequencyHz = cameraSettings["clockFrequencyHz"];
-  lastFrameSize = cameraSettings["lastFrameSize"]; 
-  lastJpegQuality = cameraSettings["jpegQuality"]; 
+  bool init = (cameraSettings["clockFrequencyHz"] != lastClockFrequencyHz) || 
+              (cameraSettings["frameSize"] != lastFrameSize) || 
+              (cameraSettings["jpegQuality"] != lastJpegQuality);
 
   short ret = 2;
   if (init) {
@@ -113,6 +110,9 @@ short initCameraWithSettings(JsonDocument cameraSettings) {
       return 0;
     } else {
       Serial.println(">>> Camera successfully initialized.");
+      lastClockFrequencyHz = cameraSettings["clockFrequencyHz"];
+      lastFrameSize = cameraSettings["lastFrameSize"]; 
+      lastJpegQuality = cameraSettings["jpegQuality"]; 
     }
   }
   

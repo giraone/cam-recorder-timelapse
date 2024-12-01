@@ -61,8 +61,8 @@ public class WorkflowSettingsForm extends FormLayout {
         addClassName("camera-settings-form");
         binder.bindInstanceFields(this);
 
-        restart.setHelperText("Restart after next image upload.");
-        pause.setHelperText("Device/camera will be paused.");
+        restart.setHelperText("Restart after next action.");
+        pause.setHelperText("Device/camera will be paused after next action.");
         delayMs.setMin(100);
         delayMs.setMax(3_600_000);
         Div secondsSuffix = new Div();
@@ -79,6 +79,7 @@ public class WorkflowSettingsForm extends FormLayout {
         formLayout.setMinWidth(98, Unit.PERCENTAGE);
         formLayout.add(
             new Paragraph("Actions"), restart, pause,
+            new Paragraph("Delay"), delayMs, new Paragraph(""),
             new Paragraph("LED"), blinkOnSuccess, blinkOnFailure,
             new Paragraph("Flash"), flashLedForPicture, flashDurationMs,
             createButtonsLayout());

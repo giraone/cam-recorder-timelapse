@@ -44,7 +44,7 @@ public class CameraSettingsForm extends FormLayout {
 
     IntegerField clockFrequencyHz = new IntegerField("Clock Frequency Hz");
     ComboBox<CameraSettings.FrameSize> frameSize = new ComboBox<>("Frame Size (Resolution)", CameraSettings.FrameSize.ALL);
-    IntegerField jpegQuality = new IntegerField("JPEG Quality (0 = best, 63 = worst)");
+    IntegerField jpegQuality = new IntegerField("JPEG Quality (0 = best, 63 = worst), for QXGS > 8, QHD >= 12");
 
     Checkbox blackPixelCorrect = new Checkbox("Black Pixel Correct");
     Checkbox whitePixelCorrect = new Checkbox("White Pixel Correct");
