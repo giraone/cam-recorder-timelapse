@@ -6,10 +6,10 @@
 - `mvn -P production -DskipTests package`
 - `java -jar target/cam-recorder-ui.jar`
 
-## TODO
+## Implemented and planned features
 
-- [x] Image viewer with scaling
-- [x] Restart every ... as setting from server (client + server)
+- [x] Image viewer with scaling/zooming possibilities
+- [x] Restart and pause as setting passed from server
 - [x] Support for displaying videos
 - [x] Create timelapse videos from images using *ffmpeg*
 - [x] Lazy loading for handling large amounts of image files

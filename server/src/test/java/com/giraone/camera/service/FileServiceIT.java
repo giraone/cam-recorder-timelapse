@@ -24,7 +24,8 @@ class FileServiceIT {
 
         FileInfoQuery query = new FileInfoQuery("000", 0, 10, new FileInfoOrder("fileName", false));
         for (FileInfo fileInfo : fileService.listFileInfos(FileService.Media.IMAGES, query)) {
-            fileService.createThumbnail(FileService.Media.IMAGES, FileService.getFile(FileService.Media.IMAGES, fileInfo.fileName()));
+            boolean ret = fileService.createThumbnail(FileService.Media.IMAGES, FileService.getFile(FileService.Media.IMAGES, fileInfo.fileName()));
+            assertThat(ret).isTrue();
         }
     }
 

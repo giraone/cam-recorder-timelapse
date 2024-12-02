@@ -72,12 +72,10 @@ public final class AsynchronousByteChannelWriteSubscriber implements Subscriber<
             while (bytes.hasRemaining()) {
                 channel.write(bytes).get();
             }
+        } catch (ExecutionException executionException) {
+            onError(executionException.getCause());
         } catch (Exception ex) {
-            if (ex instanceof ExecutionException) {
-                onError(ex.getCause());
-            } else {
-                onError(ex);
-            }
+            onError(ex);
         }
     }
 

@@ -1,11 +1,7 @@
 package com.giraone.camera.service;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.giraone.camera.service.api.Status;
-import com.giraone.imaging.ConversionCommand;
-import com.giraone.imaging.ImagingProvider;
-import com.giraone.imaging.java2.ProviderJava2D;
 import com.giraone.camera.config.ApplicationProperties;
+import com.giraone.camera.service.api.Status;
 import com.giraone.camera.service.model.FileInfo;
 import com.giraone.camera.service.model.FileInfoAndContent;
 import com.giraone.camera.service.model.FileInfoQuery;
@@ -13,6 +9,9 @@ import com.giraone.camera.service.model.VideoMetaInfo;
 import com.giraone.camera.service.video.VideoService;
 import com.giraone.camera.service.video.model.TimelapseCommand;
 import com.giraone.camera.service.video.model.TimelapseResult;
+import com.giraone.imaging.ConversionCommand;
+import com.giraone.imaging.ImagingProvider;
+import com.giraone.imaging.java2.ProviderJava2D;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -39,15 +38,15 @@ public class FileService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileService.class);
 
-    public static String DIR_NAME_THUMBS = ".thumbs";
-    public static String DIR_NAME_META = ".meta";
-    public static File STORAGE_BASE = new File("../STORAGE");
-    public static File IMAGES_BASE = new File(STORAGE_BASE, "IMAGES");
-    public static File IMAGES_THUMBS = new File(IMAGES_BASE, DIR_NAME_THUMBS);
-    public static File IMAGES_META = new File(IMAGES_BASE, DIR_NAME_META);
-    public static File VIDEOS_BASE = new File(STORAGE_BASE, "VIDEOS");
-    public static File VIDEOS_THUMBS = new File(VIDEOS_BASE, DIR_NAME_THUMBS);
-    public static File VIDEOS_META = new File(VIDEOS_BASE, DIR_NAME_META);
+    public static final String DIR_NAME_THUMBS = ".thumbs";
+    public static final String DIR_NAME_META = ".meta";
+    public static final File STORAGE_BASE = new File("../STORAGE");
+    public static final File IMAGES_BASE = new File(STORAGE_BASE, "IMAGES");
+    public static final File IMAGES_THUMBS = new File(IMAGES_BASE, DIR_NAME_THUMBS);
+    public static final File IMAGES_META = new File(IMAGES_BASE, DIR_NAME_META);
+    public static final File VIDEOS_BASE = new File(STORAGE_BASE, "VIDEOS");
+    public static final File VIDEOS_THUMBS = new File(VIDEOS_BASE, DIR_NAME_THUMBS);
+    public static final File VIDEOS_META = new File(VIDEOS_BASE, DIR_NAME_META);
 
     private static final Pattern FILE_NAME_PATTERN = Pattern.compile("[a-zA-Z0-9-]+[.][a-z0-9]{3,4}");
 
@@ -71,7 +70,7 @@ public class FileService {
     public Mono<FileInfo> storeFile(Media type, String filename, Flux<ByteBuffer> content, long contentLength) {
 
         if (isFileNameInvalid(filename)) {
-            return Mono.error(new IllegalArgumentException("Invalid filename \"" + filename + "\"!"));
+            return returnErrorOnInvalidFileName(filename);
         }
         final File file = getFile(type, filename);
         final AsynchronousFileChannel channel;
@@ -107,7 +106,7 @@ public class FileService {
 
     public FileInfoAndContent downloadFile(Media type, String filename) throws IOException {
         if (isFileNameInvalid(filename)) {
-            throw new IllegalArgumentException("Invalid filename \"" + filename + "\"!");
+            throw errorOnInvalidFileName(filename);
         }
         final File file = new File(getBaseOf(type), filename);
         return downloadFile(file);
@@ -115,7 +114,7 @@ public class FileService {
 
     public FileInfoAndContent downloadThumb(Media type, String filename) throws IOException {
         if (isFileNameInvalid(filename)) {
-            throw new IllegalArgumentException("Invalid filename \"" + filename + "\"!");
+            throw errorOnInvalidFileName(filename);
         }
         final File file = new File(getThumbOf(type), filename);
         return downloadFile(file);
@@ -123,7 +122,7 @@ public class FileService {
 
     public FileInfoAndContent downloadMeta(Media type, String filename) throws IOException {
         if (isFileNameInvalid(filename)) {
-            throw new IllegalArgumentException("Invalid filename \"" + filename + "\"!");
+            throw errorOnInvalidFileName(filename);
         }
         final File file = new File(getMetaOf(type), filename);
         return downloadFile(file);
@@ -139,11 +138,11 @@ public class FileService {
             LOGGER.info("listFileInfos {} {} = -1", type, query);
             return Collections.emptyList();
         }
-        List<FileInfo> ret = Arrays.stream(files)
-            .skip(query.offset())
-            .limit(query.limit())
+        final List<FileInfo> ret = Arrays.stream(files)
             .map(FileInfo::fromFile)
             .sorted(query.order().getComparator())
+            .skip(query.offset())
+            .limit(query.limit())
             .toList();
         LOGGER.info("listFileInfos {} {} = {}", type, query, ret.size());
         return ret;
@@ -169,7 +168,7 @@ public class FileService {
 
     public Status rename(Media type, String filename, String newName) {
         if (isFileNameInvalid(filename)) {
-            return new Status(false, "Invalid filename \"" + filename + "\"!");
+            return new Status(false, errorTextInvalidFileName(filename));
         }
         final File oldFile = new File(getBaseOf(type), filename);
         final File newFile = new File(getBaseOf(type), newName);
@@ -180,7 +179,9 @@ public class FileService {
                 final File oldThumbnailFile = buildThumbnailFile(type, filename);
                 final File newThumbnailFile = buildThumbnailFile(type, newName);
                 LOGGER.error("Rename \"{}\" to \"{}\"", oldThumbnailFile, newThumbnailFile);
-                oldThumbnailFile.renameTo(newThumbnailFile);
+                if (!oldThumbnailFile.renameTo(newThumbnailFile)) {
+                    LOGGER.error("Cannot rename \"{}\" to \"{}\"!", oldThumbnailFile, newThumbnailFile);
+                }
             }
             return new Status(ret, null);
         } catch (Exception exc) {
@@ -199,7 +200,9 @@ public class FileService {
             final boolean ret = file.delete();
             if (ret) {
                 final File thumbnailFile = buildThumbnailFile(type, filename);
-                thumbnailFile.delete();
+                if (!thumbnailFile.delete()) {
+                    LOGGER.error("Failed to delete thumbnail \"{}\". Error ignored.", thumbnailFile);
+                }
             }
             return new Status(ret, null);
         } catch (Exception exc) {
@@ -354,6 +357,18 @@ public class FileService {
 
     private static boolean isFileNameInvalid(String filename) {
         return !FILE_NAME_PATTERN.matcher(filename).matches();
+    }
+
+    private static Mono<FileInfo> returnErrorOnInvalidFileName(String filename) {
+        return Mono.error(errorOnInvalidFileName(filename));
+    }
+
+    private static IllegalArgumentException errorOnInvalidFileName(String filename) {
+        return new IllegalArgumentException(errorTextInvalidFileName(filename));
+    }
+
+    private static String errorTextInvalidFileName(String filename) {
+        return "Invalid filename \"" + filename + "\"!";
     }
 
     private static File getBaseOf(Media type) {

@@ -19,7 +19,7 @@ import java.nio.charset.Charset;
 @EnableConfigurationProperties({ApplicationProperties.class})
 public class CameraStorageBackend {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(CameraStorageBackend.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CameraStorageBackend.class);
 
     public static void main(String[] args) {
         SpringApplication app = new SpringApplication(CameraStorageBackend.class);

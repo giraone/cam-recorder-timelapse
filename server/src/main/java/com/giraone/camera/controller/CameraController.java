@@ -92,7 +92,7 @@ public class CameraController {
             Files.writeString(SETTINGS_FILE_PATH, content);
         } catch (Exception e) {
             LOGGER.error("Cannot write settings file \"{}\"!", SETTINGS_FILE_PATH, e);
-            return ResponseEntity.ok(new Status(false, e.getMessage()));
+            return ResponseEntity.internalServerError().body(new Status(false, e.getMessage()));
         }
         return ResponseEntity.ok(new Status(true, null));
     }

@@ -9,7 +9,6 @@ import com.giraone.camera.service.api.Status;
 import com.giraone.camera.service.video.model.TimelapseCommand;
 import com.giraone.camera.service.video.model.TimelapseResult;
 import com.giraone.camera.util.ObjectMapperBuilder;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -261,7 +260,7 @@ class CameraControllerIT {
             .expectBody(TimelapseResult.class)
             .returnResult()
             .getResponseBody();
-        assertThat(result.success()).isEqualTo(true);
+        assertThat(result.success()).isTrue();
         // assert (stored)
         MediaType mp4 = MediaType.parseMediaType("video/mp4");
         webTestClient.get().uri("/videos/{filename}", wantedFilename)
@@ -274,7 +273,6 @@ class CameraControllerIT {
     }
 
     @Test
-    @Disabled
     void test8_renameVideo() {
         String wantedFilename = "test.mp4";
         String newName = "new.mp4";

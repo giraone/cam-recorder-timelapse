@@ -14,6 +14,6 @@ public class CustomSerializerBoolean extends StdSerializer<Boolean> {
 
     @Override
     public void serialize(Boolean aBoolean, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
-        jsonGenerator.writeNumber(aBoolean ? 1 : 0);
+        jsonGenerator.writeNumber(aBoolean != null && aBoolean ? 1 : 0);
     }
 }

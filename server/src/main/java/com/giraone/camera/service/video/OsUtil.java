@@ -9,7 +9,7 @@ import java.io.InputStreamReader;
 import java.util.concurrent.TimeUnit;
 
 public class OsUtil {
-    private final static Logger LOGGER = LoggerFactory.getLogger(OsUtil.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(OsUtil.class);
 
     public static OsCommandResult runCommand(String[] command) {
         return runCommand(command, 30);
@@ -26,7 +26,7 @@ public class OsUtil {
                     return new OsCommandResult(-3, "Command " + commandStringFromArray(command) + " timed out after 30 seconds!", null);
                 }
             } catch (InterruptedException interruptedException) {
-                LOGGER.error("Interupt when running {}", commandStringFromArray(command), interruptedException);
+                LOGGER.error("Interrupt when running {}", commandStringFromArray(command), interruptedException);
                 return new OsCommandResult(-2, null, interruptedException);
             }
 
@@ -37,10 +37,7 @@ public class OsUtil {
             return new OsCommandResult(p.exitValue(), null, null);
         } catch (IOException ioe) {
             LOGGER.error("IO Error running {}", commandStringFromArray(command), ioe);
-            if (p != null)
-                return new OsCommandResult(p.exitValue(), null, ioe);
-            else
-                return new OsCommandResult(-1, null, ioe);
+            return new OsCommandResult(-1, null, ioe);
         }
     }
 
@@ -56,7 +53,7 @@ public class OsUtil {
                     return new OsCommandResult(-3, "Command " + commandStringFromArray(command) + " timed out after 30 seconds!", null);
                 }
             } catch (InterruptedException interruptedException) {
-                LOGGER.error("Interupt when running {}", commandStringFromArray(command), interruptedException);
+                LOGGER.error("Interrupt when running {}", commandStringFromArray(command), interruptedException);
                 return new OsCommandResult(-2, null, interruptedException);
             }
 
@@ -75,10 +72,7 @@ public class OsUtil {
             }
         } catch (IOException ioe) {
             LOGGER.error("IO Error running {}", commandStringFromArray(command), ioe);
-            if (p != null)
-                return new OsCommandResult(p.exitValue(), null, ioe);
-            else
-                return new OsCommandResult(-1, null, ioe);
+            return new OsCommandResult(-1, null, ioe);
         }
     }
 

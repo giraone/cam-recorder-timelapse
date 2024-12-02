@@ -357,7 +357,7 @@ public class CameraSettings {
             return this.ordinal();
         }
 
-        public static List<FrameSize> ALL = Arrays.asList(FrameSize.values());
+        public static final List<FrameSize> ALL = Arrays.asList(FrameSize.values());
     }
 
     @JsonDeserialize(using = CustomEnumDeserializerLevel.class)
@@ -371,9 +371,10 @@ public class CameraSettings {
             this.intValue = intValue;
         }
 
-        public static List<Level> ALL = List.of(XS, S, M, L, XL);
+        public static final List<Level> ALL = List.of(XS, S, M, L, XL);
     }
 
+    @SuppressWarnings("java:S115") // Naming
     @JsonDeserialize(using = CustomEnumDeserializerSpecialEffect.class)
     public enum SpecialEffect {
         None, Negative, Grayscale, Red, Green, Blue, Sepia;
@@ -383,9 +384,10 @@ public class CameraSettings {
             return this.ordinal();
         }
 
-        public static List<SpecialEffect> ALL = List.of(None, Negative, Grayscale, Red, Green, Blue, Sepia);
+        public static final List<SpecialEffect> ALL = List.of(None, Negative, Grayscale, Red, Green, Blue, Sepia);
     }
 
+    @SuppressWarnings("java:S115") // Naming
     @JsonDeserialize(using = CustomEnumDeserializerWhiteBalanceMode.class)
     public enum WhiteBalanceMode {
         Auto, Sunny, Cloudy, Office, Home;
@@ -395,6 +397,6 @@ public class CameraSettings {
             return this.ordinal();
         }
 
-        public static List<WhiteBalanceMode> ALL = List.of(Auto, Sunny, Cloudy, Office, Home);
+        public static final List<WhiteBalanceMode> ALL = List.of(Auto, Sunny, Cloudy, Office, Home);
     }
 }
