@@ -722,6 +722,9 @@ ImageCanvas.prototype.loadImage = function (url, fit, text) {
         xThis._onLoadNewFile(newImage, fit);
         newImage.onload = null;
     };
+    // Prevents "The operation is insecure."
+    // See https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_enabled_image
+    newImage.crossOrigin = 'http://thinkpad-hans:9001'; //
     newImage.src = url;
 };
 

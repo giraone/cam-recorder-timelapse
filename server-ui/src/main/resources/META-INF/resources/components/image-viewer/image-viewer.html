@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>ImageViewer</title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<script type="text/javascript" src="js/browser-1.1.js" ></script>
-<script type="text/javascript" src="js/imagecanvas-1.3.js"></script>
-<style type="text/css" media="screen">
+  <title>ImageViewer</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <script type="text/javascript" src="js/browser-1.1.js"></script>
+  <script type="text/javascript" src="js/imagecanvas-1.4.js"></script>
+  <style type="text/css" media="screen">
 body            { margin: 0px; padding: 0px; background-color: #C2C2D6; font-size: 1px; }
 #mainTable      { table-layout: fixed; border: 0px none; width: 99%; height: 44px; }
 #iconTable      { table-layout: fixed; border: 0px none; height: 44px; }
@@ -19,51 +19,70 @@ td.iconRuler    { padding: 0px; border: 0px none; width: 70px; height: 8px; text
 canvas          { margin: 0px; display: block; background: #000000; border: 0px none }
 .hide           { display: none; }
 .show           { display: inline; }
-</style>
+  </style>
 </head>
 
 <body onload="onloadFunction()">
 <table id="mainTable" class="show">
-<tr>
+  <tr>
     <td id="menuCell">
-        <table id="iconTable">
-            <tr>
-                <td class="icon"><img src="images/zoom_in.gif" onMouseOut="R.restoreImage(0);" id="x_menu_0" onMouseOver="R.swapImage(0);" onclick="imageCanvas1.zoomRelative(+1)" /></td>
-                <td class="icon"><img src="images/zoom_normal.gif" title="Viewer_tooltip_zoomn" id="x_menu_1" onMouseOut="R.restoreImage(1);" onMouseOver="R.swapImage(1);" onclick="imageCanvas1.scaleAbsolute(1.0)" /></td>
-                <td class="icon"><img src="images/zoom_out.gif" title="Viewer_tooltip_zoomout" id="x_menu_2" onMouseOut="R.restoreImage(2);" onMouseOver="R.swapImage(2);" onclick="imageCanvas1.zoomRelative(-1)" /></td>
-            </tr>
-            <tr>
-                <td class="iconRuler" colspan="3"><img id="zoom_ruler" src="images/ruler/r0.gif" /></td>
-            </tr>
-        </table>
+      <table id="iconTable">
+        <tr>
+          <td class="icon"><img src="images/zoom_in.gif" title="Zoom In" onMouseOut="R.restoreImage(0);" id="x_menu_0"
+                                onMouseOver="R.swapImage(0);" onclick="imageCanvas1.zoomRelative(+1)"/></td>
+          <td class="icon"><img src="images/zoom_normal.gif" title="Zoom Normal" id="x_menu_1" onMouseOut="R.restoreImage(1);"
+                                onMouseOver="R.swapImage(1);" onclick="imageCanvas1.scaleAbsolute(1.0)"/></td>
+          <td class="icon"><img src="images/zoom_out.gif" title="Zoom Out" id="x_menu_2" onMouseOut="R.restoreImage(2);"
+                                onMouseOver="R.swapImage(2);" onclick="imageCanvas1.zoomRelative(-1)"/></td>
+          <td class="icon"><img src="images/bright_plus.gif" title="Increase Brightness" id="x_menu_3" onMouseOut="R.restoreImage(3);"
+                                onMouseOver="R.swapImage(3);" onclick="imageCanvas1.brightnessRelative(+1)"/></td>
+          <td class="icon"><img src="images/bright_normal.gif" title="Reset Brightness" id="x_menu_4" onMouseOut="R.restoreImage(4);"
+                                onMouseOver="R.swapImage(4);" onclick="imageCanvas1.brightnessAbsolute(0)"/></td>
+          <td class="icon"><img src="images/bright_minus.gif" title="Decrease Brightness" id="x_menu_5" onMouseOut="R.restoreImage(5);"
+                                onMouseOver="R.swapImage(5);" onclick="imageCanvas1.brightnessRelative(-1)"/></td>
+          <td class="icon"><img src="images/contrast_plus.gif" title="Increase Contrast" id="x_menu_6" onMouseOut="R.restoreImage(6);"
+                                onMouseOver="R.swapImage(6);" onclick="imageCanvas1.contrastRelative(+1)"/></td>
+          <td class="icon"><img src="images/contrast_normal.gif" title="Reset Contrast" id="x_menu_7" onMouseOut="R.restoreImage(7);"
+                                onMouseOver="R.swapImage(7);" onclick="imageCanvas1.contrastAbsolute(1)"/></td>
+          <td class="icon"><img src="images/contrast_minus.gif" title="Decrease Contrast" id="x_menu_8" onMouseOut="R.restoreImage(8);"
+                                onMouseOver="R.swapImage(8);" onclick="imageCanvas1.contrastRelative(-1)"/></td>
+          <td class="iconSep"></td>
+          <td class="icon"><img src="images/process_original.ro.gif" title="Normal Color" id="img_original"
+                                onclick="processImage('original')"/></td>
+          <td class="icon"><img src="images/process_grayscale.gif" title="Grayscale" id="img_grayscale"
+                                onclick="processImage('grayscale');"/></td>
+          </td>
+          <td class="iconSep"></td>
+          <td class="icon"><img src="images/fullscreen.gif" title="Hide Navigation (Leave with ESC)" onclick="showFullScreen()"/></td>
+        </tr>
+        <tr>
+          <td class="iconRuler" colspan="3"><img id="zoom_ruler" src="images/ruler/r0.gif"/></td>
+          <td class="iconRuler" colspan="3"><img id="bright_ruler" src="images/ruler/r0.gif"/></td>
+          <td class="iconRuler" colspan="3"><img id="contrast_ruler" src="images/ruler/r0.gif"/></td>
+        </tr>
+      </table>
     </td>
-    <td id="titleCell"><div id="titleDiv">No image loaded!</div></td>
-</tr>
+    <td id="titleCell">
+      <div id="titleDiv">No image loaded!</div>
+    </td>
+  </tr>
 </table>
 <canvas id="imageCanvas1"></canvas>
 <script type="text/javascript">
-var R = new Rollover();
+const R = new Rollover();
 // Size of header, used to calculate canvas height.
 // Windows: Chrome, MSIE, Safari5 needs 52,  Firefox 21 needs 54
 // Android: Chrome, Android needs 54, Firefox needs 52
-var headerWidth = 54;
-var basePath = "";
+const headerWidth = 54;
+const basePath = "";
 
 if (!window.console) console = {log: function() {}};
-function log(msg)
-{
+function log(msg){
 	console.log(msg);
 };
 
-function logx(msg)
-{
-    var l = document.getElementById("log");
-    l.value = msg + "\r\n" + l.value;
-};
-
-function valueToRulerName(floatValue)
-{
-	var value = Math.ceil(floatValue); 
+function valueToRulerName(floatValue){
+	const value = Math.ceil(floatValue);
 	if (value < 0)
     {
 		if (value > -10)
@@ -84,58 +103,128 @@ function valueToRulerName(floatValue)
 	}
 };
 
-function zoomCallback(floatValue)
-{	
-	var rulerValue = (floatValue - 1.0) * 8.0;
-	var r = document.getElementById("zoom_ruler");
+function zoomCallback(floatValue){
+	const rulerValue = (floatValue - 1.0) * 8.0;
+	const r = document.getElementById("zoom_ruler");
 	r.src = basePath + "images/ruler/" + valueToRulerName(rulerValue) + ".gif";
 };
 
-function loadUrl(url, text)
-{
+function brightCallback(floatValue){
+	//log("brightCallback " + floatValue);
+	const r = document.getElementById("bright_ruler");
+	r.src = basePath + "images/ruler/" + valueToRulerName(floatValue) + ".gif";
+};
+
+function contrastCallback(floatValue){
+	//log("contrastCallback " + floatValue);
+	const r = document.getElementById("contrast_ruler");
+	r.src = basePath + "images/ruler/" + valueToRulerName(floatValue) + ".gif";
+};
+
+function doubleClickCallback(){
+    const c = document.getElementById("mainTable").className;
+    if (c == "show")
+        showFullScreen();
+    else
+        showNormalView();
+};
+
+function processImage(mode){
+	if (mode == "grayscale")	{
+		imageCanvas1.grayscale();
+		document.getElementById("img_original").src = basePath + "images/process_original.gif";
+		document.getElementById("img_grayscale").src = basePath + "images/process_grayscale.ro.gif";
+		document.getElementById("img_redfree").src = basePath + "images/process_redfree.gif";
+	}
+	else if (mode == "redfree")	{
+		imageCanvas1.redfree();
+		document.getElementById("img_original").src = basePath + "images/process_original.gif";
+		document.getElementById("img_grayscale").src = basePath + "images/process_grayscale.gif";
+		document.getElementById("img_redfree").src = basePath + "images/process_redfree.ro.gif";
+	}	else	{
+		imageCanvas1.original();
+		document.getElementById("img_original").src = basePath + "images/process_original.ro.gif";
+		document.getElementById("img_grayscale").src = basePath + "images/process_grayscale.gif";
+		document.getElementById("img_redfree").src = basePath + "images/process_redfree.gif";
+	}
+};
+
+function showFullScreen(){
+	document.getElementById("mainTable").className = "hide";
+	const c = document.getElementById("imageCanvas1");
+	c.width = DHTML.getDocumentWidth();
+	c.height = DHTML.getDocumentHeight();
+	imageCanvas1.scaleToContainer();
+}
+
+function showNormalView(){
+	document.getElementById("mainTable").className = "show";
+	const c = document.getElementById("imageCanvas1");
+	c.width = DHTML.getDocumentWidth();
+	c.height = DHTML.getDocumentHeight() - (2 * headerWidth);
+	imageCanvas1.scaleToContainer();
+}
+
+function loadUrl(url, text){
 	imageCanvas1.options.msgLoadStart = 'Image loading. Please wait...';
 	imageCanvas1.options.msgLoaded = 'Image loaded.';
 	imageCanvas1.loadImage(url, true, 'Image is loaded. Please wait...');
   DHTML.setHtmlContent(DHTML.getElementById("titleDiv"), text);
 }
 
-var imageCanvasInitOnce = new ImageCanvasInitOnce(document);
+const imageCanvasInitOnce = new ImageCanvasInitOnce(document);
+//imageCanvasInitOnce.disableDefaultEventsOnDocument(document);
 imageCanvasInitOnce.disableMouseWheelOnDocument(document);
 
-var imageCanvas1 = null;
+let imageCanvas1 = null;
 
-function onloadFunction()
-{
+function onloadFunction(){
 	R.loadIcons(
 		basePath + "images/zoom_in.gif",
 		basePath + "images/zoom_normal.gif",
 		basePath + "images/zoom_out.gif",
+		basePath + "images/bright_plus.gif",
+		basePath + "images/bright_normal.gif",
+		basePath + "images/bright_minus.gif",
+		basePath + "images/contrast_plus.gif",
+		basePath + "images/contrast_normal.gif",
+		basePath + "images/contrast_minus.gif"
 	);
 		
-	var c = document.getElementById("imageCanvas1");
+	const c = document.getElementById("imageCanvas1");
 	c.width = DHTML.getDocumentWidth();
 	c.height = DHTML.getDocumentHeight() - headerWidth;
 	
 	imageCanvas1 = new ImageCanvas(document, c, log);
 	imageCanvas1.zoomCallback = zoomCallback;
+	imageCanvas1.brightCallback = brightCallback;
+	imageCanvas1.contrastCallback = contrastCallback;
+  imageCanvas1.doubleClickCallback = doubleClickCallback;
 
-	var windowWidth = DHTML.getWindowWidth();
-	var windowHeight = DHTML.getWindowHeight();
+	let windowWidth = DHTML.getWindowWidth();
+	let windowHeight = DHTML.getWindowHeight();
 
 	window.onresize = function(e) {
-		var windowWidth2 = DHTML.getWindowWidth();
-		var windowHeight2 = DHTML.getWindowHeight();
-		var dw = windowWidth2 - windowWidth;
-		var dh = windowHeight2 - windowHeight;
+		const windowWidth2 = DHTML.getWindowWidth();
+		const windowHeight2 = DHTML.getWindowHeight();
+		const dw = windowWidth2 - windowWidth;
+		const dh = windowHeight2 - windowHeight;
 		c.width += dw;
 		c.height += dh;
 		windowWidth = windowWidth2;
 		windowHeight = windowHeight2;
 		imageCanvas1.scaleToContainer();
 	};
-
+	
+	document.body.addEventListener('keydown', function(e)	{
+	    if (e.which == 27 /* ESC */)
+	    {
+	    	showNormalView();
+	    }
+	    return false;
+	}, false);
 }
-</script>
 
+</script>
 </body>
 </html>
