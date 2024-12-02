@@ -4,7 +4,7 @@ if (!window.Float32Array)
     Float32Array = Array;
 }
 
-var ImageCanvasPoint = function()
+const ImageCanvasPoint = function()
 {
     this.x = 0;
     this.y = 0;
@@ -16,7 +16,7 @@ ImageCanvasPoint.prototype.setXY = function(x,y)
     this.y = y;
 };
 
-var ImageCanvasOptions = function()
+const ImageCanvasOptions = function()
 {
     // How fast is mouse panning done
     this.mousePanSpeed = 0.5;
@@ -55,7 +55,7 @@ var ImageCanvasOptions = function()
     this.msgLoaded = "Loaded {0}";
 };
 
-var FilterDefinition = function(filter, filterName, arg1, arg2, arg3)
+const FilterDefinition = function(filter, filterName, arg1, arg2, arg3)
 {
     this.filter = filter;
     this.filterName = filterName;
@@ -64,7 +64,7 @@ var FilterDefinition = function(filter, filterName, arg1, arg2, arg3)
     this.arg3 = arg3;
 };
 
-var Filters = function(document, imageCanvas)
+const Filters = function(document, imageCanvas)
 {
     this.currentBrightness = 0.0;
     this.currentContrast = 1.0;
@@ -74,7 +74,7 @@ var Filters = function(document, imageCanvas)
 // @returns new empty ImageData object
 Filters.prototype._createImageData = function(w, h)
 {
-    var tmpCtx = document.createElement('canvas').getContext('2d');
+    const tmpCtx = document.createElement('canvas').getContext('2d');
     /*
      if (G_vmlCanvasManager != undefined)
      G_vmlCanvasManager.initElement(tmpCtx.canvas);
@@ -84,15 +84,15 @@ Filters.prototype._createImageData = function(w, h)
 
 Filters.prototype._getPixels = function()
 {
-    var ctx = this.imageCanvas.shadowCtx;
+    const ctx = this.imageCanvas.shadowCtx;
     return ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
 };
 
 // @returns an ImageData object
 Filters.prototype._filterImage = function(filter, var_args)
 {
-    var args = [this._getPixels()];
-    for (var i = 2; i < arguments.length; i++)
+    const args = [this._getPixels()];
+    for (let i = 2; i < arguments.length; i++)
     {
         args.push(arguments[i]);
     }
@@ -101,14 +101,14 @@ Filters.prototype._filterImage = function(filter, var_args)
 
 Filters.prototype.grayscale = function(pixels)
 {
-    var d = pixels.data;
-    for (var i = 0; i < d.length; i += 4)
+    const d = pixels.data;
+    for (let i = 0; i < d.length; i += 4)
     {
-        var r = d[i];
-        var g = d[i + 1];
-        var b = d[i + 2];
+        const r = d[i];
+        const g = d[i + 1];
+        const b = d[i + 2];
         // CIE luminance for the RGB
-        var v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        const v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
         d[i] = d[i + 1] = d[i + 2] = v;
     }
     return pixels;
@@ -116,14 +116,14 @@ Filters.prototype.grayscale = function(pixels)
 
 Filters.prototype.redfree = function(pixels)
 {
-    var d = pixels.data;
-    for (var i = 0; i < d.length; i += 4)
+    const d = pixels.data;
+    for (let i = 0; i < d.length; i += 4)
     {
-        var r = 0;
-        var g = d[i + 1];
-        var b = d[i + 2];
+        const r = 0;
+        const g = d[i + 1];
+        const b = d[i + 2];
         // CIE luminance for the RGB
-        var v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        const v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
         d[i] = d[i + 1] = d[i + 2] = v;
     }
     return pixels;
@@ -131,8 +131,8 @@ Filters.prototype.redfree = function(pixels)
 
 Filters.prototype.brightness = function(pixels, adjustment)
 {
-    var d = pixels.data;
-    var i;
+    const d = pixels.data;
+    let i;
     if (adjustment > 0)
     {
         for (i = 0; i < d.length; i++)
@@ -160,8 +160,8 @@ Filters.prototype.brightness = function(pixels, adjustment)
 
 Filters.prototype.contrast = function(pixels, adjustment)
 {
-    var d = pixels.data;
-    var i;
+    const d = pixels.data;
+    let i;
     if (adjustment > 0)
     {
         for (i = 0; i < d.length; i++)
@@ -189,34 +189,34 @@ Filters.prototype.contrast = function(pixels, adjustment)
 
 Filters.prototype.convolute = function(pixels, weights, opaque)
 {
-    var side = Math.round(Math.sqrt(weights.length));
-    var halfSide = Math.floor(side / 2);
+    const side = Math.round(Math.sqrt(weights.length));
+    const halfSide = Math.floor(side / 2);
 
-    var src = pixels.data;
-    var sw = pixels.width;
-    var sh = pixels.height;
+    const src = pixels.data;
+    const sw = pixels.width;
+    const sh = pixels.height;
 
-    var output = this._createImageData(sw, sh);
-    var dst = output.data;
+    const output = this._createImageData(sw, sh);
+    const dst = output.data;
 
-    var alphaFac = opaque ? 1 : 0;
+    const alphaFac = opaque ? 1 : 0;
 
-    for (var y = 0; y < sh; y++)
+    for (let y = 0; y < sh; y++)
     {
-        for (var x = 0; x < sw; x++)
+        for (let x = 0; x < sw; x++)
         {
-            var sy = y;
-            var sx = x;
-            var dstOff = (y * sw + x) * 4;
-            var r = 0, g = 0, b = 0, a = 0;
-            for (var cy = 0; cy < side; cy++)
+            const sy = y;
+            const sx = x;
+            const dstOff = (y * sw + x) * 4;
+            const r = 0, g = 0, b = 0, a = 0;
+            for (let cy = 0; cy < side; cy++)
             {
-                for (var cx = 0; cx < side; cx++)
+                for (const cx = 0; cx < side; cx++)
                 {
-                    var scy = Math.min(sh - 1, Math.max(0, sy + cy - halfSide));
-                    var scx = Math.min(sw - 1, Math.max(0, sx + cx - halfSide));
-                    var srcOff = (scy * sw + scx) * 4;
-                    var wt = weights[cy * side + cx];
+                    const scy = Math.min(sh - 1, Math.max(0, sy + cy - halfSide));
+                    const scx = Math.min(sw - 1, Math.max(0, sx + cx - halfSide));
+                    const srcOff = (scy * sw + scx) * 4;
+                    const wt = weights[cy * side + cx];
                     r += src[srcOff] * wt;
                     g += src[srcOff + 1] * wt;
                     b += src[srcOff + 2] * wt;
@@ -234,36 +234,36 @@ Filters.prototype.convolute = function(pixels, weights, opaque)
 
 Filters.prototype.convoluteFloat32 = function(pixels, weights, opaque)
 {
-    var side = Math.round(Math.sqrt(weights.length));
-    var halfSide = Math.floor(side / 2);
+    const side = Math.round(Math.sqrt(weights.length));
+    const halfSide = Math.floor(side / 2);
 
-    var src = pixels.data;
-    var sw = pixels.width;
-    var sh = pixels.height;
+    const src = pixels.data;
+    const sw = pixels.width;
+    const sh = pixels.height;
 
-    var output = {
+    const output = {
         width:sw, height:sh, data:new Float32Array(sw * sh * 4)
     };
-    var dst = output.data;
+    const dst = output.data;
 
-    var alphaFac = opaque ? 1 : 0;
+    const alphaFac = opaque ? 1 : 0;
 
-    for (var y = 0; y < sh; y++)
+    for (let y = 0; y < sh; y++)
     {
-        for (var x = 0; x < sw; x++)
+        for (let x = 0; x < sw; x++)
         {
-            var sy = y;
-            var sx = x;
-            var dstOff = (y * sw + x) * 4;
-            var r = 0, g = 0, b = 0, a = 0;
-            for (var cy = 0; cy < side; cy++)
+            const sy = y;
+            const sx = x;
+            const dstOff = (y * sw + x) * 4;
+            const r = 0, g = 0, b = 0, a = 0;
+            for (let cy = 0; cy < side; cy++)
             {
-                for (var cx = 0; cx < side; cx++)
+                for (let cx = 0; cx < side; cx++)
                 {
-                    var scy = Math.min(sh - 1, Math.max(0, sy + cy - halfSide));
-                    var scx = Math.min(sw - 1, Math.max(0, sx + cx - halfSide));
-                    var srcOff = (scy * sw + scx) * 4;
-                    var wt = weights[cy * side + cx];
+                    const scy = Math.min(sh - 1, Math.max(0, sy + cy - halfSide));
+                    const scx = Math.min(sw - 1, Math.max(0, sx + cx - halfSide));
+                    const srcOff = (scy * sw + scx) * 4;
+                    const wt = weights[cy * side + cx];
                     r += src[srcOff] * wt;
                     g += src[srcOff + 1] * wt;
                     b += src[srcOff + 2] * wt;
@@ -283,13 +283,13 @@ Filters.prototype.convoluteFloat32 = function(pixels, weights, opaque)
 //----------------------------------------------------------------------------------------------------------------------
 //----------------------------------------------------------------------------------------------------------------------
 
-var ImageCanvasInitOnce = function()
+const ImageCanvasInitOnce = function()
 {
 };
 
 ImageCanvasInitOnce.prototype.disableDefaultEventsOnDocument = function(document)
 {
-    var preventDefaultTouchBehavior = function(e) {
+    const preventDefaultTouchBehavior = function(e) {
         e.preventDefault();
         return false;
     };
@@ -303,7 +303,7 @@ ImageCanvasInitOnce.prototype.disableDefaultEventsOnDocument = function(document
 
 ImageCanvasInitOnce.prototype.disableMouseWheelOnDocument = function(document)
 {
-    var cancelScroll = function(e) {
+    const cancelScroll = function(e) {
         e.preventDefault();
     };
 
@@ -321,7 +321,7 @@ ImageCanvasInitOnce.prototype.disableMouseWheelOnDocument = function(document)
 //----------------------------------------------------------------------------------------------------------------------
 //----------------------------------------------------------------------------------------------------------------------
 
-var ImageCanvas = function(document, canvas, logFunction)
+const ImageCanvas = function(document, canvas, logFunction)
 {
     this.options = new ImageCanvasOptions();
     this.ctx = canvas.getContext('2d');
@@ -360,7 +360,7 @@ var ImageCanvas = function(document, canvas, logFunction)
     // Touch and Mouse Events
     //----------------------------------------------------------------------------
 
-    var xThis = this;
+    let xThis = this;
 
     if ('ontouchstart' in window)
     {
@@ -401,7 +401,7 @@ var ImageCanvas = function(document, canvas, logFunction)
         {
             return xThis.onmouseup(e);
         };
-        var MouseScroll = function (e)
+        const MouseScroll = function (e)
         {
             return xThis.onmousewheel(e);
         };
@@ -460,7 +460,7 @@ ImageCanvas.prototype.saveX = function()
 
 ImageCanvas.prototype.restoreX = function()
 {
-    var saved = this.savedTransforms.pop();
+    const saved = this.savedTransforms.pop();
     if (saved != null)
     {
         this.xform = saved;
@@ -489,7 +489,7 @@ ImageCanvas.prototype.translateX = function(dx,dy)
 
 ImageCanvas.prototype.transformX = function(a,b,c,d,e,f)
 {
-    var m2 = this.svg.createSVGMatrix();
+    const m2 = this.svg.createSVGMatrix();
     m2.a=a; m2.b=b; m2.c=c; m2.d=d; m2.e=e; m2.f=f;
     this.xform = this.xform.multiply(m2);
     this.currentScale = this.currentScale * a;
@@ -599,9 +599,9 @@ ImageCanvas.prototype._setInfoText = function(text)
 
 ImageCanvas.prototype._drawBoundary = function()
 {
-    var p0 = this.transformedPointX2(this.options.boundarySize,this.options.boundarySize);
-    var p1 = this.transformedPointX2(-this.options.boundarySize,-this.options.boundarySize);
-    var p2 = this.transformedPointX2(this.currentImage.width+this.options.boundarySize, this.currentImage.height+this.options.boundarySize);
+    const p0 = this.transformedPointX2(this.options.boundarySize,this.options.boundarySize);
+    const p1 = this.transformedPointX2(-this.options.boundarySize,-this.options.boundarySize);
+    const p2 = this.transformedPointX2(this.currentImage.width+this.options.boundarySize, this.currentImage.height+this.options.boundarySize);
 
     this._log(Math.abs(p1.x - p0.x) + " " + p1.x + " " + p1.y + " " + (p2.x-p1.x) + " " + (p2.y-p1.y));
 
@@ -613,7 +613,7 @@ ImageCanvas.prototype._drawBoundary = function()
 ImageCanvas.prototype._runFilter = function(filter, filterName, store, redraw, arg1, arg2, arg3)
 {
     //this._log("ImageCanvas._runFilter filterName=" + filterName + " store=" + store + " redraw=" + redraw + " args=" + arg1 + " " + arg2 + " " + arg3);
-    var imageData = this.filters._filterImage(filter, arg1, arg2, arg3);
+    const imageData = this.filters._filterImage(filter, arg1, arg2, arg3);
     this.shadowCtx.putImageData(imageData, 0, 0);
     if (redraw)
     {
@@ -648,13 +648,13 @@ ImageCanvas.prototype._resetCurrent = function()
 ImageCanvas.prototype._setScaleToFit = function()
 {
     if (this.currentImage == null) return;
-    var newScale = 1.0;
-    var iWidth = this.currentImage.width;
-    var iHeight = this.currentImage.height;
-    var cWidth = this.ctx.canvas.width;
-    var cHeight = this.ctx.canvas.height;
-    var xScale = cWidth * 1.0 / iWidth;
-    var yScale = cHeight * 1.0 / iHeight;
+    const newScale = 1.0;
+    const iWidth = this.currentImage.width;
+    const iHeight = this.currentImage.height;
+    const cWidth = this.ctx.canvas.width;
+    const cHeight = this.ctx.canvas.height;
+    const xScale = cWidth * 1.0 / iWidth;
+    const yScale = cHeight * 1.0 / iHeight;
     if (xScale > yScale)
     {
         newScale = yScale;
@@ -674,7 +674,7 @@ ImageCanvas.prototype._onmove = function(x,y,speed)
 {
     if (this.panStartPoint != null)
     {
-        var pt = this.transformedPointX(this.lastX,this.lastY);
+        const pt = this.transformedPointX(this.lastX,this.lastY);
         this.translateX((pt.x-this.panStartPoint.x) * speed, (pt.y-this.panStartPoint.y) * speed);
         this._redrawFromShadow();
     }
@@ -701,10 +701,10 @@ ImageCanvas.prototype.onmouseup = function(e)
 {
     this.panStartPoint = null;
 
-    var ms = new Date().getTime();
+    const ms = new Date().getTime();
     if (!this.isPanningStarted && this.lastClickEndTime != null)
     {
-        var diff = ms - this.lastClickEndTime;
+        const diff = ms - this.lastClickEndTime;
         if (diff < this.options.doubleClickMaxLimitInMilliSeconds)
         {
             if (diff > this.options.doubleClickMinLimitInMilliSeconds)
@@ -734,7 +734,7 @@ ImageCanvas.prototype.onmouseup = function(e)
 
 ImageCanvas.prototype.onmousewheel = function(e)
 {
-    var delta = e.wheelDelta ? e.wheelDelta/40 : e.detail ? -e.detail : 0;
+    const delta = e.wheelDelta ? e.wheelDelta/40 : e.detail ? -e.detail : 0;
     if (delta)
     {
         this.zoomRelative(delta * this.options.mouseWheelSpeed);
@@ -752,8 +752,8 @@ ImageCanvas.prototype.ontouchstart = function(e)
     this.lastY = e.targetTouches[0].pageY - this.ctx.canvas.offsetTop;
     if (e.targetTouches.length > 1)
     {
-        var lastX2 = e.targetTouches[1].pageX - this.ctx.canvas.offsetLeft;
-        var lastY2 = e.targetTouches[1].pageY - this.ctx.canvas.offsetTop;
+        const lastX2 = e.targetTouches[1].pageX - this.ctx.canvas.offsetLeft;
+        const lastY2 = e.targetTouches[1].pageY - this.ctx.canvas.offsetTop;
         this.lastTwoFingerDistance = Math.sqrt((lastX2 - this.lastX) * (lastX2 - this.lastX) + (lastY2 - this.lastY) * (lastY2 - this.lastY));
     }
     else
@@ -772,9 +772,9 @@ ImageCanvas.prototype.ontouchmove = function(e)
 
     if (e.targetTouches.length > 1)
     {
-        var lastX2 = e.targetTouches[1].pageX - this.ctx.canvas.offsetLeft;
-        var lastY2 = e.targetTouches[1].pageY - this.ctx.canvas.offsetTop;
-        var diffXY2 = Math.sqrt((lastX2 - this.lastX) * (lastX2 - this.lastX) + (lastY2 - this.lastY) * (lastY2 - this.lastY));
+        const lastX2 = e.targetTouches[1].pageX - this.ctx.canvas.offsetLeft;
+        const lastY2 = e.targetTouches[1].pageY - this.ctx.canvas.offsetTop;
+        const diffXY2 = Math.sqrt((lastX2 - this.lastX) * (lastX2 - this.lastX) + (lastY2 - this.lastY) * (lastY2 - this.lastY));
 
         if (this.lastTwoFingerDistance != null)
         {
@@ -796,10 +796,10 @@ ImageCanvas.prototype.ontouchmove = function(e)
 
 ImageCanvas.prototype.ontouchend = function(e)
 {
-    var ms = new Date().getTime();
+    const ms = new Date().getTime();
     if (!this.isPanningStarted && this.lastClickEndTime != null)
     {
-        var diff = ms - this.lastClickEndTime;
+        const diff = ms - this.lastClickEndTime;
         if (diff < this.options.doubleClickMaxLimitInMilliSeconds)
         {
             if (diff > this.options.doubleClickMinLimitInMilliSeconds)
@@ -837,8 +837,8 @@ ImageCanvas.prototype.ontouchend = function(e)
 
 ImageCanvas.prototype.clearImage = function()
 {
-    var p1 = this.transformedPointX(0,0);
-    var p2 = this.transformedPointX(this.ctx.canvas.width, this.ctx.canvas.height);
+    const p1 = this.transformedPointX(0,0);
+    const p2 = this.transformedPointX(this.ctx.canvas.width, this.ctx.canvas.height);
     // faster than fillRect with black
     this.ctx.clearRect(p1.x,p1.y,p2.x-p1.x,p2.y-p1.y);
 };
@@ -854,7 +854,7 @@ ImageCanvas.prototype.scaleToContainer = function()
 ImageCanvas.prototype.loadImage = function(url, fit, text)
 {
     //this._log("loadImage " + filename);
-    var newImage = new Image();
+    const newImage = new Image();
 
     this._resetCurrent();
     this._resetView();
@@ -865,7 +865,7 @@ ImageCanvas.prototype.loadImage = function(url, fit, text)
     else
         this._setInfoText(this.options.msgLoadStart.replace(/\{0\}/, url));
 
-    var xThis = this;
+    const xThis = this;
     newImage.onload = function()
     {
         xThis._onLoadNewFile(newImage, fit);
@@ -876,7 +876,7 @@ ImageCanvas.prototype.loadImage = function(url, fit, text)
 
 ImageCanvas.prototype.showImageInfo = function()
 {
-    var s = "\r\n";
+    let s = "\r\n";
     if (this.currentImage !== null)
     {
         s += "\r\nImage     : " + this.currentImage.src;
@@ -906,7 +906,7 @@ ImageCanvas.prototype.scaleAbsolute = function(newScale)
 ImageCanvas.prototype.scaleRelative = function(powValue)
 {
     //this._log("ImageCanvas.scaleRelative " + powValue);
-    var factor = Math.pow(this.options.scaleFactor, powValue);
+    const factor = Math.pow(this.options.scaleFactor, powValue);
     this.scaleX(factor,factor);
     this._redrawFromShadow();
     this.zoomCallback(this.currentScale);
@@ -915,11 +915,17 @@ ImageCanvas.prototype.scaleRelative = function(powValue)
 ImageCanvas.prototype.zoomAbsolute = function(newScale)
 {
     //this._log("ImageCanvas.zoomAbsolute " + newScale);
-    var pt = this.transformedPointX(this.lastX, this.lastY);
-    this.translateX(pt.x,pt.y);
-    this.scaleX(newScale,newScale);
+   
+    if (newScale === 1.0) {
+      this.scaleX(newScale,newScale);
+      this.translateX(-pt.x,-pt.y);
+    } else {
+      letpt = this.transformedPointX(this.lastX, this.lastY);
+      this.translateX(pt.x,pt.y);
+      this.scaleX(newScale,newScale);
+      this.translateX(-pt.x,-pt.y);
+    }
     this.currentScale = newScale;
-    this.translateX(-pt.x,-pt.y);
     this._redrawFromShadow();
     this.zoomCallback(this.currentScale);
 };
@@ -927,9 +933,9 @@ ImageCanvas.prototype.zoomAbsolute = function(newScale)
 ImageCanvas.prototype.zoomRelative = function(powValue)
 {
     //this._log("ImageCanvas.zoomRelative " + powValue);
-    var pt = this.transformedPointX(this.lastX, this.lastY);
+    const pt = this.transformedPointX(this.lastX, this.lastY);
     this.translateX(pt.x,pt.y);
-    var factor = Math.pow(this.options.scaleFactor, powValue);
+    const factor = Math.pow(this.options.scaleFactor, powValue);
     this.scaleX(factor,factor);
     this.translateX(-pt.x,-pt.y);
     this._redrawFromShadow();
@@ -959,7 +965,7 @@ ImageCanvas.prototype.brightnessAbsolute = function(newValue)
     //this._log("ImageCanvas.brightnessAbsolute " + newValue);
     this._reloadCurrentImage();
     this._applyCurrentFilter(false);
-    var thisX = this;
+    const thisX = this;
     this._runFilter(function (px)
     {
         return thisX.filters.brightness(px, newValue);
@@ -970,8 +976,8 @@ ImageCanvas.prototype.brightnessAbsolute = function(newValue)
 
 ImageCanvas.prototype.brightnessRelative = function(value)
 {
-    var delta;
-    var newValue;
+    let delta;
+    let newValue;
     if (value > 0)
     {
         if (this.filters.currentBrightness >= 0)
@@ -1002,7 +1008,7 @@ ImageCanvas.prototype.brightnessRelative = function(value)
             delta = newValue = this.filters.currentBrightness + this.options.brightnessFactor * value;
         }
     }
-    var thisX = this;
+    const thisX = this;
     this._runFilter(function (px)
     {
         return thisX.filters.brightness(px, delta);
@@ -1017,7 +1023,7 @@ ImageCanvas.prototype.contrastAbsolute = function(newValue)
     //this._log("ImageCanvas.contrastAbsolute " + newValue);
     this._reloadCurrentImage();
     this._applyCurrentFilter(false);
-    var thisX = this;
+    const thisX = this;
     this._runFilter(function (px)
     {
         return thisX.filters.contrast(px, newValue);
@@ -1028,8 +1034,8 @@ ImageCanvas.prototype.contrastAbsolute = function(newValue)
 
 ImageCanvas.prototype.contrastRelative = function(powValue)
 {
-    var factor;
-    var newValue;
+    let factor;
+    let newValue;
     if (powValue > 0)
     {
         if (this.filters.currentContrast >= 1.0)
@@ -1064,7 +1070,7 @@ ImageCanvas.prototype.contrastRelative = function(powValue)
             //this._log("ImageCanvas.contrastRelative d " + powValue + " " + newValue);
         }
     }
-    var thisX = this;
+    const thisX = this;
     this._runFilter(function (px)
     {
         return thisX.filters.contrast(px, factor);
@@ -1077,7 +1083,7 @@ ImageCanvas.prototype.contrastRelative = function(powValue)
 ImageCanvas.prototype.sharpen = function(value)
 {
     //this._log("ImageCanvas.sharpen " + value);
-    var thisX = this;
+    const thisX = this;
     this._runFilter(function (px)
     {
         return thisX.filters.convolute(px,
@@ -1115,24 +1121,24 @@ ImageCanvas.prototype.sobel = function()
 {
     this._log("ImageCanvas.sobel");
     this._reloadCurrentImage();
-    var thisX = this;
+    const thisX = this;
     this._runFilter(function(px)
     {
         px = thisX.filters.grayscale(px);
-        var vertical = thisX.filters.convoluteFloat32(px,
+        const vertical = thisX.filters.convoluteFloat32(px,
             [-1, -2, -1,
                 0, 0, 0,
                 1, 2, 1], /* opaque */ false);
-        var horizontal = thisX.filters.convoluteFloat32(px,
+        const horizontal = thisX.filters.convoluteFloat32(px,
             [-1, 0, 1,
                 -2, 0, 2,
                 -1, 0, 1], /* opaque */ false);
-        var imageData = thisX.filters._createImageData(vertical.width, vertical.height);
-        for (var i = 0; i < imageData.data.length; i += 4)
+        const imageData = thisX.filters._createImageData(vertical.width, vertical.height);
+        for (let i = 0; i < imageData.data.length; i += 4)
         {
-            var v = Math.abs(vertical.data[i]);
+            const v = Math.abs(vertical.data[i]);
             imageData.data[i] = v;
-            var h = Math.abs(horizontal.data[i]);
+            const h = Math.abs(horizontal.data[i]);
             imageData.data[i + 1] = h;
             imageData.data[i + 2] = (v + h) / 4;
             imageData.data[i + 3] = 255;
@@ -1145,7 +1151,7 @@ ImageCanvas.prototype.custom = function()
 {
     this._log("ImageCanvas.custom");
     this._reloadCurrentImage();
-    var thisX = this;
+    const thisX = this;
     this._runFilter(function (px)
     {
         return thisX.filters.convolute(px,
