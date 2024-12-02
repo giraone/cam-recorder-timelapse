@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -128,12 +129,14 @@ public class CameraController {
     }
 
     @SuppressWarnings("unused")
+    @CrossOrigin
     @GetMapping("images/{filename}")
     ResponseEntity<Flux<ByteBuffer>> downloadImage(@PathVariable String filename) {
         return downloadOriginal(FileService.Media.IMAGES, filename);
     }
 
     @SuppressWarnings("unused")
+    @CrossOrigin
     @GetMapping("image-thumbs/{filename}")
     ResponseEntity<Flux<ByteBuffer>> downloadImageThumb(@PathVariable String filename) {
         return downloadThumb(FileService.Media.IMAGES, filename);
@@ -219,12 +222,14 @@ public class CameraController {
     }
 
     @SuppressWarnings("unused")
+    @CrossOrigin
     @GetMapping("videos/{filename}")
     ResponseEntity<Flux<ByteBuffer>> downloadVideo(@PathVariable String filename) {
         return downloadOriginal(FileService.Media.VIDEOS, filename);
     }
 
     @SuppressWarnings("unused")
+    @CrossOrigin
     @GetMapping("video-thumbs/{filename}")
     ResponseEntity<Flux<ByteBuffer>> downloadVideoThumb(@PathVariable String filename) {
         return downloadThumb(FileService.Media.VIDEOS, filename);
