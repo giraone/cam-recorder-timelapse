@@ -19,17 +19,19 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
-import java.util.Arrays;
-import java.util.Collections;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static java.nio.file.StandardOpenOption.*;
 
@@ -40,13 +42,13 @@ public class FileService {
 
     public static final String DIR_NAME_THUMBS = ".thumbs";
     public static final String DIR_NAME_META = ".meta";
-    public static final File STORAGE_BASE = new File("../STORAGE");
-    public static final File IMAGES_BASE = new File(STORAGE_BASE, "IMAGES");
-    public static final File IMAGES_THUMBS = new File(IMAGES_BASE, DIR_NAME_THUMBS);
-    public static final File IMAGES_META = new File(IMAGES_BASE, DIR_NAME_META);
-    public static final File VIDEOS_BASE = new File(STORAGE_BASE, "VIDEOS");
-    public static final File VIDEOS_THUMBS = new File(VIDEOS_BASE, DIR_NAME_THUMBS);
-    public static final File VIDEOS_META = new File(VIDEOS_BASE, DIR_NAME_META);
+    public static final Path STORAGE_BASE = Path.of("../STORAGE");
+    public static final Path IMAGES_BASE = STORAGE_BASE.resolve("IMAGES");
+    public static final Path IMAGES_THUMBS = IMAGES_BASE.resolve(DIR_NAME_THUMBS);
+    public static final Path IMAGES_META = IMAGES_BASE.resolve(DIR_NAME_META);
+    public static final Path VIDEOS_BASE = STORAGE_BASE.resolve("VIDEOS");
+    public static final Path VIDEOS_THUMBS = VIDEOS_BASE.resolve(DIR_NAME_THUMBS);
+    public static final Path VIDEOS_META = VIDEOS_BASE.resolve(DIR_NAME_META);
 
     private static final Pattern FILE_NAME_PATTERN = Pattern.compile("[a-zA-Z0-9-]+[.][a-z0-9]{3,4}");
 
@@ -72,12 +74,12 @@ public class FileService {
         if (isFileNameInvalid(filename)) {
             return returnErrorOnInvalidFileName(filename);
         }
-        final File file = getFile(type, filename);
+        final Path file = getFile(type, filename);
         final AsynchronousFileChannel channel;
         try {
-            channel = AsynchronousFileChannel.open(file.toPath(), CREATE, WRITE);
+            channel = AsynchronousFileChannel.open(file, CREATE, WRITE);
         } catch (IOException ioe) {
-            LOGGER.warn("Cannot open file to write to \"{}\"!", file.getAbsolutePath(), ioe);
+            LOGGER.warn("Cannot open file to write to \"{}\"!", file, ioe);
             return Mono.error(ioe);
         }
         final AtomicLong writtenBytes = new AtomicLong(0L);
@@ -85,13 +87,13 @@ public class FileService {
             .doOnSuccess(voidIgnore -> {
                 try {
                     channel.close();
-                    writtenBytes.set(file.length());
-                    LOGGER.info("File \"{}\" with {} bytes written.", file.getName(), writtenBytes.get());
-                    if (contentLength > 0 && contentLength != file.length()) {
-                        LOGGER.warn("Content length and file length mismatch {} != {}!", contentLength, file.length());
+                    writtenBytes.set(Files.size(file));
+                    LOGGER.info("File \"{}\" with {} bytes written.", file.getFileName(), writtenBytes.get());
+                    if (contentLength > 0 && contentLength != Files.size(file)) {
+                        LOGGER.warn("Content length and file length mismatch {} != {}!", contentLength, Files.size(file));
                     }
                 } catch (IOException e) {
-                    LOGGER.warn("Cannot close file \"{}\"!", file.getAbsolutePath(), e);
+                    LOGGER.warn("Cannot close file \"{}\"!", file, e);
                 }
             })
             .doOnSuccess(unused -> {
@@ -100,15 +102,14 @@ public class FileService {
                     LOGGER.debug("Thumbnail for \"{}\" stored.", filename);
                 }
             })
-            .thenReturn(new FileInfo(filename, writtenBytes.get(),
-                FileInfo.mediaTypeFromFileName(filename), FileInfo.ofEpochSecond(file.lastModified()), "?"));
+            .thenReturn(FileInfo.fromFile(file, writtenBytes.get()));
     }
 
     public FileInfoAndContent downloadFile(Media type, String filename) throws IOException {
         if (isFileNameInvalid(filename)) {
             throw errorOnInvalidFileName(filename);
         }
-        final File file = new File(getBaseOf(type), filename);
+        final Path file = getBaseOf(type).resolve(filename);
         return downloadFile(file);
     }
 
@@ -116,7 +117,7 @@ public class FileService {
         if (isFileNameInvalid(filename)) {
             throw errorOnInvalidFileName(filename);
         }
-        final File file = new File(getThumbOf(type), filename);
+        final Path file = getThumbOf(type).resolve(filename);
         return downloadFile(file);
     }
 
@@ -124,41 +125,22 @@ public class FileService {
         if (isFileNameInvalid(filename)) {
             throw errorOnInvalidFileName(filename);
         }
-        final File file = new File(getMetaOf(type), filename);
+        final Path file = getMetaOf(type).resolve(filename);
         return downloadFile(file);
     }
 
     public List<FileInfo> listFileInfos(Media type, FileInfoQuery query) {
-        final File[] files = getBaseOf(type)
-            .listFiles(file -> file.isFile()
-                && !file.getName().startsWith(".")
-                && (query.prefixFilter() == null || file.getName().startsWith(query.prefixFilter()))
-            );
-        if (files == null) {
-            LOGGER.info("listFileInfos {} {} = -1", type, query);
-            return Collections.emptyList();
-        }
-        final List<FileInfo> ret = Arrays.stream(files)
-            .map(FileInfo::fromFile)
-            .sorted(query.order().getComparator())
+        final List<FileInfo> files = listFileInfosUsingFilter(getBaseOf(type), query);
+        files.sort(query.order().getComparator());
+        return files.stream()
             .skip(query.offset())
             .limit(query.limit())
             .toList();
-        LOGGER.info("listFileInfos {} {} = {}", type, query, ret.size());
-        return ret;
     }
 
     public int countFileInfos(Media type, FileInfoQuery query) {
-
-        final File[] files = getBaseOf(type)
-            .listFiles(file -> file.isFile()
-                && !file.getName().startsWith(".")
-                && (query.prefixFilter() == null || file.getName().startsWith(query.prefixFilter()))
-            );
-        if (files == null) {
-            return 0;
-        }
-        int ret = (int) Arrays.stream(files)
+        final List<FileInfo> files = listFileInfosUsingFilter(getBaseOf(type), query);
+        int ret = (int) files.stream()
             .skip(query.offset())
             .limit(query.limit())
             .count();
@@ -170,20 +152,18 @@ public class FileService {
         if (isFileNameInvalid(filename)) {
             return new Status(false, errorTextInvalidFileName(filename));
         }
-        final File oldFile = new File(getBaseOf(type), filename);
-        final File newFile = new File(getBaseOf(type), newName);
+        final Path dir = getBaseOf(type);
+        final Path oldFile = dir.resolve(filename);
+        final Path newFile = dir.resolve(newName);
         LOGGER.error("Rename \"{}\" to \"{}\"", oldFile, newFile);
         try {
-            final boolean ret = oldFile.renameTo(newFile);
-            if (ret) {
-                final File oldThumbnailFile = buildThumbnailFile(type, filename);
-                final File newThumbnailFile = buildThumbnailFile(type, newName);
-                LOGGER.error("Rename \"{}\" to \"{}\"", oldThumbnailFile, newThumbnailFile);
-                if (!oldThumbnailFile.renameTo(newThumbnailFile)) {
-                    LOGGER.error("Cannot rename \"{}\" to \"{}\"!", oldThumbnailFile, newThumbnailFile);
-                }
+            Files.move(oldFile,newFile);
+            final Path oldThumbnailFile = buildThumbnailFile(type, filename);
+            final Path newThumbnailFile = buildThumbnailFile(type, newName);
+            if (Files.exists(oldThumbnailFile)) {
+                Files.move(oldThumbnailFile, newThumbnailFile);
             }
-            return new Status(ret, null);
+            return new Status(true, null);
         } catch (Exception exc) {
             LOGGER.error("Failed to rename \"{}\" to \"{}\"", oldFile, newFile, exc);
             return new Status(false, exc.getMessage());
@@ -194,17 +174,17 @@ public class FileService {
         if (isFileNameInvalid(filename)) {
             return new Status(false, "Invalid filename \"" + filename + "\"!");
         }
-        final File file = new File(getBaseOf(type), filename);
+        final Path file = getBaseOf(type).resolve(filename);
         LOGGER.error("Delete \"{}\"", file);
         try {
-            final boolean ret = file.delete();
-            if (ret) {
-                final File thumbnailFile = buildThumbnailFile(type, filename);
-                if (!thumbnailFile.delete()) {
-                    LOGGER.error("Failed to delete thumbnail \"{}\". Error ignored.", thumbnailFile);
-                }
+            Files.delete(file);
+            final Path thumbnailFile = buildThumbnailFile(type, filename);
+            try {
+                Files.deleteIfExists(file);
+            } catch (IOException e) {
+                LOGGER.error("Failed to delete thumbnail \"{}\". Error ignored.", thumbnailFile);
             }
-            return new Status(ret, null);
+            return new Status(true, null);
         } catch (Exception exc) {
             LOGGER.error("Failed to delete \"{}\"", file, exc);
             return new Status(false, exc.getMessage());
@@ -212,13 +192,9 @@ public class FileService {
     }
 
     public int rebuildThumbnails(Media type) {
-        File[] files = getBaseOf(type).listFiles((dir, name) -> !name.startsWith("."));
-        if (files == null) {
-            return 0;
-        }
         AtomicInteger ret = new AtomicInteger(0);
-        Arrays.stream(files).forEach(file -> {
-            LOGGER.info("Creating thumbnail for {}", file.getAbsolutePath());
+        listPathsUsingFilter(getBaseOf(type), null).forEach(file -> {
+            LOGGER.info("Creating thumbnail for {}", file);
             if (createThumbnail(type, file)) {
                 ret.getAndIncrement();
             }
@@ -227,13 +203,9 @@ public class FileService {
     }
 
     public int rebuildMeta(Media type) {
-        File[] files = getBaseOf(type).listFiles((dir, name) -> !name.startsWith("."));
-        if (files == null) {
-            return 0;
-        }
         AtomicInteger ret = new AtomicInteger(0);
-        Arrays.stream(files).forEach(file -> {
-            LOGGER.info("Creating meta data for {}", file.getAbsolutePath());
+        listPathsUsingFilter(getBaseOf(type), null).forEach(file -> {
+            LOGGER.info("Creating thumbnail for {}", file);
             if (createMetaData(type, file)) {
                 ret.getAndIncrement();
             }
@@ -243,24 +215,24 @@ public class FileService {
 
     //------------------------------------------------------------------------------------------------------------------
 
-    public static File getFileDirImages() {
+    public static Path getFileDirImages() {
         return IMAGES_BASE;
     }
 
-    public static File getThumbDirImages() {
+    public static Path getThumbDirImages() {
         return IMAGES_THUMBS;
     }
 
-    public static File getFileDirVideos() {
+    public static Path getFileDirVideos() {
         return VIDEOS_BASE;
     }
 
-    public static File getThumbDirVideos() {
+    public static Path getThumbDirVideos() {
         return VIDEOS_THUMBS;
     }
 
-    public static File getFile(Media type, String filename) {
-        return new File(getBaseOf(type), filename);
+    public static Path getFile(Media type, String filename) {
+        return getBaseOf(type).resolve(filename);
     }
 
     public static String buildThumbnailFileName(String fileName) {
@@ -273,16 +245,21 @@ public class FileService {
 
     public Mono<TimelapseResult> createTimelapseVideo(TimelapseCommand timelapseCommand) {
 
-        final File outputVideoFile;
+        final Path outputVideoFile;
         try {
-            outputVideoFile = File.createTempFile("f2mp4-out-", ".mp4");
+            outputVideoFile = Files.createTempFile("f2mp4-out-", ".mp4");
             videoService.createTimelapseVideo(timelapseCommand, outputVideoFile);
         } catch (IOException ioe) {
             LOGGER.error("createTimelapseVideo failed", ioe);
             return Mono.just(new TimelapseResult(false, null));
         }
-        final long contentLength = outputVideoFile.length();
-        final Flux<ByteBuffer> content = FluxUtil.readFile(outputVideoFile.toPath());
+        final long contentLength;
+        try {
+            contentLength = Files.size(outputVideoFile);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        final Flux<ByteBuffer> content = FluxUtil.readFile(outputVideoFile);
         return this.storeFile(Media.VIDEOS, timelapseCommand.outputFilename(), content, contentLength)
             .thenReturn(new TimelapseResult(true, timelapseCommand.outputFilename()));
     }
@@ -294,8 +271,8 @@ public class FileService {
 
     //------------------------------------------------------------------------------------------------------------------
 
-    boolean createThumbnail(Media type, File originalFile) {
-        final File thumbnailFile = buildThumbnailFile(type, originalFile.getName());
+    boolean createThumbnail(Media type, Path originalFile) {
+        final Path thumbnailFile = buildThumbnailFile(type, originalFile.getFileName().toString());
         if (type == Media.IMAGES) {
             return createThumbnailForImage(originalFile, thumbnailFile);
         } else {
@@ -303,29 +280,29 @@ public class FileService {
         }
     }
 
-    boolean createThumbnailForImage(File originalFile, File thumbnailFile) {
+    boolean createThumbnailForImage(Path originalFile, Path thumbnailFile) {
         try {
-            imagingProvider.createThumbNail(originalFile, thumbnailFile, MediaType.IMAGE_JPEG_VALUE,
+            imagingProvider.createThumbNail(originalFile.toFile(), thumbnailFile.toFile(), MediaType.IMAGE_JPEG_VALUE,
                 160, 120, ConversionCommand.CompressionQuality.LOSSY_BEST, ConversionCommand.SpeedHint.ULTRA_QUALITY);
         } catch (Exception exc) {
-            LOGGER.warn("Cannot create thumbnail for image \"{}\"! {}", originalFile.getAbsolutePath(), exc.getMessage());
+            LOGGER.warn("Cannot create thumbnail for image \"{}\"! {}", originalFile, exc.getMessage());
             return false;
         }
         return true;
     }
 
-    boolean createThumbnailForVideo(File originalFile, File thumbnailFile) {
+    boolean createThumbnailForVideo(Path originalFile, Path thumbnailFile) {
         try {
             videoService.videoToThumbnail(originalFile, thumbnailFile);
         } catch (Exception exc) {
-            LOGGER.warn("Cannot create thumbnail for video \"{}\"! {}", originalFile.getAbsolutePath(), exc.getMessage());
+            LOGGER.warn("Cannot create thumbnail for video \"{}\"! {}", originalFile, exc.getMessage());
             return false;
         }
         return true;
     }
 
-    boolean createMetaData(Media type, File originalFile) {
-        final File metaFile = buildMetaFile(type, originalFile.getName());
+    boolean createMetaData(Media type, Path originalFile) {
+        final Path metaFile = buildMetaFile(type, originalFile.getFileName().toString());
         try {
             if (type == Media.VIDEOS) {
                 final VideoMetaInfo videoMetaInfo = videoService.extractVideoMetaInfo(originalFile);
@@ -334,21 +311,21 @@ public class FileService {
                 return false;
             }
         } catch (Exception exc) {
-            LOGGER.warn("Cannot create meta data for \"{}\"! {}", originalFile.getAbsolutePath(), exc.getMessage());
+            LOGGER.warn("Cannot create meta data for \"{}\"! {}", originalFile, exc.getMessage());
             return false;
         }
     }
 
-    private FileInfoAndContent downloadFile(File file) throws IOException {
+    private FileInfoAndContent downloadFile(Path file) throws IOException {
 
         final AsynchronousFileChannel channel;
         try {
-            channel = AsynchronousFileChannel.open(file.toPath(), READ);
+            channel = AsynchronousFileChannel.open(file, READ);
         } catch (NoSuchFileException nsfe) {
-            LOGGER.warn("File \"{}\" does not exist! {}", file.getAbsolutePath(), nsfe.getMessage());
+            LOGGER.warn("File \"{}\" does not exist! {}", file, nsfe.getMessage());
             throw nsfe;
         } catch (IOException ioe) {
-            LOGGER.warn("Cannot open file to read from \"{}\"! {}", file.getAbsolutePath(), ioe.getMessage());
+            LOGGER.warn("Cannot open file to read from \"{}\"! {}", file, ioe.getMessage());
             throw ioe;
         }
         final Flux<ByteBuffer> content = FluxUtil.readFile(channel);
@@ -371,26 +348,26 @@ public class FileService {
         return "Invalid filename \"" + filename + "\"!";
     }
 
-    private static File getBaseOf(Media type) {
+    private static Path getBaseOf(Media type) {
         return type == Media.IMAGES ? IMAGES_BASE : VIDEOS_BASE;
     }
 
-    private static File getThumbOf(Media type) {
+    private static Path getThumbOf(Media type) {
         return type == Media.IMAGES ? IMAGES_THUMBS : VIDEOS_THUMBS;
     }
 
-    private static File getMetaOf(Media type) {
+    private static Path getMetaOf(Media type) {
         return type == Media.IMAGES ? IMAGES_META : VIDEOS_META;
     }
 
-    private static File buildThumbnailFile(Media type, String filename) {
+    private static Path buildThumbnailFile(Media type, String filename) {
         final String thumbnailFileName = buildThumbnailFileName(filename);
-        return new File(getThumbOf(type), thumbnailFileName);
+        return getThumbOf(type).resolve(thumbnailFileName);
     }
 
-    private static File buildMetaFile(Media type, String filename) {
+    private static Path buildMetaFile(Media type, String filename) {
         final String metaFileName = buildMetaFileName(filename);
-        return new File(getMetaOf(type), metaFileName);
+        return getMetaOf(type).resolve(metaFileName);
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -402,16 +379,39 @@ public class FileService {
         return fileName.substring(0, lastDotIndex) + newExtension;
     }
 
-    private static void createDirectory(File directory) {
-        if (!directory.isDirectory()) {
-            if (directory.mkdirs()) {
-                LOGGER.info("{} directory created.", directory);
-            } else {
-                LOGGER.error("Cannot create {} directory!", directory);
+    private static void createDirectory(Path directory) {
+        if (!Files.isDirectory(directory)) {
+            try {
+               Files.createDirectories(directory);
+            } catch (IOException e) {
+                LOGGER.error("Cannot create directory \"{}\"!", directory);
             }
         } else {
-            LOGGER.info("{} directory already exists.", directory);
+            LOGGER.info("Directory \"{}\" already exists.", directory);
         }
+    }
+
+    private static List<Path> listPathsUsingFilter(Path dir, FileInfoQuery query) {
+        final List<Path> files = new ArrayList<>(100);
+        final DirectoryStream.Filter<? super Path> filter = path ->
+            Files.isRegularFile(path)
+                && !Files.isHidden(path)
+                && (query.prefixFilter() == null || path.getFileName().toString().startsWith(query.prefixFilter()));
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, filter)) {
+            for (Path path: stream) {
+                files.add(path);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return files;
+    }
+
+    private static List<FileInfo> listFileInfosUsingFilter(Path dir, FileInfoQuery query) {
+        return listPathsUsingFilter(dir, query)
+            .stream()
+            .map(FileInfo::fromFile)
+            .collect(Collectors.toList());
     }
 
     public enum Media {

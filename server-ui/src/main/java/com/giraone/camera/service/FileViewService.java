@@ -26,6 +26,9 @@ import java.util.Set;
 @Service
 public class FileViewService {
 
+    private static final Duration DURATION_WAIT_SINGLE = Duration.ofSeconds(20);
+    private static final Duration DURATION_WAIT_LIST = Duration.ofSeconds(60);
+
     private static final Logger LOGGER = LoggerFactory.getLogger(FileViewService.class);
 
     public static String DIR_NAME_THUMBS = ".thumbs";
@@ -192,13 +195,13 @@ public class FileViewService {
     }
 
     private Status waitFor(Mono<Status> statusMono) {
-        final Status ret = statusMono.block(Duration.ofSeconds(20L));
+        final Status ret = statusMono.block(DURATION_WAIT_SINGLE);
         LOGGER.debug("waitFor {}", ret);
         return ret != null ? ret : new Status(false, "Timeout (block)!");
     }
 
     private List<FileInfo> waitFor(Flux<FileInfo> fileInfoFlux) {
-        final List<FileInfo> ret = fileInfoFlux.collectList().block(Duration.ofSeconds(20L));
+        final List<FileInfo> ret = fileInfoFlux.collectList().block(DURATION_WAIT_LIST);
         LOGGER.debug("waitFor {}", ret);
         return ret != null ? ret : List.of();
     }

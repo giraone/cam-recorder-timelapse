@@ -7,9 +7,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,7 +26,7 @@ class VideoServiceIT {
     @Test
     void videoInfoFull() throws IOException {
         // arrange
-        File video = new File("src/test/resources/testdata/video-640x480-1MB.mp4");
+        Path video = Path.of("src/test/resources/testdata/video-640x480-1MB.mp4");
         // act
         String result = videoService.extractVideoInfoFull(video);
         // assert
@@ -34,7 +36,7 @@ class VideoServiceIT {
     @Test
     void videoMetaInfo() throws IOException {
         // arrange
-        File video = new File("src/test/resources/testdata/video-640x480-1MB.mp4");
+        Path video = Path.of("src/test/resources/testdata/video-640x480-1MB.mp4");
         // act
         VideoMetaInfo result = videoService.extractVideoMetaInfo(video);
         // assert
@@ -48,13 +50,12 @@ class VideoServiceIT {
     @Test
     void videoToThumbnail() throws Exception {
         // arrange
-        File video = new File("src/test/resources/testdata/video-640x480-1MB.mp4");
-        File tempFile = File.createTempFile("videoToThumbnail", ".jpg");
-        tempFile.deleteOnExit();
+        Path video = Path.of("src/test/resources/testdata/video-640x480-1MB.mp4");
+        Path tempFile = Files.createTempFile("videoToThumbnail", ".jpg");
         // act
         videoService.videoToThumbnail(video, tempFile);
         // assert
-        assertThat(tempFile).size().isGreaterThan(100);
+        assertThat(Files.size(tempFile)).isGreaterThan(100);
     }
 
     @Test
@@ -62,21 +63,26 @@ class VideoServiceIT {
         // arrange
         List<String> imageFiles = buildInputFiles();
         TimelapseCommand timelapseCommand = new TimelapseCommand("", imageFiles, 2 ,15);
-        File tempOutputFile = File.createTempFile("createTempFile-", ".mp4");
-        tempOutputFile.deleteOnExit();
+        Path tempOutputFile = Files.createTempFile("createTempFile-", ".mp4");
         // act
         videoService.createTimelapseVideo(timelapseCommand, tempOutputFile);
         // assert
-        assertThat(tempOutputFile).size().isGreaterThan(100);
+        assertThat(Files.size(tempOutputFile)).isGreaterThan(100);
+        Files.delete(tempOutputFile);
     }
 
     public static List<String> buildInputFiles() {
         // arrange
-        File images = FileService.getFileDirImages();
-        File[] files = images.listFiles((dir, name) -> name.startsWith("cam-b-2024-11-17"));
-        if (files == null || files.length == 0) {
-            throw new IllegalStateException("No input files in \"" + images.getAbsolutePath() + "\"!");
+        final Path images = FileService.getFileDirImages();
+        final List<String> files = new ArrayList<>();
+        final DirectoryStream.Filter<? super Path> filter = path -> path.getFileName().toString().startsWith("cam-b-2024-11-17");
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(images, filter)) {
+            for (Path path: stream) {
+                files.add(path.getFileName().toString());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        return Arrays.stream(files).map(File::getName).toList();
+        return files;
     }
 }

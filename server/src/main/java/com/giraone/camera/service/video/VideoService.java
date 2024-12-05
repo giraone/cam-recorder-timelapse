@@ -15,11 +15,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static com.giraone.camera.service.FileService.getFile;
 
@@ -73,19 +73,19 @@ public class VideoService {
 
     private final ImagingProvider imagingProvider = new ProviderJava2D();
 
-    public String extractVideoInfoFull(File inputFile) throws IOException {
-        File tempFile = File.createTempFile("v-info-", ".json");
+    public String extractVideoInfoFull(Path inputFile) throws IOException {
+        Path tempFile = Files.createTempFile("v-info-", ".json");
         try {
             String[] ffmpegCommands = makeOsCmdProbe(COMMAND_PROBE);
             for (int i = 0; i < ffmpegCommands.length; i++) {
-                if (INFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = inputFile.getAbsolutePath().replace('\\', '/');
-                if (OUTFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = tempFile.getAbsolutePath().replace('\\', '/');
+                if (INFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = inputFile.normalize().toString().replace('\\', '/');
+                if (OUTFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = tempFile.normalize().toString().replace('\\', '/');
             }
 
             OsUtil.OsCommandResult result = OsUtil.runCommand(ffmpegCommands);
             if (result.code() >= 0) {
-                if (tempFile.length() > 0L) {
-                    return Files.readString(tempFile.toPath());
+                if (Files.size(tempFile) > 0L) {
+                    return Files.readString(tempFile);
                 } else {
                     throw new OsCallException("Cannot probe video \"" + inputFile + "\"! Code = " + result.code());
                 }
@@ -97,11 +97,11 @@ public class VideoService {
                 }
             }
         } finally {
-            tempFile.delete();
+            Files.delete(tempFile);
         }
     }
 
-    public VideoMetaInfo extractVideoMetaInfo(File inputFile) throws IOException {
+    public VideoMetaInfo extractVideoMetaInfo(Path inputFile) throws IOException {
         String jsonString = extractVideoInfoFull(inputFile);
         if (jsonString == null) {
             return new VideoMetaInfo("ERROR (ffprobe)", "", 0, "ERROR (ffprobe)", 0);
@@ -114,9 +114,9 @@ public class VideoService {
         }
     }
 
-    public boolean storeVideoMetaInfo(VideoMetaInfo videoMetaInfo, File outputFile) {
+    public boolean storeVideoMetaInfo(VideoMetaInfo videoMetaInfo, Path outputFile) {
         try {
-            MAPPER.writeValue(outputFile, videoMetaInfo);
+            MAPPER.writeValue(outputFile.toFile(), videoMetaInfo);
             return true;
         } catch (IOException e) {
             LOGGER.warn("Cannot write VideoMetaInfo to {}", outputFile, e);
@@ -124,15 +124,11 @@ public class VideoService {
         }
     }
 
-    public void createTimelapseVideo(TimelapseCommand timelapseCommand, File outputVideoFile) throws IOException {
-        final File inputListFile = File.createTempFile("f2mp4-list-", ".txt");
-        try (PrintStream out = new PrintStream(new FileOutputStream(inputListFile))) {
+    public void createTimelapseVideo(TimelapseCommand timelapseCommand, Path outputVideoFile) throws IOException {
+        final Path inputListFile = Files.createTempFile("f2mp4-list-", ".txt");
+        try (PrintStream out = new PrintStream(new FileOutputStream(inputListFile.toFile()))) {
             timelapseCommand.inputFileNames().forEach(filename -> {
-                try {
-                    out.printf("file '%s'%n", getFile(FileService.Media.IMAGES, filename).getCanonicalPath().replace('\\', '/'));
-                } catch (IOException e) {
-                    throw new OsCallException("cannot write into input list file \"" + inputListFile + "\"!", e);
-                }
+                out.printf("file '%s'%n", getFile(FileService.Media.IMAGES, filename).normalize().toString().replace('\\', '/'));
             });
         }
         final long maxWaitTimeMs = timelapseCommand.inputFileNames().size() * 500L;
@@ -140,18 +136,19 @@ public class VideoService {
             inputListFile, timelapseCommand.inputFileNames().size(), maxWaitTimeMs);
         final String[] ffmpegCommands = makeOsCmdMpeg(COMMAND_TIMELAPSE);
         for (int i = 0; i < ffmpegCommands.length; i++) {
-            if (INFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = inputListFile.getAbsolutePath().replace('\\', '/');
-            if (OUTFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = outputVideoFile.getAbsolutePath().replace('\\', '/');
+            if (INFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = inputListFile.normalize().toString().replace('\\', '/');
+            if (OUTFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = outputVideoFile.normalize().toString().replace('\\', '/');
             ffmpegCommands[i] = ffmpegCommands[i].replace(SELECT, Integer.toString(timelapseCommand.select()));
             ffmpegCommands[i] = ffmpegCommands[i].replace(FRAME_RATE, Integer.toString(timelapseCommand.frameRate()));
         }
         final OsUtil.OsCommandResult result = OsUtil.runCommandAndReadOutput(ffmpegCommands, maxWaitTimeMs);
         if (result.code() == 0) {
-            if (outputVideoFile.length() < 100L) {
+            final long fileSize = Files.size(outputVideoFile);
+            if (fileSize < 100L) {
                 throw new OsCallException("ffmpeg call not successful! No video file created!");
             } else {
-                LOGGER.info("ffmpeg call successful with output to {} and {} bytes.", outputVideoFile.getAbsolutePath(), outputVideoFile.length());
-                inputListFile.delete();
+                LOGGER.info("ffmpeg call successful with output to {} and {} bytes.", outputVideoFile, fileSize);
+                Files.delete(inputListFile);
             }
         } else if (result.code() > 0) {
             throw new OsCallException("ffmpeg call not successful! Exit code = " + result.code() + ". " + result.output());
@@ -164,19 +161,19 @@ public class VideoService {
         }
     }
 
-    public void videoToThumbnail(File inputFile, File outputThumbnailFile) throws Exception {
-        final File tempFile = File.createTempFile("v2png-", ".png");
+    public void videoToThumbnail(Path inputFile, Path outputThumbnailFile) throws Exception {
+        final Path tempFile = Files.createTempFile("v2png-", ".png");
         try {
             String[] ffmpegCommands = makeOsCmdMpeg(COMMAND_THUMBNAIL);
             for (int i = 0; i < ffmpegCommands.length; i++) {
-                if (INFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = inputFile.getAbsolutePath().replace('\\', '/');
-                if (OUTFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = tempFile.getAbsolutePath().replace('\\', '/');
+                if (INFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = inputFile.normalize().toString().replace('\\', '/');
+                if (OUTFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = tempFile.normalize().toString().replace('\\', '/');
             }
 
             final OsUtil.OsCommandResult result = OsUtil.runCommandAndReadOutput(ffmpegCommands, 5000L);
             if (result.code() >= 0) {
-                if (tempFile.length() > 100L) {
-                    imagingProvider.createThumbNail(tempFile, outputThumbnailFile, MediaType.IMAGE_JPEG_VALUE,
+                if (Files.size(tempFile) > 100L) {
+                    imagingProvider.createThumbNail(tempFile.toFile(), outputThumbnailFile.toFile(), MediaType.IMAGE_JPEG_VALUE,
                         160, 120, ConversionCommand.CompressionQuality.LOSSY_BEST, ConversionCommand.SpeedHint.ULTRA_QUALITY);
                 } else {
                     throw new OsCallException("Cannot create thumbnail for video \"" + inputFile + "\"! Empty PNG output.");
@@ -189,9 +186,7 @@ public class VideoService {
                 }
             }
         } finally {
-            if (!tempFile.delete()) {
-                LOGGER.warn("Cannot delete temp file \"{}\"!", tempFile);
-            }
+            Files.deleteIfExists(tempFile);
         }
     }
 

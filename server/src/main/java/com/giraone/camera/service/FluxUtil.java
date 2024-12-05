@@ -7,7 +7,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -226,15 +225,6 @@ public final class FluxUtil {
             return Flux.error(ioe);
         }
         return readFile(inputChannel);
-    }
-
-    /**
-     * Creates a {@link Flux} from a {@link File} which reads the entire file.
-     * @param file the file to read
-     * @return The content of the path
-     */
-    public static Flux<ByteBuffer> readFile(File file) {
-        return readFile(file.toPath());
     }
 
     //------------------------------------------------------------------------------------------------------------------

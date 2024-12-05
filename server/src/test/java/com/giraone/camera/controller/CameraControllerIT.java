@@ -30,10 +30,13 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.giraone.camera.service.FileService.buildThumbnailFileName;
 import static com.giraone.camera.service.video.VideoServiceIT.buildInputFiles;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.WRITE;
@@ -134,11 +137,11 @@ class CameraControllerIT {
             assertThat(settings.getStatus()).isNotNull();
             assertThat(settings.getStatus().success()).isTrue();
         }
-        File uploadedFile = new File(FileService.getFileDirImages(), FILENAME_IMAGE);
+        Path uploadedFile = FileService.getFileDirImages().resolve(FILENAME_IMAGE);
         assertThat(uploadedFile).exists().hasSize(EXPECTED_IMAGE_FILE_SIZE);
-        File thumbFile = new File(FileService.getThumbDirImages(), FileService.buildThumbnailFileName(FILENAME_IMAGE));
+        Path thumbFile = FileService.getThumbDirImages().resolve(FileService.buildThumbnailFileName(FILENAME_IMAGE));
         assertThat(thumbFile).exists();
-        assertThat(thumbFile.length()).isGreaterThan(100L);
+        assertThat(Files.size(thumbFile)).isGreaterThan(100L);
     }
 
     @Test
@@ -158,10 +161,10 @@ class CameraControllerIT {
         FluxUtil.writeFile(content, channel).block();
         assertThat(downloadedFile).exists().hasSize(EXPECTED_IMAGE_FILE_SIZE);
         // Now delete the uploaded file and thumbnail
-        File uploadedFile = new File(FileService.getFileDirImages(), FILENAME_IMAGE);
-        assertThat(uploadedFile.delete()).isTrue();
-        File thumbFile = new File(FileService.getThumbDirImages(), FileService.buildThumbnailFileName(FILENAME_IMAGE));
-        assertThat(thumbFile.delete()).isTrue();
+        Path uploadedFile = FileService.getFileDirImages().resolve(FILENAME_IMAGE);
+        Files.delete(uploadedFile);
+        Path thumbFile = FileService.getThumbDirImages().resolve(FileService.buildThumbnailFileName(FILENAME_IMAGE));
+        Files.delete(thumbFile);
     }
 
     @Test
@@ -179,8 +182,7 @@ class CameraControllerIT {
             .jsonPath("$.[0].mediaType").isEqualTo("image/jpeg")
             .jsonPath("$.[1].fileName").isEqualTo("0001-porsche.jpg")
             .jsonPath("$.[1].sizeInBytes").isEqualTo(339894L)
-            .jsonPath("$.[1].mediaType").isEqualTo("image/jpeg")
-        ;
+            .jsonPath("$.[1].mediaType").isEqualTo("image/jpeg");
     }
 
     @Test
@@ -202,11 +204,11 @@ class CameraControllerIT {
                     "success", true
                 )));
         }
-        File uploadedFile = new File(FileService.getFileDirVideos(), FILENAME_VIDEO);
+        Path uploadedFile = FileService.getFileDirVideos().resolve(FILENAME_VIDEO);
         assertThat(uploadedFile).exists().hasSize(EXPECTED_VIDEO_FILE_SIZE);
-        File thumbFile = new File(FileService.getThumbDirVideos(), FileService.buildThumbnailFileName(FILENAME_VIDEO));
+        Path thumbFile = FileService.getThumbDirVideos().resolve(buildThumbnailFileName(FILENAME_VIDEO));
         assertThat(thumbFile).exists();
-        assertThat(thumbFile.length()).isGreaterThan(100L);
+        assertThat(Files.size(thumbFile)).isGreaterThan(100L);
     }
 
     @Test
@@ -239,8 +241,7 @@ class CameraControllerIT {
             .expectBody()
             .jsonPath("$.[0].fileName").isEqualTo("video-640x480-1MB.mp4")
             .jsonPath("$.[0].sizeInBytes").isEqualTo(1057149L)
-            .jsonPath("$.[0].mediaType").isEqualTo("video/mp4")
-        ;
+            .jsonPath("$.[0].mediaType").isEqualTo("video/mp4");
     }
 
     @Test
@@ -268,8 +269,7 @@ class CameraControllerIT {
             .exchange()
             .expectStatus().isOk()
             .expectHeader().contentType(mp4)
-            .expectHeader().contentLength(111L)
-        ;
+            .expectHeader().contentLength(111L);
     }
 
     @Test
@@ -281,13 +281,11 @@ class CameraControllerIT {
             .exchange()
             .expectStatus().isOk()
             .expectBody()
-            .jsonPath("$").isEqualTo("true")
-        ;
+            .jsonPath("$").isEqualTo("true");
         webTestClient.delete().uri("/videos/{filename}", newName)
             .exchange()
             .expectStatus().isOk()
             .expectBody()
-            .jsonPath("$.success").isEqualTo("true")
-        ;
+            .jsonPath("$.success").isEqualTo("true");
     }
 }

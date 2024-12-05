@@ -30,7 +30,6 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
@@ -45,8 +44,7 @@ public class CameraController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CameraController.class);
 
-    private static final File SETTINGS_FILE = new File("../camera-settings.json");
-    private static final Path SETTINGS_FILE_PATH = SETTINGS_FILE.toPath();
+    private static final Path SETTINGS_FILE_PATH = Path.of("../camera-settings.json");
     private static final String X_HEADER_ERROR = "X-Files-Error";
 
     private static final ObjectMapper objectMapper = ObjectMapperBuilder.build();
