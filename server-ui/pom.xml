@@ -6,14 +6,13 @@
   <groupId>com.giraone.recorder</groupId>
   <artifactId>cam-recorder-ui</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-  <name>cam-recorder</name>
+  <name>cam-recorder-ui</name>
   <description>HTTP service for receiving (ESP32) camera images including UI</description>
 
   <properties>
     <java.version>17</java.version>
     <vaadin.version>24.5.4</vaadin.version>
     <line-awesome.version>2.0.0</line-awesome.version>
-    <giraone.imagingkit.version>1.2.0</giraone.imagingkit.version>
     <maven-versions-plugin.version>2.17.1</maven-versions-plugin.version>
   </properties>
 
@@ -101,12 +100,6 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-security</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>com.giraone.imaging</groupId>
-      <artifactId>imaging-kit</artifactId>
-      <version>${giraone.imagingkit.version}</version>
     </dependency>
 
     <!-- Tooling dependencies -->

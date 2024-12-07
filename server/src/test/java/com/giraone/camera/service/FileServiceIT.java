@@ -24,7 +24,8 @@ class FileServiceIT {
 
         FileInfoQuery query = new FileInfoQuery("000", 0, 10, new FileInfoOrder("fileName", false));
         for (FileInfo fileInfo : fileService.listFileInfos(FileService.Media.IMAGES, query)) {
-            boolean ret = fileService.createThumbnail(FileService.Media.IMAGES, FileService.getFile(FileService.Media.IMAGES, fileInfo.fileName()));
+            boolean ret = fileService.createThumbnail(FileService.Media.IMAGES,
+                FileService.getFile(FileService.Media.IMAGES, fileInfo.getFileName()));
             assertThat(ret).isTrue();
         }
     }
@@ -40,8 +41,7 @@ class FileServiceIT {
         "000,          1,10, fileName,false,     1,0001-porsche.jpg"
     })
     // @formatter:on
-    void listFileInfos(String prefix, int offset, int limit, String orderAttribute, boolean desc,
-                       int expectedSize, String expectedName) {
+    void listFileInfos(String prefix, int offset, int limit, String orderAttribute, boolean desc, int expectedSize, String expectedName) {
 
         // arrange
         FileInfoQuery query = new FileInfoQuery(prefix, offset, limit, new FileInfoOrder(orderAttribute, desc));
@@ -49,6 +49,6 @@ class FileServiceIT {
         List<FileInfo> result = fileService.listFileInfos(FileService.Media.IMAGES, query);
         // assert
         assertThat(result).hasSize(expectedSize);
-        assertThat(result.get(0).fileName()).isEqualTo(expectedName);
+        assertThat(result.get(0).getFileName()).isEqualTo(expectedName);
     }
 }

@@ -169,19 +169,19 @@ public class CameraController {
         @RequestParam(required = false, defaultValue = "fileName") String orderAttribute,
         @RequestParam(required = false, defaultValue = "false") boolean orderDesc
     ) {
-        return fileService.listFileInfos(FileService.Media.IMAGES,
+        final List<FileInfo> ret = fileService.listFileInfos(FileService.Media.IMAGES,
             new FileInfoQuery(prefixFilter, offset, limit, new FileInfoOrder(orderAttribute, orderDesc)));
+        LOGGER.info("listImageFiles prefix={}, offset={}, limit={}, order={}/{} ==> count={}",
+            prefixFilter, offset, limit, orderAttribute, orderDesc, ret.size());
+        return ret;
     }
 
     @SuppressWarnings("unused")
     @GetMapping("image-count")
-    int countImageFiles(
-        @RequestParam(required = false) String prefixFilter,
-        @RequestParam(required = false, defaultValue = "0") int offset,
-        @RequestParam(required = false, defaultValue = "50") int limit
-    ) {
-        return fileService.countFileInfos(FileService.Media.IMAGES,
-            new FileInfoQuery(prefixFilter, offset, limit, null));
+    int countImageFiles(@RequestParam(required = false) String prefixFilter) {
+        final int ret = fileService.countFileInfos(FileService.Media.IMAGES, prefixFilter);
+        LOGGER.info("countImageFiles prefix={} ==> count={}", prefixFilter, ret);
+        return ret;
     }
 
     @SuppressWarnings("unused")
@@ -268,13 +268,8 @@ public class CameraController {
 
     @SuppressWarnings("unused")
     @GetMapping("video-count")
-    int countVideoFiles(
-        @RequestParam(required = false) String prefixFilter,
-        @RequestParam(required = false, defaultValue = "0") int offset,
-        @RequestParam(required = false, defaultValue = "50") int limit
-    ) {
-        return fileService.countFileInfos(FileService.Media.VIDEOS,
-            new FileInfoQuery(prefixFilter, offset, limit, null));
+    int countVideoFiles(@RequestParam(required = false) String prefixFilter) {
+        return fileService.countFileInfos(FileService.Media.VIDEOS, prefixFilter);
     }
 
     @SuppressWarnings("unused")
@@ -307,8 +302,8 @@ public class CameraController {
         } catch (IOException ioe) {
             return ResponseEntity.badRequest().header(X_HEADER_ERROR, ioe.getMessage()).build();
         }
-        final String mediaType = fileInfoAndContent.fileInfo().mediaType();
-        final long contentLength = fileInfoAndContent.fileInfo().sizeInBytes();
+        final String mediaType = fileInfoAndContent.fileInfo().getMediaType();
+        final long contentLength = fileInfoAndContent.fileInfo().getSizeInBytes();
         return streamToWebClient(fileInfoAndContent.content(), mediaType, contentLength);
     }
 
@@ -322,8 +317,8 @@ public class CameraController {
         } catch (IOException ioe) {
             return ResponseEntity.badRequest().header(X_HEADER_ERROR, ioe.getMessage()).build();
         }
-        final String mediaType = fileInfoAndContent.fileInfo().mediaType();
-        final long contentLength = fileInfoAndContent.fileInfo().sizeInBytes();
+        final String mediaType = fileInfoAndContent.fileInfo().getMediaType();
+        final long contentLength = fileInfoAndContent.fileInfo().getSizeInBytes();
         return streamToWebClient(fileInfoAndContent.content(), mediaType, contentLength);
     }
 

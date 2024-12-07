@@ -3,6 +3,7 @@ package com.giraone.camera;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -14,6 +15,7 @@ class CameraAdministrationIT {
 
     @Test
     void contextLoads() {
+        System.err.println(BCrypt.hashpw("boss-secret", BCrypt.gensalt()));
         assertThat(cameraAdministration).isNotNull();
     }
 }

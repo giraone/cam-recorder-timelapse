@@ -78,8 +78,8 @@ public class VideoService {
         try {
             String[] ffmpegCommands = makeOsCmdProbe(COMMAND_PROBE);
             for (int i = 0; i < ffmpegCommands.length; i++) {
-                if (INFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = inputFile.normalize().toString().replace('\\', '/');
-                if (OUTFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = tempFile.normalize().toString().replace('\\', '/');
+                if (INFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = inputFile.toAbsolutePath().toString().replace('\\', '/');
+                if (OUTFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = tempFile.toAbsolutePath().toString().replace('\\', '/');
             }
 
             OsUtil.OsCommandResult result = OsUtil.runCommand(ffmpegCommands);
@@ -128,7 +128,7 @@ public class VideoService {
         final Path inputListFile = Files.createTempFile("f2mp4-list-", ".txt");
         try (PrintStream out = new PrintStream(new FileOutputStream(inputListFile.toFile()))) {
             timelapseCommand.inputFileNames().forEach(filename -> {
-                out.printf("file '%s'%n", getFile(FileService.Media.IMAGES, filename).normalize().toString().replace('\\', '/'));
+                out.printf("file '%s'%n", getFile(FileService.Media.IMAGES, filename).toAbsolutePath().toString().replace('\\', '/'));
             });
         }
         final long maxWaitTimeMs = timelapseCommand.inputFileNames().size() * 500L;
@@ -136,8 +136,8 @@ public class VideoService {
             inputListFile, timelapseCommand.inputFileNames().size(), maxWaitTimeMs);
         final String[] ffmpegCommands = makeOsCmdMpeg(COMMAND_TIMELAPSE);
         for (int i = 0; i < ffmpegCommands.length; i++) {
-            if (INFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = inputListFile.normalize().toString().replace('\\', '/');
-            if (OUTFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = outputVideoFile.normalize().toString().replace('\\', '/');
+            if (INFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = inputListFile.toAbsolutePath().toString().replace('\\', '/');
+            if (OUTFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = outputVideoFile.toAbsolutePath().toString().replace('\\', '/');
             ffmpegCommands[i] = ffmpegCommands[i].replace(SELECT, Integer.toString(timelapseCommand.select()));
             ffmpegCommands[i] = ffmpegCommands[i].replace(FRAME_RATE, Integer.toString(timelapseCommand.frameRate()));
         }
@@ -166,8 +166,8 @@ public class VideoService {
         try {
             String[] ffmpegCommands = makeOsCmdMpeg(COMMAND_THUMBNAIL);
             for (int i = 0; i < ffmpegCommands.length; i++) {
-                if (INFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = inputFile.normalize().toString().replace('\\', '/');
-                if (OUTFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = tempFile.normalize().toString().replace('\\', '/');
+                if (INFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = inputFile.toAbsolutePath().toString().replace('\\', '/');
+                if (OUTFILE.equals(ffmpegCommands[i])) ffmpegCommands[i] = tempFile.toAbsolutePath().toString().replace('\\', '/');
             }
 
             final OsUtil.OsCommandResult result = OsUtil.runCommandAndReadOutput(ffmpegCommands, 5000L);

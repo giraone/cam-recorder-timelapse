@@ -1,5 +1,6 @@
 package com.giraone.camera.service.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.giraone.camera.service.video.VideoService;
 import com.giraone.camera.util.ObjectMapperBuilder;
@@ -16,17 +17,67 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.giraone.camera.service.FileService.DIR_NAME_META;
 
-public record FileInfo(String fileName, long sizeInBytes, String mediaType, LocalDateTime lastModified, String infos) {
-
+public class FileInfo {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileInfo.class);
 
     private static final ImagingProvider imagingProvider = new ProviderJava2D();
     private static final VideoService videoService = new VideoService();
     private static final ObjectMapper objectMapper = ObjectMapperBuilder.build();
+
+    private static final Map<String,String> infoCacheImage = new HashMap<>();
+    private static final Map<String,String> infoCacheVideo = new HashMap<>();
+
+    @JsonIgnore
+    private final Path path;
+    private final String fileName;
+    private final long sizeInBytes;
+    private final String mediaType;
+    private final LocalDateTime lastModified;
+    private String infos;
+
+    public FileInfo(Path path, String fileName, long sizeInBytes, String mediaType, LocalDateTime lastModified) {
+        this.path = path;
+        this.fileName = fileName;
+        this.sizeInBytes = sizeInBytes;
+        this.mediaType = mediaType;
+        this.lastModified = lastModified;
+        this.infos = "";
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public long getSizeInBytes() {
+        return sizeInBytes;
+    }
+
+    public String getMediaType() {
+        return mediaType;
+    }
+
+    public LocalDateTime getLastModified() {
+        return lastModified;
+    }
+
+    public String getInfos() {
+        return infos;
+    }
+
+    public FileInfo buildInfos() {
+        if (mediaType.startsWith("image")) {
+            infos = fetchImageInfos(fileName, path);
+        } else if (mediaType.startsWith("video")) {
+            infos = fetchVideoInfos(fileName, path);
+        }
+        return this;
+    }
 
     public static FileInfo fromFile(Path file) {
         return FileInfo.fromFile(file, size(file));
@@ -36,15 +87,9 @@ public record FileInfo(String fileName, long sizeInBytes, String mediaType, Loca
         return FileInfo.fromFile(file, size, lastModified(file));
     }
 
-    public static FileInfo fromFile(Path file, long size, LocalDateTime lastModified) {
-        final String fileName = file.getFileName().toString();
-        final String mediaType = mediaTypeFromFileName(fileName);
-        return new FileInfo(file.getFileName().toString(), size, mediaType,
-            lastModified,
-            mediaType.startsWith("image")
-                ? fetchImageInfos(file)
-                : fetchVideoInfos(file)
-        );
+    public static FileInfo fromFile(Path path, long size, LocalDateTime lastModified) {
+        final String fileName = path.getFileName().toString();
+        return new FileInfo(path, fileName, size, mediaTypeFromFileName(fileName), lastModified);
     }
 
     public static String mediaTypeFromFileName(String filename) {
@@ -60,22 +105,35 @@ public record FileInfo(String fileName, long sizeInBytes, String mediaType, Loca
         }
     }
 
-    public static String fetchImageInfos(Path file) {
+    public static String fetchImageInfos(String filename, Path file) {
+        String ret = infoCacheImage.get(filename);
+        if (ret != null) {
+            return ret;
+        }
         try {
             com.giraone.imaging.FileInfo imagingFileInfo = imagingProvider.fetchFileInfo(file.toFile());
-            return imagingFileInfo.getWidth() + "x" + imagingFileInfo.getHeight();
+            ret = imagingFileInfo.getWidth() + "x" + imagingFileInfo.getHeight();
+            infoCacheImage.put(filename, ret);
+            LOGGER.info("fetchImageInfos {}={}", filename, ret);
+            return ret;
         } catch (Exception e) {
             return "?";
         }
     }
 
-    private static String fetchVideoInfos(Path file) {
+    private static String fetchVideoInfos(String filename, Path file) {
 
-        final String filename = file.getFileName().toString();
+        String ret = infoCacheVideo.get(filename);
+        if (ret != null) {
+            return ret;
+        }
         final String baseName = filename.substring(0, filename.lastIndexOf('.'));
         final Path metaFile = file.getParent().resolve(DIR_NAME_META).resolve(baseName + ".json");
         if (!Files.exists(metaFile)) {
-            return fetchVideoInfosFresh(file, metaFile);
+            ret = fetchVideoInfosFresh(file, metaFile);
+            infoCacheVideo.put(filename, ret);
+            LOGGER.info("fetchVideoInfos {}={}", filename, ret);
+            return ret;
         }
         VideoMetaInfo videoMetaInfo = null;
         try {
@@ -83,7 +141,10 @@ public record FileInfo(String fileName, long sizeInBytes, String mediaType, Loca
         } catch (IOException e) {
             LOGGER.warn("Cannot parse {}", metaFile, e);
         }
-        return videoMetaInfo != null ? videoMetaInfo.toString() : "JSON-Error";
+        ret = videoMetaInfo != null ? videoMetaInfo.toString() : "JSON-Error";
+        infoCacheVideo.put(filename, ret);
+        LOGGER.info("fetchImageInfos {}={}", filename, ret);
+        return ret;
     }
 
     private static String fetchVideoInfosFresh(Path file, Path metaFile) {

@@ -4,10 +4,10 @@ import java.util.Comparator;
 
 public record FileInfoOrder(String attribute, boolean desc) {
 
-    private static final Comparator<FileInfo> comparatorFileName = Comparator.comparing(FileInfo::fileName);
-    private static final Comparator<FileInfo> comparatorLastModified = Comparator.comparing(FileInfo::lastModified);
-    private static final Comparator<FileInfo> comparatorInfos = Comparator.comparing(FileInfo::infos);
-    private static final Comparator<FileInfo> comparatorSizeInBytes = Comparator.comparing(FileInfo::sizeInBytes);
+    private static final Comparator<FileInfo> comparatorFileName = Comparator.comparing(FileInfo::getFileName);
+    private static final Comparator<FileInfo> comparatorLastModified = Comparator.comparing(FileInfo::getLastModified);
+    private static final Comparator<FileInfo> comparatorInfos = Comparator.comparing(FileInfo::getInfos);
+    private static final Comparator<FileInfo> comparatorSizeInBytes = Comparator.comparing(FileInfo::getSizeInBytes);
 
     public Comparator<FileInfo> getComparator() {
         Comparator<FileInfo> ret;

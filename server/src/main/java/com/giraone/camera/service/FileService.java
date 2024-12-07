@@ -135,17 +135,12 @@ public class FileService {
         return files.stream()
             .skip(query.offset())
             .limit(query.limit())
+            .map(fileInfo -> fileInfo.buildInfos())
             .toList();
     }
 
-    public int countFileInfos(Media type, FileInfoQuery query) {
-        final List<FileInfo> files = listFileInfosUsingFilter(getBaseOf(type), query);
-        int ret = (int) files.stream()
-            .skip(query.offset())
-            .limit(query.limit())
-            .count();
-        LOGGER.info("countFileInfos {} {} = {}", type, query, ret);
-        return ret;
+    public int countFileInfos(Media type, String prefixFilter) {
+        return countUsingFilter(getBaseOf(type), prefixFilter);
     }
 
     public Status rename(Media type, String filename, String newName) {
@@ -157,7 +152,7 @@ public class FileService {
         final Path newFile = dir.resolve(newName);
         LOGGER.error("Rename \"{}\" to \"{}\"", oldFile, newFile);
         try {
-            Files.move(oldFile,newFile);
+            Files.move(oldFile, newFile);
             final Path oldThumbnailFile = buildThumbnailFile(type, filename);
             final Path newThumbnailFile = buildThumbnailFile(type, newName);
             if (Files.exists(oldThumbnailFile)) {
@@ -382,7 +377,7 @@ public class FileService {
     private static void createDirectory(Path directory) {
         if (!Files.isDirectory(directory)) {
             try {
-               Files.createDirectories(directory);
+                Files.createDirectories(directory);
             } catch (IOException e) {
                 LOGGER.error("Cannot create directory \"{}\"!", directory);
             }
@@ -391,14 +386,14 @@ public class FileService {
         }
     }
 
-    private static List<Path> listPathsUsingFilter(Path dir, FileInfoQuery query) {
+    private static List<Path> listPathsUsingFilter(Path dir, String prefixFilter) {
         final List<Path> files = new ArrayList<>(100);
-        final DirectoryStream.Filter<? super Path> filter = path ->
-            Files.isRegularFile(path)
-                && !Files.isHidden(path)
-                && (query.prefixFilter() == null || path.getFileName().toString().startsWith(query.prefixFilter()));
+        final DirectoryStream.Filter<? super Path> filter = path -> {
+            final String fileName = path.getFileName().toString();
+            return !fileName.startsWith(".") && (prefixFilter == null || fileName.startsWith(prefixFilter));
+        };
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, filter)) {
-            for (Path path: stream) {
+            for (Path path : stream) {
                 files.add(path);
             }
         } catch (IOException e) {
@@ -407,8 +402,22 @@ public class FileService {
         return files;
     }
 
+    private static int countUsingFilter(Path dir, String prefixFilter) {
+        final AtomicInteger ret = new AtomicInteger(0);
+        final DirectoryStream.Filter<? super Path> filter = path -> {
+            final String fileName = path.getFileName().toString();
+            return !fileName.startsWith(".") && (prefixFilter == null || fileName.startsWith(prefixFilter));
+        };
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, filter)) {
+            stream.spliterator().forEachRemaining(path -> ret.getAndIncrement());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return ret.get();
+    }
+
     private static List<FileInfo> listFileInfosUsingFilter(Path dir, FileInfoQuery query) {
-        return listPathsUsingFilter(dir, query)
+        return listPathsUsingFilter(dir, query.prefixFilter())
             .stream()
             .map(FileInfo::fromFile)
             .collect(Collectors.toList());

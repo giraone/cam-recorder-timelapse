@@ -2,8 +2,6 @@ package com.giraone.camera.config;
 
 import com.giraone.camera.views.LoginView;
 import com.vaadin.flow.spring.security.VaadinWebSecurity;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,9 +18,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @Configuration
 public class SecurityConfig extends VaadinWebSecurity {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(SecurityConfig.class);
-
-    private ApplicationProperties applicationProperties;
+    private final ApplicationProperties applicationProperties;
 
     public SecurityConfig(ApplicationProperties applicationProperties) {
         this.applicationProperties = applicationProperties;
@@ -31,13 +27,16 @@ public class SecurityConfig extends VaadinWebSecurity {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
 
-        // This code uses script and style in html ('unsafe-inline') and images loaded from the image server
+        // This code uses script and style in html ('unsafe-inline') and images and media loaded from the image server
         // Vaadin itself uses 'unsafe-eval' and data: for images/fonts
-        final String cspPolicy = "default-src 'self'; frame-src 'self'; " +
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-                "style-src 'self' 'unsafe-inline'; " +
-                "img-src 'self' data: " + applicationProperties.getHostUrl() + "; " +
-                "font-src 'self' data: ";
+        final String cspPolicy = "default-src 'self'; " +
+            "img-src 'self' data: " + applicationProperties.getHostUrl() + "; " +
+            "media-src 'self' " + applicationProperties.getHostUrl() + "; " +
+            "connect-src 'self'; " +
+            "frame-src 'self'; " +
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+            "style-src 'self' 'unsafe-inline'; " +
+            "font-src 'self' data: ";
         http.headers(configurer -> configurer.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
         http.headers(configurer -> configurer.contentSecurityPolicy(
             contentSecurityPolicyConfig -> contentSecurityPolicyConfig.policyDirectives(cspPolicy)));
@@ -54,7 +53,7 @@ public class SecurityConfig extends VaadinWebSecurity {
     @Bean
     public UserDetailsService users() {
 
-        // Created using: BCrypt.hashpw("<user>-secret", BCrypt.gensalt()));
+        // Created using: BCrypt.hashpw("<user>-secret", BCrypt.gensalt());
         UserDetails user = User.builder()
             .username("cam")
             .password("{bcrypt}$2a$10$VuBTJ/Iz.R16uiEwZsDPCeBh8NxuhTmPXX3LQEMhIS9iW7KANUVu2")
@@ -62,11 +61,9 @@ public class SecurityConfig extends VaadinWebSecurity {
             .build();
         UserDetails admin = User.builder()
             .username("boss")
-            .password("{bcrypt}$2a$10$7eDGvhlM1ZN7nem972h7MeRkaDNlOMRT1XtSlmLOxV7PS3fsh5o.C")
+            .password("{bcrypt}$2a$10$RX/BG7JYqhTxJ3JAAVl.Peb3PHmiwZQs4opkiELxNES3zV9.hJVpi")
             .roles("USER", "ADMIN")
             .build();
         return new InMemoryUserDetailsManager(user, admin);
     }
-
-
 }

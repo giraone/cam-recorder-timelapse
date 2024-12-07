@@ -99,8 +99,6 @@ public class FileViewService {
         return webClient().get().uri(uriBuilder -> uriBuilder
                 .path("/" + type + "-count")
                 .queryParam("prefixFilter", fileInfoQuery.prefixFilter())
-                .queryParam("offset", fileInfoQuery.offset())
-                .queryParam("limit", fileInfoQuery.limit())
                 .build())
             .exchangeToMono(clientResponse -> clientResponse.bodyToMono(Integer.class)).block();
     }
