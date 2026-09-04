@@ -39,7 +39,7 @@ public class WorkflowSettingsForm extends FormLayout {
 
     Checkbox restart = new Checkbox("Restart");
     Checkbox pause = new Checkbox("Pause");
-    IntegerField delayMs = new IntegerField("Delay (ms) till next action");
+    IntegerField delayMs = new IntegerField("Delay (ms) till next action (min ~ 5000 on SXGA)");
 
     Checkbox blinkOnSuccess = new Checkbox("Blink on success");
     Checkbox blinkOnFailure = new Checkbox("Blink on failure");
