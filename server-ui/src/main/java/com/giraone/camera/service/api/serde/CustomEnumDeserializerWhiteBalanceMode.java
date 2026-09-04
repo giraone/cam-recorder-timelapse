@@ -1,12 +1,10 @@
 package com.giraone.camera.service.api.serde;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.giraone.camera.service.api.CameraSettings;
-
-import java.io.IOException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.deser.std.StdDeserializer;
 
 public class CustomEnumDeserializerWhiteBalanceMode extends StdDeserializer<CameraSettings.WhiteBalanceMode> {
 
@@ -15,10 +13,9 @@ public class CustomEnumDeserializerWhiteBalanceMode extends StdDeserializer<Came
     }
 
     @Override
-    public CameraSettings.WhiteBalanceMode deserialize(JsonParser jsonParser, DeserializationContext ctxt)
-        throws IOException {
-        JsonNode node = jsonParser.getCodec().readTree(jsonParser);
-        int value = Integer.parseInt(node.asText());
+    public CameraSettings.WhiteBalanceMode deserialize(JsonParser jsonParser, DeserializationContext ctxt) {
+        final JsonNode node = jsonParser.readValueAsTree();
+        final int value = Integer.parseInt(node.asString());
         for (CameraSettings.WhiteBalanceMode e : CameraSettings.WhiteBalanceMode.ALL) {
             if (e.ordinal() == value) {
                 return e;

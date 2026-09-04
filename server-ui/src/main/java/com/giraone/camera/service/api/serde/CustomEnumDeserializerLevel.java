@@ -1,12 +1,10 @@
 package com.giraone.camera.service.api.serde;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.giraone.camera.service.api.CameraSettings;
-
-import java.io.IOException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.deser.std.StdDeserializer;
 
 public class CustomEnumDeserializerLevel extends StdDeserializer<CameraSettings.Level> {
 
@@ -15,10 +13,9 @@ public class CustomEnumDeserializerLevel extends StdDeserializer<CameraSettings.
     }
 
     @Override
-    public CameraSettings.Level deserialize(JsonParser jsonParser, DeserializationContext ctxt)
-        throws IOException {
-        JsonNode node = jsonParser.getCodec().readTree(jsonParser);
-        int value = Integer.parseInt(node.asText());
+    public CameraSettings.Level deserialize(JsonParser jsonParser, DeserializationContext ctxt) {
+        final JsonNode node = jsonParser.readValueAsTree();
+        final int value = Integer.parseInt(node.asString());
         for (CameraSettings.Level e : CameraSettings.Level.ALL) {
             if (e.ordinal() == value + 2) {
                 return e;

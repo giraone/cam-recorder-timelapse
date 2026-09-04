@@ -1,14 +1,14 @@
 package com.giraone.camera.service.api;
 
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.giraone.camera.service.api.serde.CustomDeserializerBoolean;
 import com.giraone.camera.service.api.serde.CustomEnumDeserializerFrameSize;
 import com.giraone.camera.service.api.serde.CustomEnumDeserializerLevel;
 import com.giraone.camera.service.api.serde.CustomEnumDeserializerSpecialEffect;
 import com.giraone.camera.service.api.serde.CustomEnumDeserializerWhiteBalanceMode;
 import com.giraone.camera.service.api.serde.CustomSerializerBoolean;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 import java.util.Arrays;
 import java.util.List;
@@ -370,7 +370,7 @@ public class CameraSettings {
             this.intValue = intValue;
         }
 
-        public static List<Level> ALL = List.of(XS, S, M, L, XL);
+        public static final List<Level> ALL = List.of(XS, S, M, L, XL);
     }
 
     @JsonDeserialize(using = CustomEnumDeserializerSpecialEffect.class)
@@ -382,7 +382,7 @@ public class CameraSettings {
             return this.ordinal();
         }
 
-        public static List<SpecialEffect> ALL = List.of(None, Negative, Grayscale, Red, Green, Blue, Sepia);
+        public static final List<SpecialEffect> ALL = List.of(None, Negative, Grayscale, Red, Green, Blue, Sepia);
     }
 
     @JsonDeserialize(using = CustomEnumDeserializerWhiteBalanceMode.class)
@@ -394,6 +394,6 @@ public class CameraSettings {
             return this.ordinal();
         }
 
-        public static List<WhiteBalanceMode> ALL = List.of(Auto, Sunny, Cloudy, Office, Home);
+        public static final List<WhiteBalanceMode> ALL = List.of(Auto, Sunny, Cloudy, Office, Home);
     }
 }
