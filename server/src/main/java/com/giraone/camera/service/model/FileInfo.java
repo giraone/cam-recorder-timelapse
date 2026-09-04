@@ -1,7 +1,6 @@
 package com.giraone.camera.service.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.giraone.camera.service.video.VideoService;
 import com.giraone.camera.util.ObjectMapperBuilder;
 import com.giraone.imaging.ImagingProvider;
@@ -9,6 +8,7 @@ import com.giraone.imaging.java2.ProviderJava2D;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -138,7 +138,7 @@ public class FileInfo {
         VideoMetaInfo videoMetaInfo = null;
         try {
             videoMetaInfo = objectMapper.readValue(metaFile.toFile(), VideoMetaInfo.class);
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOGGER.warn("Cannot parse {}", metaFile, e);
         }
         ret = videoMetaInfo != null ? videoMetaInfo.toString() : "JSON-Error";
@@ -157,8 +157,8 @@ public class FileInfo {
         }
         try {
             objectMapper.writeValue(metaFile.toFile(), videoMetaInfo);
-        } catch (IOException e) {
-            LOGGER.warn("Cannot write video meta to " + metaFile, e);
+        } catch (Exception e) {
+            LOGGER.warn("Cannot write video meta to {}", metaFile, e);
             return "ERROR (write)";
         }
         return videoMetaInfo.toString();

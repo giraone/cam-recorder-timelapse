@@ -1,10 +1,9 @@
 package com.giraone.camera.service.api.serde;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-
-import java.io.IOException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ser.std.StdSerializer;
 
 public class CustomSerializerBoolean extends StdSerializer<Boolean> {
 
@@ -13,7 +12,7 @@ public class CustomSerializerBoolean extends StdSerializer<Boolean> {
     }
 
     @Override
-    public void serialize(Boolean aBoolean, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
-        jsonGenerator.writeNumber(aBoolean != null && aBoolean ? 1 : 0);
+    public void serialize(Boolean value, JsonGenerator jsonGenerator, SerializationContext ctxt) throws JacksonException {
+        jsonGenerator.writeNumber(value != null && value ? 1 : 0);
     }
 }

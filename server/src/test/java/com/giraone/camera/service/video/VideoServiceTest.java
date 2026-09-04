@@ -1,15 +1,15 @@
 package com.giraone.camera.service.video;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.giraone.camera.service.model.VideoMetaInfo;
 import org.junit.jupiter.api.Test;
+import tools.jackson.core.JacksonException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class VideoServiceTest {
 
     @Test
-    void buildVideoInfoFromFfmpegJson() throws JsonProcessingException {
+    void buildVideoInfoFromFfmpegJson() throws JacksonException {
 
         String input = """
             {
@@ -84,7 +84,7 @@ class VideoServiceTest {
                         "creation_time": "2012-04-01 15:42:24"
                     }
                 }
-            }                     
+            }
             """;
         // act
         VideoMetaInfo videoMetaInfo= VideoService.buildVideoInfoFromFfmpegJson(input);

@@ -1,19 +1,19 @@
 package com.giraone.camera.service.video;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.giraone.imaging.ConversionCommand;
-import com.giraone.imaging.ImagingProvider;
-import com.giraone.imaging.java2.ProviderJava2D;
 import com.giraone.camera.service.FileService;
 import com.giraone.camera.service.model.VideoMetaInfo;
 import com.giraone.camera.service.video.model.TimelapseCommand;
 import com.giraone.camera.util.ObjectMapperBuilder;
+import com.giraone.imaging.ConversionCommand;
+import com.giraone.imaging.ImagingProvider;
+import com.giraone.imaging.java2.ProviderJava2D;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -109,7 +109,7 @@ public class VideoService {
         }
         try {
             return buildVideoInfoFromFfmpegJson(jsonString);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             LOGGER.warn("Cannot parse: " + jsonString, e);
             return new VideoMetaInfo("ERROR (parse)", "", 0, "ERROR (parse)", 0);
         }
@@ -119,7 +119,7 @@ public class VideoService {
         try {
             MAPPER.writeValue(outputFile.toFile(), videoMetaInfo);
             return true;
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOGGER.warn("Cannot write VideoMetaInfo to {}", outputFile, e);
             return false;
         }
@@ -205,14 +205,14 @@ public class VideoService {
         return cmd;
     }
 
-    static VideoMetaInfo buildVideoInfoFromFfmpegJson(String jsonString) throws JsonProcessingException {
+    static VideoMetaInfo buildVideoInfoFromFfmpegJson(String jsonString) throws JacksonException {
         JsonNode jsonNode = MAPPER.readTree(jsonString);
-        String videoCodec = jsonNode.at("/streams/0/codec_name").asText();
-        String audioCodec = jsonNode.at("/streams/1/codec_name").asText();
-        String width = jsonNode.at("/streams/0/width").asText();
-        String height = jsonNode.at("/streams/0/height").asText();
-        String durationSecondsString = jsonNode.at("/format/duration").asText();
-        String framesPerSecondCalc = jsonNode.at("/streams/0/avg_frame_rate").asText();
+        String videoCodec = jsonNode.at("/streams/0/codec_name").asString();
+        String audioCodec = jsonNode.at("/streams/1/codec_name").asString();
+        String width = jsonNode.at("/streams/0/width").asString();
+        String height = jsonNode.at("/streams/0/height").asString();
+        String durationSecondsString = jsonNode.at("/format/duration").asString();
+        String framesPerSecondCalc = jsonNode.at("/streams/0/avg_frame_rate").asString();
         int i = framesPerSecondCalc.indexOf('/');
         int i1 = Integer.parseInt(framesPerSecondCalc.substring(0, i));
         int i2 = Integer.parseInt(framesPerSecondCalc.substring(i + 1));

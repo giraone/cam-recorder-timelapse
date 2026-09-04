@@ -5,18 +5,18 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.16</version>
+		<version>4.1.1</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.giraone.recorder</groupId>
 	<artifactId>cam-recorder</artifactId>
-	<version>0.0.2-SNAPSHOT</version>
+	<version>0.0.3-SNAPSHOT</version>
 	<name>cam-recorder</name>
 	<description>HTTP service for receiving (ESP32) camera images</description>
 	<properties>
-		<java.version>21</java.version>
+		<java.version>25</java.version>
 		<giraone.imagingkit.version>2.1.0-SNAPSHOT</giraone.imagingkit.version>
-		<maven-versions-plugin.version>2.18.0</maven-versions-plugin.version>
+		<maven-versions-plugin.version>2.21.0</maven-versions-plugin.version>
 	</properties>
 
 	<dependencies>
@@ -47,6 +47,11 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-webtestclient</artifactId>
+      <scope>test</scope>
+    </dependency>
 		<dependency>
 			<groupId>io.projectreactor</groupId>
 			<artifactId>reactor-test</artifactId>

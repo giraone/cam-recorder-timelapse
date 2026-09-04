@@ -2,14 +2,14 @@ package com.giraone.camera.service.api;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.giraone.camera.service.api.serde.CustomDeserializerBoolean;
 import com.giraone.camera.service.api.serde.CustomEnumDeserializerFrameSize;
 import com.giraone.camera.service.api.serde.CustomEnumDeserializerLevel;
 import com.giraone.camera.service.api.serde.CustomEnumDeserializerSpecialEffect;
 import com.giraone.camera.service.api.serde.CustomEnumDeserializerWhiteBalanceMode;
 import com.giraone.camera.service.api.serde.CustomSerializerBoolean;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 import java.util.Arrays;
 import java.util.List;

@@ -1,6 +1,5 @@
 package com.giraone.camera.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.giraone.camera.service.FileService;
 import com.giraone.camera.service.api.CameraStatus;
 import com.giraone.camera.service.api.Settings;
@@ -29,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -147,7 +147,7 @@ public class CameraController {
         Status ret = fileService.rename(FileService.Media.IMAGES, filename, newName);
         return ret.success()
             ? ResponseEntity.ok(ret)
-            : ResponseEntity.unprocessableEntity().body(ret);
+            : ResponseEntity.unprocessableContent().body(ret);
     }
 
     @SuppressWarnings("unused")
@@ -157,7 +157,7 @@ public class CameraController {
         Status ret = fileService.delete(FileService.Media.IMAGES, filename);
         return ret.success()
             ? ResponseEntity.ok(ret)
-            : ResponseEntity.unprocessableEntity().body(ret);
+            : ResponseEntity.unprocessableContent().body(ret);
     }
 
     @SuppressWarnings("unused")
@@ -240,7 +240,7 @@ public class CameraController {
         Status ret = fileService.rename(FileService.Media.VIDEOS, filename, newName);
         return ret.success()
             ? ResponseEntity.ok(ret)
-            : ResponseEntity.unprocessableEntity().body(ret);
+            : ResponseEntity.unprocessableContent().body(ret);
     }
 
     @SuppressWarnings("unused")
@@ -250,7 +250,7 @@ public class CameraController {
         Status ret = fileService.delete(FileService.Media.VIDEOS, filename);
         return ret.success()
             ? ResponseEntity.ok(ret)
-            : ResponseEntity.unprocessableEntity().body(ret);
+            : ResponseEntity.unprocessableContent().body(ret);
     }
 
     @SuppressWarnings("unused")

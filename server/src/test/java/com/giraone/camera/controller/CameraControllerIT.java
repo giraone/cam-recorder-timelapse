@@ -1,7 +1,5 @@
 package com.giraone.camera.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.giraone.camera.service.FileService;
 import com.giraone.camera.service.FluxUtil;
 import com.giraone.camera.service.api.Settings;
@@ -15,8 +13,8 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.MediaType;
@@ -24,6 +22,8 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.reactive.function.BodyInserters;
 import reactor.core.publisher.Flux;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -245,7 +245,7 @@ class CameraControllerIT {
     }
 
     @Test
-    void test7_createTimelapseVideo() throws JsonProcessingException {
+    void test7_createTimelapseVideo() throws JacksonException {
 
         // arrange
         String wantedFilename = "test.mp4";
