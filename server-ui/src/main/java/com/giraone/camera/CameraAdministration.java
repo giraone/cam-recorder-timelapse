@@ -1,9 +1,11 @@
 package com.giraone.camera;
 
 import com.giraone.camera.config.ApplicationProperties;
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
+import com.vaadin.flow.theme.lumo.Lumo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -22,7 +24,9 @@ import java.nio.charset.Charset;
  */
 @SpringBootApplication
 @EnableConfigurationProperties({ApplicationProperties.class})
-@Theme(value = "flowcrmtutorial")
+//@Theme(value = "flowcrmtutorial")
+// Lumo utility classes (LumoUtility.*) are not loaded automatically, they need this stylesheet
+@StyleSheet(Lumo.UTILITY_STYLESHEET)
 @PWA(
     name = "Camera Application",
     shortName = "CAMAPP",
@@ -33,7 +37,7 @@ public class CameraAdministration implements AppShellConfigurator {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(CameraAdministration.class);
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         SpringApplication app = new SpringApplication(CameraAdministration.class);
         Environment env = app.run(args).getEnvironment();
         logApplicationStartup(env);

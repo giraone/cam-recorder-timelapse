@@ -1,7 +1,7 @@
 package com.giraone.camera.config;
 
 import com.giraone.camera.views.LoginView;
-import com.vaadin.flow.spring.security.VaadinWebSecurity;
+import com.vaadin.flow.spring.security.VaadinSecurityConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -12,11 +12,13 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.SecurityFilterChain;
+
+import static org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults;
 
 @EnableWebSecurity
 @Configuration
-public class SecurityConfig extends VaadinWebSecurity {
+public class SecurityConfig {
 
     private final ApplicationProperties applicationProperties;
 
@@ -24,8 +26,8 @@ public class SecurityConfig extends VaadinWebSecurity {
         this.applicationProperties = applicationProperties;
     }
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) {
 
         // This code uses script and style in html ('unsafe-inline') and images and media loaded from the image server
         // Vaadin itself uses 'unsafe-eval' and data: for images/fonts
@@ -40,14 +42,15 @@ public class SecurityConfig extends VaadinWebSecurity {
         http.headers(configurer -> configurer.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
         http.headers(configurer -> configurer.contentSecurityPolicy(
             contentSecurityPolicyConfig -> contentSecurityPolicyConfig.policyDirectives(cspPolicy)));
+        // Registered before the Vaadin configurer, so these rules take precedence over its "anyRequest" rule
         http.authorizeHttpRequests(auth ->
             auth.requestMatchers(
-                AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/images/*.png"),
-                AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/actuator"),
-                AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/actuator/**")
+                withDefaults().matcher(HttpMethod.GET, "/images/*.png"),
+                withDefaults().matcher(HttpMethod.GET, "/actuator"),
+                withDefaults().matcher(HttpMethod.GET, "/actuator/**")
             ).permitAll());
-        super.configure(http);
-        setLoginView(http, LoginView.class);
+        http.with(VaadinSecurityConfigurer.vaadin(), configurer -> configurer.loginView(LoginView.class));
+        return http.build();
     }
 
     @Bean

@@ -12,7 +12,7 @@ import java.time.temporal.ChronoUnit;
 public class LoginViewElement extends VerticalLayoutElement {
 
     public boolean login(String username, String password) {
-        LoginFormElement form = $(LoginFormElement.class).first();
+        LoginFormElement form = $(LoginFormElement.class).single();
         form.getUsernameField().setValue(username);
         form.getPasswordField().setValue(password);
         form.getSubmitButton().click();

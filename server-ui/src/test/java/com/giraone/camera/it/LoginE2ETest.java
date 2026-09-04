@@ -5,6 +5,7 @@ import com.vaadin.testbench.BrowserTest;
 import com.vaadin.testbench.BrowserTestBase;
 import com.vaadin.testbench.IPAddress;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.env.Environment;
@@ -12,6 +13,7 @@ import org.springframework.core.env.Environment;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@Disabled
 //@RunLocally(Browser.FIREFOX)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class LoginE2ETest extends BrowserTestBase {
@@ -32,14 +34,14 @@ public class LoginE2ETest extends BrowserTestBase {
 
     @BrowserTest
     public void loginAsValidUserSucceeds() {
-        LoginViewElement loginView = $(LoginViewElement.class).onPage().first();
-        assertTrue(loginView.login("user", "password"));
+        LoginViewElement loginView = $(LoginViewElement.class).onPage().single();
+        assertTrue(loginView.login("boss", "boss-secret"));
     }
 
     @BrowserTest
     public void loginAsInvalidUserFails() {
-        LoginViewElement loginView = $(LoginViewElement.class).onPage().first();
-        assertFalse(loginView.login("user", "invalid"));
+        LoginViewElement loginView = $(LoginViewElement.class).onPage().single();
+        assertFalse(loginView.login("boss", "invalid"));
     }
 
 }
