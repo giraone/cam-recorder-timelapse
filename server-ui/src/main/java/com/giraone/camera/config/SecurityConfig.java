@@ -49,6 +49,14 @@ public class SecurityConfig {
                 withDefaults().matcher(HttpMethod.GET, "/actuator"),
                 withDefaults().matcher(HttpMethod.GET, "/actuator/**")
             ).permitAll());
+        // Vaadin 25 no longer grants "anyRequest" to every authenticated user, it derives the access rules from
+        // the Flow route registry. Static resources of the views are not routes, so they have to be listed here.
+        // They are part of the authenticated views (iframe content and their scripts), so they stay protected.
+        http.authorizeHttpRequests(auth ->
+            auth.requestMatchers(
+                withDefaults().matcher(HttpMethod.GET, "/components/**"),
+                withDefaults().matcher(HttpMethod.GET, "/js/**")
+            ).authenticated());
         http.with(VaadinSecurityConfigurer.vaadin(), configurer -> configurer.loginView(LoginView.class));
         return http.build();
     }

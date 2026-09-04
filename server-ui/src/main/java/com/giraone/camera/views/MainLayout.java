@@ -14,7 +14,11 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import jakarta.annotation.security.PermitAll;
 
+// Vaadin 25 also checks the access rules of parent layouts, so this must be annotated as well.
+// The layout shows the logged in user and a logout button, so it requires an authenticated user.
+@PermitAll
 public class MainLayout extends AppLayout {
     private final SecurityService securityService;
 

@@ -11,6 +11,14 @@
   `MainLayout` are now loaded via `@StyleSheet(Lumo.UTILITY_STYLESHEET)`
 - Obsolete `frontend/index.html` removed so Vaadin generates the current default
 - Test bench: deprecated `first()` replaced by `single()`
+- `MainLayout` annotated with `@PermitAll`: Vaadin 25 also enforces the access rules of parent layouts,
+  so navigation failed after login with "Denied access to view 'ImagesView' due to parent layout
+  'MainLayout' access rules"
+- New `RouteAccessTest` guarding the access annotations of the views and their parent layout
+- `SecurityConfig` allows the static resources of the views (`/components/**`, `/js/**`) for authenticated
+  users: Vaadin 25 derives "anyRequest" from the Flow route registry, so these non-route resources were
+  answered with 403 and the image/video viewer iframes stayed empty
+- New `StaticResourceAccessTest` verifying these resources over real HTTP
 
 ## Version 0.0.2 (2026-09-04)
 
