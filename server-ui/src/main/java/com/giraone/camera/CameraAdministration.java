@@ -4,7 +4,6 @@ import com.giraone.camera.config.ApplicationProperties;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.server.PWA;
-import com.vaadin.flow.theme.Theme;
 import com.vaadin.flow.theme.lumo.Lumo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +23,6 @@ import java.nio.charset.Charset;
  */
 @SpringBootApplication
 @EnableConfigurationProperties({ApplicationProperties.class})
-//@Theme(value = "flowcrmtutorial")
 // Lumo utility classes (LumoUtility.*) are not loaded automatically, they need this stylesheet
 @StyleSheet(Lumo.UTILITY_STYLESHEET)
 @PWA(

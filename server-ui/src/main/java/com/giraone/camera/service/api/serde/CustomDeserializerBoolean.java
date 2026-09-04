@@ -5,8 +5,6 @@ import tools.jackson.databind.DeserializationContext;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.deser.std.StdDeserializer;
 
-import java.io.IOException;
-
 public class CustomDeserializerBoolean extends StdDeserializer<Boolean> {
 
     protected CustomDeserializerBoolean() {
