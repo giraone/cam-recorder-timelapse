@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -49,15 +50,12 @@ public class SecurityConfig {
                 withDefaults().matcher(HttpMethod.GET, "/actuator"),
                 withDefaults().matcher(HttpMethod.GET, "/actuator/**")
             ).permitAll());
-        // Vaadin 25 no longer grants "anyRequest" to every authenticated user, it derives the access rules from
-        // the Flow route registry. Static resources of the views are not routes, so they have to be listed here.
-        // They are part of the authenticated views (iframe content and their scripts), so they stay protected.
-        http.authorizeHttpRequests(auth ->
-            auth.requestMatchers(
-                withDefaults().matcher(HttpMethod.GET, "/components/**"),
-                withDefaults().matcher(HttpMethod.GET, "/js/**")
-            ).authenticated());
-        http.with(VaadinSecurityConfigurer.vaadin(), configurer -> configurer.loginView(LoginView.class));
+        // Vaadin 25 derives "anyRequest" from the Flow route registry instead of simply requiring an authenticated
+        // user. Everything that is not a route is rejected with 403 then - the iframe pages of the views, their
+        // scripts and the icons of the line-awesome add-on. Requiring authentication restores the behaviour of
+        http.with(VaadinSecurityConfigurer.vaadin(), configurer -> configurer
+            .loginView(LoginView.class)
+            .anyRequest(AuthorizeHttpRequestsConfigurer.AuthorizedUrl::authenticated));
         return http.build();
     }
 
