@@ -16,10 +16,10 @@ The **main loop** consists of
   to the *image server* and receiving back the *workflow and camera settings*
   - *workflow settings* are e.g. delay time till next photo, going into paused mode, indicator for using the led as a flash, restarting the device, ...
   - *cameras settings* are a larger amount of properties like image size, JPEG quality, exposure levels, white balance, ... 
-- initialzing the camera with the received settings and taking the first photo using these settings
+- initializing the camera with the received settings and taking the first photo using these settings
 - uploading the photo to the image server and receiving back again the settings, when they have been changed
 - applying the received delay time till the next action
-- if the settings were changed, the ESP32Cam applies them by re-initialzing the camera and will take and upload the next photo
+- if the settings were changed, the ESP32Cam applies them by re-initializing the camera and will take and upload the next photo
 - if the workflow setting had indicated going into the pause mode, the ESP32Cam will only upload its status without taking a photo
   and receives again new setting, that may indicate to leave to paused mode now
 
