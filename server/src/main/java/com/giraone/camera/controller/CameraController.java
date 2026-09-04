@@ -101,7 +101,7 @@ public class CameraController {
     ResponseEntity<Settings> uploadStatus(@RequestBody CameraStatus status) {
         LOGGER.info("Camera status = {}", status);
         final Settings settingsToReturn = new Settings(currentSettings.getStatus(), currentSettings.getWorkflow(), null);
-        updateSettings(settingsToReturn, status.imageCounter());
+        updateSettings(settingsToReturn, status.cameraInitCounter());
         return ResponseEntity.ok(settingsToReturn);
     }
 
@@ -322,10 +322,10 @@ public class CameraController {
         return streamToWebClient(fileInfoAndContent.content(), mediaType, contentLength);
     }
 
-    private void updateSettings(Settings settingsToReturn, int imageCounter) {
-        if (cameraSettingsChanged || imageCounter == 0) {
-            LOGGER.info("Forcing to re-initialize camera settings.");
-            // return camera settings, when they were changed or no image was taken yet
+    private void updateSettings(Settings settingsToReturn, int initCounter) {
+        // If the camera settings were changed or were never requested, then return it
+        if (cameraSettingsChanged || initCounter == 0) {
+            LOGGER.info("Forcing to re-initialize camera settings. cameraSettingsChanged={}, initCounter={}", cameraSettingsChanged, initCounter);
             settingsToReturn.setCamera(currentSettings.getCamera());
             cameraSettingsChanged = false;
         }

@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static com.giraone.camera.service.FileService.getFile;
+import static com.giraone.imaging.ConversionCommand.CompressionQuality.LOSSY_BEST;
 
 @Service
 public class VideoService {
@@ -127,9 +128,7 @@ public class VideoService {
     public void createTimelapseVideo(TimelapseCommand timelapseCommand, Path outputVideoFile) throws IOException {
         final Path inputListFile = Files.createTempFile("f2mp4-list-", ".txt");
         try (PrintStream out = new PrintStream(new FileOutputStream(inputListFile.toFile()))) {
-            timelapseCommand.inputFileNames().forEach(filename -> {
-                out.printf("file '%s'%n", getFile(FileService.Media.IMAGES, filename).toAbsolutePath().toString().replace('\\', '/'));
-            });
+            timelapseCommand.inputFileNames().forEach(filename -> out.printf("file '%s'%n", getFile(FileService.Media.IMAGES, filename).toAbsolutePath().toString().replace('\\', '/')));
         }
         final long maxWaitTimeMs = timelapseCommand.inputFileNames().size() * 500L;
         LOGGER.info("List file created \"{}\" with {} entries. Max wait = {}ms",
@@ -173,8 +172,10 @@ public class VideoService {
             final OsUtil.OsCommandResult result = OsUtil.runCommandAndReadOutput(ffmpegCommands, 5000L);
             if (result.code() >= 0) {
                 if (Files.size(tempFile) > 100L) {
-                    imagingProvider.createThumbNail(tempFile.toFile(), outputThumbnailFile.toFile(), MediaType.IMAGE_JPEG_VALUE,
-                        160, 120, ConversionCommand.CompressionQuality.LOSSY_BEST, ConversionCommand.SpeedHint.ULTRA_QUALITY);
+                    final ConversionCommand conversionCommand = ConversionCommand.buildConversionCommand(
+                        outputThumbnailFile.toFile(), MediaType.IMAGE_JPEG_VALUE,160, 120, LOSSY_BEST
+                    );
+                    imagingProvider.createThumbnail(tempFile, conversionCommand);
                 } else {
                     throw new OsCallException("Cannot create thumbnail for video \"" + inputFile + "\"! Empty PNG output.");
                 }

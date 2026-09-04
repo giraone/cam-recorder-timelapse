@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static com.giraone.imaging.ConversionCommand.CompressionQuality.LOSSY_BEST;
 import static java.nio.file.StandardOpenOption.*;
 
 @Service
@@ -135,7 +136,7 @@ public class FileService {
         return files.stream()
             .skip(query.offset())
             .limit(query.limit())
-            .map(fileInfo -> fileInfo.buildInfos())
+            .map(FileInfo::buildInfos)
             .toList();
     }
 
@@ -277,8 +278,10 @@ public class FileService {
 
     boolean createThumbnailForImage(Path originalFile, Path thumbnailFile) {
         try {
-            imagingProvider.createThumbNail(originalFile, thumbnailFile, MediaType.IMAGE_JPEG_VALUE,
-                160, 120, ConversionCommand.CompressionQuality.LOSSY_BEST);
+            final ConversionCommand conversionCommand = ConversionCommand.buildConversionCommand(
+                thumbnailFile.toFile(), MediaType.IMAGE_JPEG_VALUE,160, 120, LOSSY_BEST
+            );
+            imagingProvider.createThumbnail(originalFile, conversionCommand);
         } catch (Exception exc) {
             LOGGER.warn("Cannot create thumbnail for image \"{}\"! {}", originalFile, exc.getMessage());
             return false;

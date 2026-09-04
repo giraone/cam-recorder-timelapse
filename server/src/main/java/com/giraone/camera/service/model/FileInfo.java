@@ -111,7 +111,7 @@ public class FileInfo {
             return ret;
         }
         try {
-            com.giraone.imaging.FileInfo imagingFileInfo = imagingProvider.fetchFileInfo(file.toFile());
+            com.giraone.imaging.FileInfo imagingFileInfo = imagingProvider.fetchFileInfo(file);
             ret = imagingFileInfo.getWidth() + "x" + imagingFileInfo.getHeight();
             infoCacheImage.put(filename, ret);
             LOGGER.info("fetchImageInfos {}={}", filename, ret);
