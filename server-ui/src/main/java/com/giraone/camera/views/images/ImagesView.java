@@ -154,7 +154,7 @@ public class ImagesView extends VerticalLayout {
         deleteSelectedButton.addClickListener(click -> deleteSelected());
         deleteSelectedButton.setEnabled(!gridFileInfo.itemsIsEmpty());
 
-        Button downloadSelectedButton = new Button("Donwload");
+        Button downloadSelectedButton = new Button("Download");
         downloadSelectedButton.setIcon(LineAwesomeIcon.DOWNLOAD_SOLID.create());
         downloadSelectedButton.addClickListener(click -> downloadSelected());
         downloadSelectedButton.setEnabled(!gridFileInfo.itemsIsEmpty());
