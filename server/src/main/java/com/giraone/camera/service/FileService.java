@@ -170,7 +170,7 @@ public class FileService {
             return new Status(false, "Invalid filename \"" + filename + "\"!");
         }
         final Path file = getBaseOf(type).resolve(filename);
-        LOGGER.error("Delete \"{}\"", file);
+        LOGGER.debug("Delete \"{}\"", file);
         try {
             Files.delete(file);
             final Path thumbnailFile = buildThumbnailFile(type, filename);
@@ -277,8 +277,8 @@ public class FileService {
 
     boolean createThumbnailForImage(Path originalFile, Path thumbnailFile) {
         try {
-            imagingProvider.createThumbNail(originalFile.toFile(), thumbnailFile.toFile(), MediaType.IMAGE_JPEG_VALUE,
-                160, 120, ConversionCommand.CompressionQuality.LOSSY_BEST, ConversionCommand.SpeedHint.ULTRA_QUALITY);
+            imagingProvider.createThumbNail(originalFile, thumbnailFile, MediaType.IMAGE_JPEG_VALUE,
+                160, 120, ConversionCommand.CompressionQuality.LOSSY_BEST);
         } catch (Exception exc) {
             LOGGER.warn("Cannot create thumbnail for image \"{}\"! {}", originalFile, exc.getMessage());
             return false;
@@ -390,7 +390,7 @@ public class FileService {
         final List<Path> files = new ArrayList<>(100);
         final DirectoryStream.Filter<? super Path> filter = path -> {
             final String fileName = path.getFileName().toString();
-            return !fileName.startsWith(".") && (prefixFilter == null || fileName.startsWith(prefixFilter));
+            return !fileName.startsWith(".") && (prefixFilter == null || fileName.startsWith(prefixFilter)) && Files.isRegularFile(path);
         };
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, filter)) {
             for (Path path : stream) {
@@ -406,7 +406,7 @@ public class FileService {
         final AtomicInteger ret = new AtomicInteger(0);
         final DirectoryStream.Filter<? super Path> filter = path -> {
             final String fileName = path.getFileName().toString();
-            return !fileName.startsWith(".") && (prefixFilter == null || fileName.startsWith(prefixFilter));
+            return !fileName.startsWith(".") && (prefixFilter == null || fileName.startsWith(prefixFilter)) && Files.isRegularFile(path);
         };
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, filter)) {
             stream.spliterator().forEachRemaining(path -> ret.getAndIncrement());
