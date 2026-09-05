@@ -13,7 +13,6 @@ import tools.jackson.databind.annotation.JsonSerialize;
 import java.util.Arrays;
 import java.util.List;
 
-@SuppressWarnings("unused")
 public class CameraSettings {
 
     private int clockFrequencyHz = 16000000;

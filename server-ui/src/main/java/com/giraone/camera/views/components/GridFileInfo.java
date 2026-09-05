@@ -89,7 +89,7 @@ public class GridFileInfo extends Grid<FileInfo> {
     }
 
     public void setFilter(String filter) {
-        LOGGER.info("setFilter \"{}\"", filter);
+        LOGGER.debug("setFilter \"{}\"", filter);
         filterDataProvider.setFilter(filter);
     }
 

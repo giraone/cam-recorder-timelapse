@@ -96,11 +96,17 @@ public class FileViewService {
 
     public int countFileInfos(String type, FileInfoQuery fileInfoQuery) {
         LOGGER.debug("countFileInfos {} {}", type, fileInfoQuery);
-        return webClient().get().uri(uriBuilder -> uriBuilder
+        Integer ret =  webClient().get().uri(uriBuilder -> uriBuilder
                 .path("/" + type + "-count")
                 .queryParam("prefixFilter", fileInfoQuery.prefixFilter())
                 .build())
             .exchangeToMono(clientResponse -> clientResponse.bodyToMono(Integer.class)).block();
+        if (ret != null) {
+            return ret;
+        } else {
+            LOGGER.error("Cannot perform countFileInfos: timeout!");
+            return 0;
+        }
     }
 
     public List<FileInfo> listImageInfos(FileInfoQuery fileInfoQuery) {
@@ -121,7 +127,11 @@ public class FileViewService {
                 .queryParam("orderAttribute", fileInfoQuery.order().attribute())
                 .queryParam("orderDesc", fileInfoQuery.order().desc())
                 .build())
-            .exchangeToFlux(clientResponse -> clientResponse.bodyToFlux(FileInfo.class)));
+            // TODO: On error sth. like
+            // {"timestamp":"2026-09-05T18:43:44.442Z","path":"/video-infos","status":500,"error":"Internal Server Error","requestId":"2769ee74-56"}
+            // is returned and not an array. Handle this type of error.
+            .exchangeToFlux(clientResponse -> clientResponse.bodyToFlux(FileInfo.class))
+        );
     }
 
     public Status renameImage(FileInfo fileInfo, String name) {
@@ -194,13 +204,13 @@ public class FileViewService {
 
     private Status waitFor(Mono<Status> statusMono) {
         final Status ret = statusMono.block(DURATION_WAIT_SINGLE);
-        LOGGER.debug("waitFor {}", ret);
+        LOGGER.debug("waitForStatus {}", ret);
         return ret != null ? ret : new Status(false, "Timeout (block)!");
     }
 
     private List<FileInfo> waitFor(Flux<FileInfo> fileInfoFlux) {
         final List<FileInfo> ret = fileInfoFlux.collectList().block(DURATION_WAIT_LIST);
-        LOGGER.debug("waitFor {}", ret);
+        LOGGER.debug("waitForList {}", ret);
         return ret != null ? ret : List.of();
     }
 }

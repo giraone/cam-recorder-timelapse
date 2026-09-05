@@ -2,6 +2,7 @@ package com.giraone.camera.views.images;
 
 import com.giraone.camera.config.ApplicationProperties;
 import com.giraone.camera.service.FileViewService;
+import com.giraone.camera.service.api.VideoCreationSettings;
 import com.giraone.camera.service.model.FileInfo;
 import com.giraone.camera.service.model.Status;
 import com.giraone.camera.service.model.timelapse.TimelapseCommand;
@@ -42,7 +43,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 @SpringComponent
-@Scope("prototype")
+@Scope("prototype") // prototype scope generates a fresh object for every method call or dependency injection
 @PermitAll
 @Route(value = "", layout = MainLayout.class)
 @PageTitle("Images | Cam Recorder")
@@ -156,12 +157,12 @@ public class ImagesView extends VerticalLayout {
 
         Button downloadSelectedButton = new Button("Download");
         downloadSelectedButton.setIcon(LineAwesomeIcon.DOWNLOAD_SOLID.create());
-        downloadSelectedButton.addClickListener(click -> downloadSelected());
+        downloadSelectedButton.addClickListener(_ -> downloadSelected());
         downloadSelectedButton.setEnabled(!gridFileInfo.itemsIsEmpty());
 
         makeVideoButton = new Button("Create video");
         makeVideoButton.setIcon(LineAwesomeIcon.VIDEO_SOLID.create());
-        makeVideoButton.addClickListener(click -> makeTimelapseVideo());
+        makeVideoButton.addClickListener(_ -> makeTimelapseVideo());
         makeVideoButton.setEnabled(!gridFileInfo.itemsIsEmpty());
 
         itemsLabel = new Paragraph("0 of 0 items");
@@ -177,7 +178,7 @@ public class ImagesView extends VerticalLayout {
         final TextPromptDialog textPromptDialog = new TextPromptDialog(
             "Rename", "New name:",
             fileInfo.fileName(), "New name",
-            name -> renameFile(fileInfo, name));
+            name -> { if (name != null && !name.isBlank()) renameFile(fileInfo, name); });
         textPromptDialog.open();
     }
 
@@ -326,7 +327,7 @@ public class ImagesView extends VerticalLayout {
     private void activation(boolean selected) {
         final int itemsSize = gridFileInfo.getItemsSize();
         final int totalCount = gridFileInfo.getTotalCount();
-        LOGGER.warn("activation selected={} itemsSize={} totalCount={}", selected, itemsSize, totalCount);
+        LOGGER.info("activation selected={} itemsSize={} totalCount={}", selected, itemsSize, totalCount);
         final boolean entries = itemsSize > 0;
         deleteSelectedButton.setEnabled(entries && selected);
         makeVideoButton.setEnabled(entries && selected);
@@ -357,15 +358,19 @@ public class ImagesView extends VerticalLayout {
             return;
         }
         List<String> names = selectedItems.stream().map(FileInfo::fileName).sorted().toList();
-        String outputVideoName = names.get(0).replace(".jpg", ".mp4");
-        TimelapseCommand timelapseCommand = new TimelapseCommand(outputVideoName, names, 1, 10);
+        String outputVideoName = names.getFirst().replace(".jpg", ".mp4");
+        VideoCreationSettings videoCreationSettings = VideoCreationSettings.getCurrent();
+        TimelapseCommand timelapseCommand = new TimelapseCommand(outputVideoName, names,
+            videoCreationSettings.getModuloSelectImage(),
+            videoCreationSettings.getFrameRate()
+        );
         try {
             TimelapseResult result = fileViewService.makeTimelapseVideo(timelapseCommand).block(Duration.ofSeconds(120));
             if (result != null) {
                 Notification notification = Notification.show(result.toString());
                 notification.addThemeVariants(NotificationVariant.LUMO_PRIMARY);
             } else {
-                showError("Timeout for makeTimelapseVideo!");
+                showError("Timeout (120s) for makeTimelapseVideo!");
             }
         } catch (Exception e) {
             LOGGER.warn("makeTimelapseVideo failed!", e);

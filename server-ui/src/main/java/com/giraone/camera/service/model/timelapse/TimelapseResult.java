@@ -1,4 +1,4 @@
 package com.giraone.camera.service.model.timelapse;
 
-public record TimelapseResult(boolean success, String filename) {
+public record TimelapseResult(boolean success, String filename, String errorMessage) {
 }

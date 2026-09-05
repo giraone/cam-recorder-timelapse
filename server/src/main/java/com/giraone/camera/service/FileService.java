@@ -245,19 +245,19 @@ public class FileService {
         try {
             outputVideoFile = Files.createTempFile("f2mp4-out-", ".mp4");
             videoService.createTimelapseVideo(timelapseCommand, outputVideoFile);
-        } catch (IOException ioe) {
-            LOGGER.error("createTimelapseVideo failed", ioe);
-            return Mono.just(new TimelapseResult(false, null));
+        } catch (Exception e) {
+            LOGGER.error("createTimelapseVideo failed", e);
+            return Mono.just(new TimelapseResult(false, null, e.getMessage()));
         }
         final long contentLength;
         try {
             contentLength = Files.size(outputVideoFile);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            return Mono.just(new TimelapseResult(false, null, e.getMessage()));
         }
         final Flux<ByteBuffer> content = FluxUtil.readFile(outputVideoFile);
         return this.storeFile(Media.VIDEOS, timelapseCommand.outputFilename(), content, contentLength)
-            .thenReturn(new TimelapseResult(true, timelapseCommand.outputFilename()));
+            .thenReturn(new TimelapseResult(true, timelapseCommand.outputFilename(), null));
     }
 
     // TODO: No zip - actually just a simple concat

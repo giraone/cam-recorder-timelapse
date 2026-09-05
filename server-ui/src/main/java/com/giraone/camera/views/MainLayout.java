@@ -3,6 +3,7 @@ package com.giraone.camera.views;
 import com.giraone.camera.security.SecurityService;
 import com.giraone.camera.views.images.ImagesView;
 import com.giraone.camera.views.settings.CameraSettingsForm;
+import com.giraone.camera.views.settings.VideoCreationSettingsForm;
 import com.giraone.camera.views.settings.WorkflowSettingsForm;
 import com.giraone.camera.views.videos.VideosView;
 import com.vaadin.flow.component.applayout.AppLayout;
@@ -52,7 +53,8 @@ public class MainLayout extends AppLayout {
             new RouterLink("Images", ImagesView.class),
             new RouterLink("Videos", VideosView.class),
             new RouterLink("Workflow Settings", WorkflowSettingsForm.class),
-            new RouterLink("Camera Settings", CameraSettingsForm.class)
+            new RouterLink("Camera Settings", CameraSettingsForm.class),
+            new RouterLink("Video Creation Settings", VideoCreationSettingsForm.class)
         ));
     }
 }

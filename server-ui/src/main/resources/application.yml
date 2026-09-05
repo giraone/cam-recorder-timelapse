@@ -5,12 +5,17 @@ spring:
   application:
     name: cam-recorder
   mustache.check-template-location: false
+#  jackson:
+#    deserialization:
+#      fail-on-unknown-properties: false
+#      fail-on-null-for-primitives: false
 
 logging:
   level:
-    ROOT: INFO
+    ROOT: WARN
     org.atmosphere: WARN
-    com.giraone.streaming: DEBUG
+    com.giraone.camera: WARN
+    com.giraone.camera.CameraAdministration: INFO
   pattern:
     dateformat: 'yyyy-MM-dd HH:mm:ss.SSS,Europe/Berlin'
 

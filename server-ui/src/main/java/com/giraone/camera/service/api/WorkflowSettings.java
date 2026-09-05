@@ -1,6 +1,5 @@
 package com.giraone.camera.service.api;
 
-@SuppressWarnings("unused")
 public class WorkflowSettings {
 
     private boolean restart = false;

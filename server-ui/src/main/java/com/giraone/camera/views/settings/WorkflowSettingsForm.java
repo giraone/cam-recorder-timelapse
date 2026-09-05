@@ -26,16 +26,20 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import jakarta.annotation.security.PermitAll;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Scope;
 
 import java.time.Duration;
 
 @SpringComponent
-@Scope("prototype")
+@Scope("prototype") // prototype scope generates a fresh object for every method call or dependency injection
 @PermitAll
 @Route(value = "workflow-settings", layout = MainLayout.class)
 @PageTitle("Workflow Settings | Cam Recorder")
 public class WorkflowSettingsForm extends FormLayout {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(WorkflowSettingsForm.class);
 
     Checkbox restart = new Checkbox("Restart");
     Checkbox pause = new Checkbox("Pause");
@@ -92,15 +96,23 @@ public class WorkflowSettingsForm extends FormLayout {
         add(formLayout);
         addSaveListener(this::saveWorkflowSettings);
         settings = fileViewService.loadSettings().block(Duration.ofSeconds(5));
-        binder.setBean(settings.getWorkflow());
+        if (settings != null) {
+            binder.setBean(settings.getWorkflow());
+        } else {
+            LOGGER.error("Cannot get settings from fileViewService within 5 seconds!");
+        }
     }
     
     private void saveWorkflowSettings(WorkflowSettingsForm.SaveEvent event) {
         Status status = fileViewService.storeSettings(settings).block(Duration.ofSeconds(5));
-        if (status.success()) {
-            Notification.show("Saved!");
+        if (status != null) {
+            if (status.success()) {
+                Notification.show("Saved!");
+            } else {
+                Notification.show("Cannot save settings: " + status.error());
+            }
         } else {
-            Notification.show("Cannot save settings: " + status.error());
+            Notification.show("Cannot save settings: timeout!");
         }
     }
 
@@ -135,8 +147,8 @@ public class WorkflowSettingsForm extends FormLayout {
     }
 
     public static class SaveEvent extends WorkflowSettingsFormEvent {
-        SaveEvent(WorkflowSettingsForm source, WorkflowSettings WorkflowSettings) {
-            super(source, WorkflowSettings);
+        SaveEvent(WorkflowSettingsForm source, WorkflowSettings workflowSettings) {
+            super(source, workflowSettings);
         }
     }
 
@@ -146,6 +158,7 @@ public class WorkflowSettingsForm extends FormLayout {
         }
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public Registration addSaveListener(ComponentEventListener<SaveEvent> listener) {
         return addListener(SaveEvent.class, listener);
     }

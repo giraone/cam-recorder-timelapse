@@ -40,7 +40,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 @SpringComponent
-@Scope("prototype")
+@Scope("prototype") // prototype scope generates a fresh object for every method call or dependency injection
 @PermitAll
 @Route(value = "videos", layout = MainLayout.class)
 @PageTitle("Videos | Cam Recorder")
@@ -163,7 +163,7 @@ public class VideosView extends VerticalLayout {
         final TextPromptDialog textPromptDialog = new TextPromptDialog(
             "Rename", "New name:",
             fileInfo.fileName(), "New name",
-            name -> renameFile(fileInfo, name));
+            name -> { if (name != null && !name.isBlank()) renameFile(fileInfo, name); });
         textPromptDialog.open();
     }
 
@@ -340,7 +340,7 @@ public class VideosView extends VerticalLayout {
         Button closeButton = new Button(new Icon("lumo", "cross"));
         closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
         closeButton.setAriaLabel("Close");
-        closeButton.addClickListener(event -> notification.close());
+        closeButton.addClickListener(_ -> notification.close());
         HorizontalLayout layout = new HorizontalLayout(divText, closeButton);
         layout.setAlignItems(Alignment.CENTER);
         notification.add(layout);

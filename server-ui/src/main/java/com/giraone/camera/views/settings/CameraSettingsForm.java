@@ -31,16 +31,20 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import jakarta.annotation.security.PermitAll;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Scope;
 
 import java.time.Duration;
 
 @SpringComponent
-@Scope("prototype")
+@Scope("prototype") // prototype scope generates a fresh object for every method call or dependency injection
 @PermitAll
 @Route(value = "camera-settings", layout = MainLayout.class)
 @PageTitle("Camera Settings | Cam Recorder")
 public class CameraSettingsForm extends FormLayout {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CameraSettingsForm.class);
 
     IntegerField clockFrequencyHz = new IntegerField("Clock Frequency Hz");
     ComboBox<CameraSettings.FrameSize> frameSize = new ComboBox<>("Frame Size (Resolution)", CameraSettings.FrameSize.ALL);
@@ -144,12 +148,17 @@ public class CameraSettingsForm extends FormLayout {
             // Use one column by default
             new ResponsiveStep("0", 1),
             // Use 3 columns, if the layout's width exceeds 640px
-            new ResponsiveStep("640px", 3));
+            new ResponsiveStep("640px", 3)
+        );
 
         add(formLayout);
         addSaveListener(this::saveCameraSettings);
         settings = fileViewService.loadSettings().block(Duration.ofSeconds(5));
-        setCameraSettings(settings.getCamera());
+        if (settings != null) {
+            setCameraSettings(settings.getCamera());
+        } else {
+            LOGGER.error("Cannot get settings from fileViewService within 5 seconds!");
+        }
     }
 
     private void setCameraSettings(CameraSettings cameraSettings) {
@@ -158,10 +167,14 @@ public class CameraSettingsForm extends FormLayout {
 
     private void saveCameraSettings(CameraSettingsForm.SaveEvent event) {
         Status status = fileViewService.storeSettings(settings).block(Duration.ofSeconds(5));
-        if (status.success()) {
-            Notification.show("Saved!");
+        if (status != null) {
+            if (status.success()) {
+                Notification.show("Saved!");
+            } else {
+                Notification.show("Cannot save settings: " + status.error());
+            }
         } else {
-            Notification.show("Cannot save settings: " + status.error());
+            Notification.show("Cannot save settings: timeout!");
         }
     }
 
@@ -207,6 +220,7 @@ public class CameraSettingsForm extends FormLayout {
         }
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public Registration addSaveListener(ComponentEventListener<SaveEvent> listener) {
         return addListener(SaveEvent.class, listener);
     }
