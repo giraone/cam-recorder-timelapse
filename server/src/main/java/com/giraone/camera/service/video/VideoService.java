@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 
 import static com.giraone.camera.service.FileService.getFile;
 import static com.giraone.imaging.ConversionCommand.CompressionQuality.LOSSY_BEST;
@@ -88,13 +89,16 @@ public class VideoService {
                 if (Files.size(tempFile) > 0L) {
                     return Files.readString(tempFile);
                 } else {
-                    throw new OsCallException("Cannot probe video \"" + inputFile + "\"! Code = " + result.code());
+                    throw new OsCallException("Cannot probe video \"" + inputFile + "\"! Code = " + result.code()
+                        + ", ffmpegCommands=" + Arrays.toString(ffmpegCommands));
                 }
             } else {
                 if (result.exception() != null) {
-                    throw new OsCallException("Cannot probe video \"" + inputFile + "\"!", result.exception());
+                    throw new OsCallException("Cannot probe video \"" + inputFile + "\"! ffmpegCommands="
+                        + Arrays.toString(ffmpegCommands), result.exception());
                 } else {
-                    throw new OsCallException("Cannot probe video \"" + inputFile + "\"! " + result.output());
+                    throw new OsCallException("Cannot probe video \"" + inputFile + "\"! ffmpegCommands="
+                        + Arrays.toString(ffmpegCommands) + " output = " + result.output());
                 }
             }
         } finally {
@@ -110,7 +114,7 @@ public class VideoService {
         try {
             return buildVideoInfoFromFfmpegJson(jsonString);
         } catch (JacksonException e) {
-            LOGGER.warn("Cannot parse: " + jsonString, e);
+            LOGGER.warn("Cannot parse: {}", jsonString, e);
             return new VideoMetaInfo("ERROR (parse)", "", 0, "ERROR (parse)", 0);
         }
     }
@@ -217,10 +221,12 @@ public class VideoService {
         int i1 = Integer.parseInt(framesPerSecondCalc.substring(0, i));
         int i2 = Integer.parseInt(framesPerSecondCalc.substring(i + 1));
         int framesPerSecond = i1 / i2;
+        int durationSeconds = durationSecondsString.isEmpty() ? 0 : (int) Float.parseFloat(durationSecondsString);
+        System.err.println(durationSecondsString + " " + durationSeconds);
         return new VideoMetaInfo(
             videoCodec,
             audioCodec,
-            durationSecondsString.isEmpty() ? 0 : (int) Float.parseFloat(durationSecondsString),
+            durationSeconds,
             width + "x" + height,
             framesPerSecond
         );
