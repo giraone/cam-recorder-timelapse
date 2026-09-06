@@ -143,7 +143,7 @@ public class FileInfo {
         }
         ret = videoMetaInfo != null ? videoMetaInfo.toString() : "JSON-Error";
         infoCacheVideo.put(filename, ret);
-        LOGGER.info("fetchImageInfos {}={}", filename, ret);
+        LOGGER.info("fetchVideoInfos {}={}", filename, ret);
         return ret;
     }
 

@@ -222,7 +222,6 @@ public class VideoService {
         int i2 = Integer.parseInt(framesPerSecondCalc.substring(i + 1));
         int framesPerSecond = i1 / i2;
         int durationSeconds = durationSecondsString.isEmpty() ? 0 : (int) Float.parseFloat(durationSecondsString);
-        System.err.println(durationSecondsString + " " + durationSeconds);
         return new VideoMetaInfo(
             videoCodec,
             audioCodec,
