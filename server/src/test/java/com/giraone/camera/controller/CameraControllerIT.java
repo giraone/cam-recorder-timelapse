@@ -1,9 +1,11 @@
 package com.giraone.camera.controller;
 
+import com.giraone.camera.service.CameraStatusService;
 import com.giraone.camera.service.FileService;
 import com.giraone.camera.service.FluxUtil;
 import com.giraone.camera.service.api.Settings;
 import com.giraone.camera.service.api.Status;
+import com.giraone.camera.service.model.CameraStatusRecord;
 import com.giraone.camera.service.video.model.TimelapseCommand;
 import com.giraone.camera.service.video.model.TimelapseResult;
 import com.giraone.camera.util.ObjectMapperBuilder;
@@ -32,6 +34,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -59,6 +62,9 @@ class CameraControllerIT {
 
     @Autowired
     private WebTestClient webTestClient;
+
+    @Autowired
+    private CameraStatusService cameraStatusService;
 
     @Test
     void getSettings() {
@@ -100,19 +106,44 @@ class CameraControllerIT {
     @Test
     void uploadStatus() {
 
+        // arrange
+        String cameraName = "camera1";
+        LocalDateTime now = LocalDateTime.now();
+        cameraStatusService.reset(cameraName);
+        // act
         Settings settings = webTestClient.put()
             .uri("/status")
             .contentType(MediaType.APPLICATION_JSON)
             .accept(MediaType.APPLICATION_JSON)
-            .bodyValue(Map.of("rssi", -10))
+            .bodyValue(Map.of(
+                "rssi", -10,
+                "cameraName", cameraName,
+                "imageCounter", 8,
+                "imageErrors", 2,
+                "cameraInitCounter", 0,
+                "cameraInitErrors", 0,
+                "uploadImageErrors", 0,
+                "uploadStatusErrors", 0
+                ))
             .exchange()
             .expectStatus().isOk()
             .returnResult(Settings.class)
             .getResponseBody()
             .blockFirst();
+        // assert - response
         assertThat(settings).isNotNull();
         assertThat(settings.getStatus()).isNotNull();
         assertThat(settings.getStatus().success()).isTrue();
+        // assert - stored data
+        List<CameraStatusRecord> statusList = cameraStatusService.get(cameraName);
+        assertThat(statusList).isNotNull();
+        assertThat(statusList).hasSize(1);
+        CameraStatusRecord cameraStatusRecord = statusList.getFirst();
+        assertThat(cameraStatusRecord).isNotNull();
+        assertThat(cameraStatusRecord.rssi()).isEqualTo(-10);
+        assertThat(cameraStatusRecord.imageCounter()).isEqualTo(8);
+        assertThat(cameraStatusRecord.imageErrors()).isEqualTo(2);
+        assertThat(cameraStatusRecord.timestamp()).isNotNull().isAfter(now);
     }
 
     @Test

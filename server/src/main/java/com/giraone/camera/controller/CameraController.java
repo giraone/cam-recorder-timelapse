@@ -1,5 +1,6 @@
 package com.giraone.camera.controller;
 
+import com.giraone.camera.service.CameraStatusService;
 import com.giraone.camera.service.FileService;
 import com.giraone.camera.service.api.CameraStatus;
 import com.giraone.camera.service.api.Settings;
@@ -55,10 +56,12 @@ public class CameraController {
     private boolean cameraSettingsChanged = false;
 
     private final FileService fileService;
+    private final CameraStatusService cameraStatusService;
 
     @SuppressWarnings("unused")
-    public CameraController(FileService fileService) {
+    public CameraController(FileService fileService, CameraStatusService cameraStatusService) {
         this.fileService = fileService;
+        this.cameraStatusService = cameraStatusService;
         try {
             final String content = Files.readString(SETTINGS_FILE_PATH);
             currentSettings = objectMapper.readValue(content, Settings.class);
@@ -98,10 +101,11 @@ public class CameraController {
 
     @SuppressWarnings("unused")
     @PutMapping("status")
-    ResponseEntity<Settings> uploadStatus(@RequestBody CameraStatus status) {
-        LOGGER.info("Camera status = {}", status);
+    ResponseEntity<Settings> uploadStatus(@RequestBody CameraStatus cameraStatus) {
+        LOGGER.info("Camera status = {}", cameraStatus);
         final Settings settingsToReturn = new Settings(currentSettings.getStatus(), currentSettings.getWorkflow(), null);
-        updateSettings(settingsToReturn, status.cameraInitCounter());
+        updateSettings(settingsToReturn, cameraStatus.cameraInitCounter());
+        cameraStatusService.store(cameraStatus);
         return ResponseEntity.ok(settingsToReturn);
     }
 

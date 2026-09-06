@@ -6,6 +6,7 @@
 - Store video and create thumbnails using *ffmpeg*
 - Extract video information using *ffprobe*
 - Create timelapse videos using *ffmpeg*
+- Store and return camera status (WiFi strength, number of errors)
 - UI to change camera settings - see server-ui
 - UI to view uploaded images - see server-ui
 
