@@ -2,6 +2,7 @@ package com.giraone.camera.service;
 
 import com.giraone.camera.config.ApplicationProperties;
 import com.giraone.camera.service.api.Settings;
+import com.giraone.camera.service.model.CameraStatusRecord;
 import com.giraone.camera.service.model.FileInfo;
 import com.giraone.camera.service.model.FileInfoQuery;
 import com.giraone.camera.service.model.Status;
@@ -9,6 +10,7 @@ import com.giraone.camera.service.model.timelapse.TimelapseCommand;
 import com.giraone.camera.service.model.timelapse.TimelapseResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,9 @@ public class FileViewService {
     private static final Duration DURATION_WAIT_LIST = Duration.ofSeconds(60);
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileViewService.class);
+
+    private static final ParameterizedTypeReference<List<String>> CAMERA_NAME_LIST = new ParameterizedTypeReference<>() {
+    };
 
     public static String DIR_NAME_THUMBS = ".thumbs";
     public static String DIR_NAME_META = ".meta";
@@ -176,6 +181,45 @@ public class FileViewService {
         return webClient().post().uri("/image/download-as-zip")
             .body(BodyInserters.fromValue(imageNames))
             .exchangeToMono(clientResponse -> clientResponse.bodyToMono(String.class));
+    }
+
+    //-- CAMERA STATUS -------------------------------------------------------------------------------------------------
+
+    /**
+     * Fetches the names of all cameras, that have reported a status to the backend server.
+     *
+     * @return the camera names in a stable, alphabetical order - empty, if the server does not answer in time
+     */
+    public List<String> listCameras() {
+        LOGGER.debug("listCameras");
+        // A "ParameterizedTypeReference" is used deliberately: "bodyToFlux(String.class)" would be served by the
+        // raw StringDecoder, which passes the undecoded JSON text through instead of the elements of the array.
+        final List<String> ret = webClient().get().uri("/cameras")
+            .exchangeToMono(clientResponse -> clientResponse.bodyToMono(CAMERA_NAME_LIST))
+            .block(DURATION_WAIT_LIST);
+        if (ret == null) {
+            LOGGER.error("Cannot perform listCameras: timeout!");
+            return List.of();
+        }
+        return ret.stream().sorted().toList();
+    }
+
+    /**
+     * Fetches the status records of one camera.
+     *
+     * @param cameraName name of the camera
+     * @return the status records in the order sent by the server - empty, if the server does not answer in time
+     */
+    public List<CameraStatusRecord> listCameraStatus(String cameraName) {
+        LOGGER.debug("listCameraStatus {}", cameraName);
+        final List<CameraStatusRecord> ret = webClient().get().uri("/status/{cameraName}", cameraName)
+            .exchangeToFlux(clientResponse -> clientResponse.bodyToFlux(CameraStatusRecord.class))
+            .collectList().block(DURATION_WAIT_LIST);
+        if (ret == null) {
+            LOGGER.error("Cannot perform listCameraStatus of \"{}\": timeout!", cameraName);
+            return List.of();
+        }
+        return ret;
     }
 
     //------------------------------------------------------------------------------------------------------------------

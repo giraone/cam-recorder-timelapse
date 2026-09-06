@@ -1,5 +1,18 @@
 # Release Notes and List of Changes
 
+## Version 0.0.4 (2026-09-06)
+
+- New view "Camera Status" (route `camera-status`), reachable from the drawer menu. It shows one table per
+  camera with all attributes of a camera status record (timestamp, RSSI, image counter, image errors, camera
+  init counter, camera init errors, upload image errors, upload status errors), ordered by timestamp in
+  descending order. A "Reload" button refetches the data.
+- New model record `CameraStatusRecord`, mirroring the record of the server module
+- `FileViewService` extended by `listCameras()` and `listCameraStatus(String)`, calling the backend endpoints
+  `cameras` and `status/{cameraName}`. The camera names are read with a `ParameterizedTypeReference`, because
+  `bodyToFlux(String.class)` is served by the raw `StringDecoder` and would not decode the JSON array.
+- New tests: `CameraStatusRecordTest`, `CameraStatusViewTest` and `FileViewServiceTest` (the latter against a
+  local HTTP test double, so the JSON decoding is covered too); `RouteAccessTest` extended by the new view
+
 ## Version 0.0.3 (2026-09-04)
 
 - Upgrade to Vaadin 25.2.6, spring-boot 4.1.1

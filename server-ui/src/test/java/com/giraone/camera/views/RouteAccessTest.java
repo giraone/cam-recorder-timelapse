@@ -4,6 +4,7 @@ import com.giraone.camera.views.images.ImagesView;
 import com.giraone.camera.views.settings.CameraSettingsForm;
 import com.giraone.camera.views.settings.VideoCreationSettingsForm;
 import com.giraone.camera.views.settings.WorkflowSettingsForm;
+import com.giraone.camera.views.status.CameraStatusView;
 import com.giraone.camera.views.videos.VideosView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.server.auth.AccessAnnotationChecker;
@@ -33,7 +34,8 @@ class RouteAccessTest {
         VideosView.class,
         CameraSettingsForm.class,
         WorkflowSettingsForm.class,
-        VideoCreationSettingsForm.class
+        VideoCreationSettingsForm.class,
+        CameraStatusView.class
     })
     void authenticatedUserHasAccess(Class<? extends Component> target) {
         assertThat(accessAnnotationChecker.hasAccess(target, AUTHENTICATED_USER, role -> true)).isTrue();
@@ -46,7 +48,8 @@ class RouteAccessTest {
         VideosView.class,
         CameraSettingsForm.class,
         WorkflowSettingsForm.class,
-        VideoCreationSettingsForm.class
+        VideoCreationSettingsForm.class,
+        CameraStatusView.class
     })
     void anonymousUserHasNoAccess(Class<? extends Component> target) {
         assertThat(accessAnnotationChecker.hasAccess(target, null, role -> false)).isFalse();

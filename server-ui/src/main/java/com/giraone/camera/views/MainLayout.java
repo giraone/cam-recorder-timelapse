@@ -5,6 +5,7 @@ import com.giraone.camera.views.images.ImagesView;
 import com.giraone.camera.views.settings.CameraSettingsForm;
 import com.giraone.camera.views.settings.VideoCreationSettingsForm;
 import com.giraone.camera.views.settings.WorkflowSettingsForm;
+import com.giraone.camera.views.status.CameraStatusView;
 import com.giraone.camera.views.videos.VideosView;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
@@ -52,6 +53,7 @@ public class MainLayout extends AppLayout {
         addToDrawer(new VerticalLayout(
             new RouterLink("Images", ImagesView.class),
             new RouterLink("Videos", VideosView.class),
+            new RouterLink("Camera Status", CameraStatusView.class),
             new RouterLink("Workflow Settings", WorkflowSettingsForm.class),
             new RouterLink("Camera Settings", CameraSettingsForm.class),
             new RouterLink("Video Creation Settings", VideoCreationSettingsForm.class)

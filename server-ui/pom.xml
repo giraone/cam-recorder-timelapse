@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.giraone.recorder</groupId>
   <artifactId>cam-recorder-ui</artifactId>
-  <version>0.0.3-SNAPSHOT</version>
+  <version>0.0.4-SNAPSHOT</version>
   <name>cam-recorder-ui</name>
   <description>HTTP service for receiving (ESP32) camera images including UI</description>
 
