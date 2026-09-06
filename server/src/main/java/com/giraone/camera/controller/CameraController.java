@@ -5,6 +5,7 @@ import com.giraone.camera.service.FileService;
 import com.giraone.camera.service.api.CameraStatus;
 import com.giraone.camera.service.api.Settings;
 import com.giraone.camera.service.api.Status;
+import com.giraone.camera.service.model.CameraStatusRecord;
 import com.giraone.camera.service.model.FileInfo;
 import com.giraone.camera.service.model.FileInfoAndContent;
 import com.giraone.camera.service.model.FileInfoOrder;
@@ -38,6 +39,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @SuppressWarnings("unused")
 @RestController
@@ -107,6 +109,20 @@ public class CameraController {
         updateSettings(settingsToReturn, cameraStatus.cameraInitCounter());
         cameraStatusService.store(cameraStatus);
         return ResponseEntity.ok(settingsToReturn);
+    }
+
+    @SuppressWarnings("unused")
+    @GetMapping("cameras")
+    ResponseEntity<Set<String>> getCameras() {
+        LOGGER.info("getCameras");
+        return ResponseEntity.ok(cameraStatusService.getCameras());
+    }
+
+    @SuppressWarnings("unused")
+    @GetMapping("status/{cameraName}")
+    ResponseEntity<List<CameraStatusRecord>> getStatusOfCamera(@PathVariable String cameraName) {
+        LOGGER.info("getStatusOfCamera {}", cameraName);
+        return ResponseEntity.ok(cameraStatusService.get(cameraName));
     }
 
     //-- IMAGES --------------------------------------------------------------------------------------------------------

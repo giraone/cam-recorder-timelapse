@@ -2,6 +2,7 @@ package com.giraone.camera.service;
 
 import com.giraone.camera.service.api.CameraStatus;
 import com.giraone.camera.service.model.CameraStatusRecord;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -9,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Service, to store and return camera status (WiFi strength, number of errors)
@@ -40,5 +42,9 @@ public class CameraStatusService {
 
     public List<CameraStatusRecord> get(String cameraName) {
         return storage.computeIfAbsent(cameraName, _ -> new ArrayList<>());
+    }
+
+    public @Nullable Set<String> getCameras() {
+        return storage.keySet();
     }
 }
