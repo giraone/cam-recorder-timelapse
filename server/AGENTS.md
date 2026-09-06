@@ -49,7 +49,7 @@
 - Normal unit tests for a class "Clazz.java" are located in the same package as the class under test and named "ClazzTest.java".
   They are perform in the mvn test phase.
 - Use AAA pattern for tests (Arrange, Act, Assert) and separate the sections of the test code
-  by a three slash comment line containing arrange, act, assert, e.g. `/// arrange`.
+  by a comment line containing arrange, act, assert, e.g. `// arrange`.
 - When testing with multiple test data sets, use JUnit5 parameterized tests (`@ParameterizedTest`).
 - When testing for exceptions, use AssertJ's *assertThatThrownBy*.
 - When using temporary files in tests, ensure they are properly deleted after the test execution.
