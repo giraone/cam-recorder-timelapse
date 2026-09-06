@@ -37,7 +37,7 @@ public class CameraStatusService {
             cameraStatus.uploadStatusErrors()
         );
         final List<CameraStatusRecord> statusList = storage.computeIfAbsent(cameraStatus.cameraName(), _ -> new ArrayList<>());
-        statusList.add(cameraStatusRecord);
+        statusList.addFirst(cameraStatusRecord); // add first to have youngest entry first
     }
 
     public List<CameraStatusRecord> get(String cameraName) {
