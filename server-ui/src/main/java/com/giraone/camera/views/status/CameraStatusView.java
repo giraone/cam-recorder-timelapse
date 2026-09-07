@@ -38,9 +38,6 @@ public class CameraStatusView extends VerticalLayout {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CameraStatusView.class);
 
-    /** Height of a single camera table. Tables with more records than this are scrollable. */
-    private static final String GRID_HEIGHT = "20em";
-
     private final FileViewService fileViewService;
     private final VerticalLayout tables = new VerticalLayout();
     private final Paragraph camerasLabel = new Paragraph();
@@ -111,7 +108,7 @@ public class CameraStatusView extends VerticalLayout {
         final Grid<CameraStatusRecord> grid = new Grid<>();
         grid.addClassName("camera-status-grid");
         grid.setSelectionMode(Grid.SelectionMode.NONE);
-        grid.setHeight(GRID_HEIGHT);
+        grid.setSizeFull();
         grid.setMultiSort(false);
 
         final Grid.Column<CameraStatusRecord> timestampColumn = grid

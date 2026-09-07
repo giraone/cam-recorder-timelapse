@@ -26,6 +26,7 @@ public record CameraStatusRecord(LocalDateTime timestamp,
                                  int uploadImageErrors,
                                  int uploadStatusErrors) {
 
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     /**
      * Orders the records by {@link #timestamp} in descending order, so the most recent status comes first.
      * Records without a timestamp are placed at the end.
@@ -37,6 +38,6 @@ public record CameraStatusRecord(LocalDateTime timestamp,
      * @return the timestamp as an ISO-8601 local date time or {@code "-"}, if there is no timestamp
      */
     public String timestampToDisplay() {
-        return timestamp != null ? DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(timestamp) : "-";
+        return timestamp != null ? FORMATTER.format(timestamp) : "-";
     }
 }

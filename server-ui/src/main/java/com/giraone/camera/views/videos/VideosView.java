@@ -73,6 +73,7 @@ public class VideosView extends VerticalLayout {
             true,
             fileViewService,
             this::displayFile,
+            this::downloadFile,
             this::deleteFile,
             this::renameFile,
             selectedItems -> activation(!selectedItems.isEmpty()),
@@ -236,6 +237,12 @@ public class VideosView extends VerticalLayout {
         openFileViewer(url, fileInfo.fileName() + "  (" + fileInfo.infos() + ", " + fileInfo.sizeInBytes() + " Bytes)");
     }
 
+    private void downloadFile(FileInfo fileInfo) {
+        currentItem = fileInfo;
+        String url = applicationProperties.getHostUrl() + "/videos/" + fileInfo.fileName();
+        openBrowser(url);
+    }
+
     private void openFileViewer(String url, String label) {
         displayForm.setVisible(true);
         if (firstDisplay) {
@@ -245,6 +252,10 @@ public class VideosView extends VerticalLayout {
         } else {
             UI.getCurrent().getPage().executeJs("loadVideo($0,$1)", url, label);
         }
+    }
+
+    private void openBrowser(String url) {
+        UI.getCurrent().getPage().open(url);
     }
 
     private void viewPreviousFile() {

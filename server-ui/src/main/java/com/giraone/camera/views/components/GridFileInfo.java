@@ -7,6 +7,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridMultiSelectionModel;
 import com.vaadin.flow.component.grid.GridSortOrder;
+import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.dataview.GridDataView;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -30,6 +31,7 @@ public class GridFileInfo extends Grid<FileInfo> {
 
     public GridFileInfo(boolean video, FileViewService fileViewService,
                         Consumer<FileInfo> displayFile,
+                        Consumer<FileInfo> downloadFile,
                         Consumer<FileInfo> deleteFile,
                         Consumer<FileInfo> renameFile,
                         Consumer<Set<FileInfo>> selectionChangedListener,
@@ -50,29 +52,47 @@ public class GridFileInfo extends Grid<FileInfo> {
             this.addSelectionListener(selection -> selectionChangedListener.accept(selection.getAllSelectedItems()));
         }
         this.setPageSize(100);
+        this.addThemeVariants(GridVariant.LUMO_COMPACT);
 
         this.removeAllColumns();
         this.addComponentColumn(fileInfo -> {
+
             final Button displayButton = new Button("");
             displayButton.setIcon(LineAwesomeIcon.LAPTOP_SOLID.create());
-            displayButton.addClickListener(event -> displayFile.accept(fileInfo));
+            displayButton.addClickListener(_ -> displayFile.accept(fileInfo));
+
+            final Button downloadButton = new Button("");
+            downloadButton.setIcon(LineAwesomeIcon.DOWNLOAD_SOLID.create());
+            downloadButton.addClickListener(_ -> downloadFile.accept(fileInfo));
+
             final Button deleteButton = new Button("");
             deleteButton.setIcon(LineAwesomeIcon.CUT_SOLID.create());
-            deleteButton.addClickListener(event -> deleteFile.accept(fileInfo));
+            deleteButton.addClickListener(_ -> deleteFile.accept(fileInfo));
+
             final Button renameButton = new Button("");
             renameButton.setIcon(LineAwesomeIcon.PEN_SOLID.create());
-            renameButton.addClickListener(event -> renameFile.accept(fileInfo));
-            HorizontalLayout ret = new HorizontalLayout(displayButton, deleteButton, renameButton);
-            ret.setWidth(64, Unit.PIXELS);
+            renameButton.addClickListener(_ -> renameFile.accept(fileInfo));
+
+            final HorizontalLayout ret = new HorizontalLayout(displayButton, downloadButton, deleteButton, renameButton);
+            ret.setWidth(48*4, Unit.PIXELS);
             return ret;
-        }).setHeader("Action").setAutoWidth(false);
+        })
+            .setHeader("Action")
+            .setAutoWidth(false)
+            .setWidth(48*4 + "px")
+            .setPartNameGenerator(e -> "no-padding-cell")
+        ;
+
         this.addComponentColumn(fileInfo -> {
-            final Image image = new Image(fileViewService.getThumbUrl(fileInfo), "no thubnail!");
+            final Image image = new Image(fileViewService.getThumbUrl(fileInfo), "no thumbnail!");
             image.setWidth(64, Unit.PIXELS);
             image.setHeight(48, Unit.PIXELS);
             image.setClassName("no-padding");
             return image;
-        }).setHeader("Image").setAutoWidth(false);
+        })
+            .setHeader("Image")
+            .setWidth("64px")
+            .setAutoWidth(false);
         this.addColumn(FileInfo::fileName, "fileName").setHeader("File Name").setAutoWidth(true);
         this.addColumn(FileInfo::toDisplayShort, "lastModified").setHeader("Last Modified").setAutoWidth(true);
         this.addColumn(FileInfo::sizeInBytes, "sizeInBytes").setHeader("Size").setAutoWidth(true);

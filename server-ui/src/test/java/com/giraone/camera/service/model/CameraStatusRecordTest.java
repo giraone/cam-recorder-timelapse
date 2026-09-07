@@ -14,8 +14,8 @@ class CameraStatusRecordTest {
 
     @ParameterizedTest
     @CsvSource({
-        "2026-09-06T12:30:45, 2026-09-06T12:30:45",
-        "2026-01-02T03:04:05.678, 2026-01-02T03:04:05.678"
+        "2026-09-06T12:30:45, 2026-09-06 12:30:45",
+        "2026-01-02T03:04:05.678, 2026-01-02 03:04:05"
     })
     void timestampToDisplayReturnsIsoLocalDateTime(String timestamp, String expected) {
         // arrange

@@ -77,6 +77,7 @@ public class ImagesView extends VerticalLayout {
             false,
             fileViewService,
             this::displayFile,
+            this::downloadFile,
             this::deleteFile,
             this::renameFile,
             selectedItems -> activation(!selectedItems.isEmpty()),
@@ -251,6 +252,12 @@ public class ImagesView extends VerticalLayout {
         openFileViewer(url, fileInfo.fileName() + "  (" + fileInfo.infos() + ", " + fileInfo.sizeInBytes() + " Bytes)");
     }
 
+    private void downloadFile(FileInfo fileInfo) {
+        currentItem = fileInfo;
+        String url = applicationProperties.getHostUrl() + "/images/" + fileInfo.fileName();
+        openBrowser(url);
+    }
+
     private void openFileViewer(String url, String label) {
         displayForm.setVisible(true);
         if (firstDisplay) {
@@ -260,6 +267,10 @@ public class ImagesView extends VerticalLayout {
         } else {
             UI.getCurrent().getPage().executeJs("loadImage($0,$1)", url, label);
         }
+    }
+
+    private void openBrowser(String url) {
+        UI.getCurrent().getPage().open(url);
     }
 
     private void viewPreviousFile() {
