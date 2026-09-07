@@ -5,12 +5,49 @@ int lastClockFrequencyHz = 0;
 int lastFrameSize = 0;
 int lastJpegQuality = 0;
 
+// Maps the frame size sent by the server (ext_framesize_t) to the framesize_t of the
+// camera driver. The two enums differ - the driver has the additional entries
+// FRAMESIZE_128X128 and FRAMESIZE_320X320 - so the values must not simply be cast.
+static const framesize_t FRAME_SIZES[] = {
+  FRAMESIZE_96X96,    //  0 - 96x96
+  FRAMESIZE_QQVGA,    //  1 - 160x120
+  FRAMESIZE_QCIF,     //  2 - 176x144
+  FRAMESIZE_HQVGA,    //  3 - 240x176
+  FRAMESIZE_240X240,  //  4 - 240x240
+  FRAMESIZE_QVGA,     //  5 - 320x240
+  FRAMESIZE_CIF,      //  6 - 400x296
+  FRAMESIZE_HVGA,     //  7 - 480x320
+  FRAMESIZE_VGA,      //  8 - 640x480
+  FRAMESIZE_SVGA,     //  9 - 800x600
+  FRAMESIZE_XGA,      // 10 - 1024x768
+  FRAMESIZE_HD,       // 11 - 1280x720
+  FRAMESIZE_SXGA,     // 12 - 1280x1024
+  FRAMESIZE_UXGA,     // 13 - 1600x1200
+  FRAMESIZE_FHD,      // 14 - 1920x1080
+  FRAMESIZE_P_HD,     // 15 - 720x1280
+  FRAMESIZE_P_3MP,    // 16 - 864x1536
+  FRAMESIZE_QXGA,     // 17 - 2048x1536
+  FRAMESIZE_QHD,      // 18 - 2560x1440
+  FRAMESIZE_WQXGA,    // 19 - 2560x1600
+  FRAMESIZE_P_FHD,    // 20 - 1088x1920
+  FRAMESIZE_QSXGA     // 21 - 2560x1920
+};
+static_assert(sizeof(FRAME_SIZES) / sizeof(FRAME_SIZES[0]) == EXT_FRAMESIZE_INVALID,
+  "FRAME_SIZES needs exactly one entry per ext_framesize_t value");
+
+// Largest frame size this camera can deliver. The OV2640 of the AI-Thinker ESP32-CAM
+// stops at UXGA - anything above lets esp_camera_init() fail. Raise for an OV5640 board.
+static const int MAX_FRAME_SIZE = EXT_FRAMESIZE_UXGA;
+
 framesize_t framesizeFromInt(int index) {
-   if (index >= 0 && index < EXT_FRAMESIZE_INVALID) {
-           return (framesize_t) index;
-    } else {
-        return (framesize_t) FRAMESIZE_UXGA;
-    }
+  if (index < 0 || index >= EXT_FRAMESIZE_INVALID) {
+    Serial.printf(">>> Unknown frameSize %d - using UXGA!\r\n", index);
+    index = EXT_FRAMESIZE_UXGA;
+  } else if (index > MAX_FRAME_SIZE) {
+    Serial.printf(">>> frameSize %d not supported by this sensor - using UXGA!\r\n", index);
+    index = EXT_FRAMESIZE_UXGA;
+  }
+  return FRAME_SIZES[index];
 }
 
 gainceiling_t gainceilingFromInt(int value) {
@@ -38,7 +75,12 @@ gainceiling_t gainceilingFromInt(int value) {
 // 1 = camera init was successfully performed
 // 2 = only sensor settings (without init) were successfully changed
 short initCameraWithSettings(JsonDocument cameraSettings) {
-   
+
+  if (cameraSettings.isNull()) {
+    Serial.println(">>> No camera settings available - camera not initialized!");
+    return 0;
+  }
+
   static const int8_t PWDN_GPIO_NUM = 32;
   static const int8_t RESET_GPIO_NUM = -1;
   static const int8_t XCLK_GPIO_NUM = 0;
@@ -84,10 +126,25 @@ short initCameraWithSettings(JsonDocument cameraSettings) {
     .frame_size = framesizeFromInt(cameraSettings["frameSize"]),
     // 0 - 63 (smaller is less compression and better)
     .jpeg_quality = cameraSettings["jpegQuality"],
-    .fb_count = 2,
     .grab_mode = CAMERA_GRAB_LATEST
   };
-  
+
+  // Two frame buffers and the large frame sizes are only possible with PSRAM
+  if (psramFound()) {
+    config.fb_location = CAMERA_FB_IN_PSRAM;
+    config.fb_count = 2;
+  } else {
+    Serial.println(">>> No PSRAM found - reducing frame buffers, frame size and quality!");
+    config.fb_location = CAMERA_FB_IN_DRAM;
+    config.fb_count = 1;
+    if (config.frame_size > FRAMESIZE_SVGA) {
+      config.frame_size = FRAMESIZE_SVGA;
+    }
+    if (config.jpeg_quality < 12) {
+      config.jpeg_quality = 12;
+    }
+  }
+
 
   bool init = (cameraSettings["clockFrequencyHz"] != lastClockFrequencyHz) || 
               (cameraSettings["frameSize"] != lastFrameSize) || 
@@ -111,12 +168,17 @@ short initCameraWithSettings(JsonDocument cameraSettings) {
     } else {
       Serial.println(">>> Camera successfully initialized.");
       lastClockFrequencyHz = cameraSettings["clockFrequencyHz"];
-      lastFrameSize = cameraSettings["lastFrameSize"]; 
+      lastFrameSize = cameraSettings["frameSize"];
       lastJpegQuality = cameraSettings["jpegQuality"]; 
     }
   }
   
   sensor_t* sensor = esp_camera_sensor_get();
+  if (sensor == NULL) {
+    // Happens, when the camera was never initialized successfully
+    Serial.println(">>> No camera sensor available - settings not applied!");
+    return 0;
+  }
 
   // Brightness - -2,-1,0,1,2
   sensor->set_brightness(sensor, cameraSettings["brightness"]);

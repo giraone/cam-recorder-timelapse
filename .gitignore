@@ -8,6 +8,9 @@ STORAGE/VIDEOS/*.mp4
 
 .attach*
 
+### Arduino client - WiFi credentials and server address ###
+client/ESP32CamTimelapse/secrets.h
+
 ### IntelliJ IDEA ###
 .idea
 *.iws

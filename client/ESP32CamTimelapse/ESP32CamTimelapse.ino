@@ -1,6 +1,6 @@
 /*
- Continous loop to fetch camera settings from an image server and send photos taken with these settings to the image server using plain HTTP POST (no multipart).
- - The file name is build using the camera name (derived rom IP address) and the current date and time (with a base time fetched from an NTP server)
+ Continuous loop to fetch camera settings from an image server and send photos taken with these settings to the image server using plain HTTP POST (no multipart).
+ - The file name is build using the camera name (derived from IP address) and the current date and time (with a base time fetched from an NTP server)
  - The camera settings are fetch on each restart from the server
  - The server can force a "restartNow" after each upload, so then all new settings are applied
  - The server can force pause/resume of the loop to take photo.
@@ -10,6 +10,8 @@
    - Number of unsuccessful photo transmissions
    - WiFi signal strength (rssi) 
 
+ Board: AI Thinker ESP32-CAM
+ 
  See also
   - [Make-Magazin ESP32C_Mailkamera](https://github.com/MakeMagazinDE/ESP32C_Mailkamera)
   - https://RandomNerdTutorials.com/esp32-send-email-smtp-server-arduino-ide/
@@ -22,29 +24,41 @@
 #include <HTTPClient.h> // EspressIF HTTPClient
 #include <ArduinoJson.h>
 #include "init_camera.h"
+// Credentials and server address - not in git, copy "secrets.h.example" to "secrets.h"
+#include "secrets.h"
 
 //-- WIFI -------------------------------------------------------------------------
 
-const char* SSID = "<enter here>";
-const char* PASSWORD = "<enter here>";
+const char* SSID = WIFI_SSID;
+const char* PASSWORD = WIFI_PASSWORD;
+// Give up waiting for the access point after this time and restart the device
+const uint32_t WIFI_CONNECT_TIMEOUT_MS = 30000;
 
 //-- HTTP -------------------------------------------------------------------------
 
-// 45 (lenovo) or 87 (air)
-const char* TARGET_URL_IMAGE = "http://192.168.178.87:9001/images/%s-%s.jpg";     // the 2 parameters are: cameraName, timeLabel
-const char* TARGET_URL_STATUS = "http://192.168.178.87:9001/status";
+const char* TARGET_URL_IMAGE = "http://" SERVER_HOST ":" SERVER_PORT "/images/%s-%s.jpg";     // the 2 parameters are: cameraName, timeLabel
+const char* TARGET_URL_STATUS = "http://" SERVER_HOST ":" SERVER_PORT "/status";
 const char* MIME_TYPE_JPEG = "image/jpeg";
 const char* MIME_TYPE_JSON = "application/json";
 
 //-- NTP --------------------------------------------------------------------------
 
-const char* ntpServer = "de.pool.ntp.org";
-const long gmtOffset_sec = 3600;
-const int daylightOffset_sec = 0;
+const char* ntpServer1 = "de.pool.ntp.org";
+const char* ntpServer2 = "pool.ntp.org";
+// Central European Time, incl. the switch to/from daylight saving time
+const char* timeZone = "CET-1CEST,M3.5.0,M10.5.0/3";
+// Give up waiting for the first NTP answer after this time
+const uint32_t NTP_SYNC_TIMEOUT_MS = 15000;
 
 //-- Settings ---------------------------------------------------------------------
 
+// Set when new camera settings arrived, cleared only after they were applied successfully
 bool cameraSettingsChanged = true;
+
+// Fallback and guard rails for the loop delay, used when the server sends nothing usable
+const uint32_t DEFAULT_DELAY_MS = 20000;
+const uint32_t MIN_DELAY_MS = 1000;
+const uint32_t MAX_DELAY_MS = 3600000;
 
 JsonDocument settings;
 JsonDocument workflowSettings;
@@ -95,29 +109,35 @@ void setup() {
 }
 
 void loop() {
+  ensureWiFiConnected();
+
   workflowSettings["restart"] = false;
   workflowSettings["pause"] = false;
-  workflowSettings["delayMs"] = 20000;
+  workflowSettings["delayMs"] = DEFAULT_DELAY_MS;
   uploadStatus();
 
-  if (cameraSettingsChanged) {
+  if (cameraSettingsChanged && !cameraSettings.isNull()) {
      short result = initCameraWithSettings(cameraSettings);
-     if (result == 1) {
-        cameraInitCounter++;
-     } else if (result == 0) {
+     if (result == 0) {
         cameraInitErrors++;
+     } else {
+        // Clear only after the settings were really applied, so a failed init is retried
+        cameraSettingsChanged = false;
+        if (result == 1) {
+          cameraInitCounter++;
+        }
      }
   }
- 
+
   if (workflowSettings["restart"]) {
-      Serial.println(">>> Command for restarting received!"); 
+      Serial.println(">>> Command for restarting received!");
       ESP.restart();
-      return;
   }
   if (!workflowSettings["pause"]) {
     shootAndSend();
   }
-  delay(workflowSettings["delayMs"]);
+  const uint32_t delayMs = workflowSettings["delayMs"] | DEFAULT_DELAY_MS;
+  delay(constrain(delayMs, MIN_DELAY_MS, MAX_DELAY_MS));
 }
 
 void shootAndSend() {
@@ -145,9 +165,24 @@ void shootAndSend() {
 }
 
 void initWiFi() {
+  WiFi.mode(WIFI_STA);
+  WiFi.setAutoReconnect(true);
+  WiFi.setSleep(false); // modem sleep makes the uploads slow and unreliable
+  connectWiFi();
+}
+
+// Connect to the access point and derive the camera name from the assigned IP address.
+// Restarts the device, if no connection can be established - the AP may come back later.
+void connectWiFi() {
   WiFi.begin(SSID, PASSWORD);
   Serial.print(">>> Connect to WiFi...");
+  const uint32_t startedMs = millis();
   while (WiFi.status() != WL_CONNECTED) {
+    if (millis() - startedMs > WIFI_CONNECT_TIMEOUT_MS) {
+      Serial.println();
+      Serial.println(">>> No WiFi connection - restarting!");
+      ESP.restart();
+    }
     delay(500);
     Serial.print(".");
   }
@@ -155,8 +190,10 @@ void initWiFi() {
   IPAddress ipAddress = WiFi.localIP();
   //S Serial.print(">>> IP address: ");
   //S Serial.println(ipAddress);
- 
-  snprintf(cameraName, sizeof(cameraName), "c%03s", lastIpPart(ipAddress));
+
+  // Last octet of the IPv4 address, zero padded, e.g. 192.168.178.87 --> "c087"
+  // Recalculated on every connect, because DHCP may hand out a different address
+  snprintf(cameraName, sizeof(cameraName), "c%03u", (unsigned) ipAddress[3]);
   //S Serial.print(">>> Camera Name: ");
   //S Serial.println(cameraName);
   delay(100);
@@ -165,8 +202,32 @@ void initWiFi() {
   //S Serial.println(wifiRssi);
 }
 
+// Reconnect, if the connection was lost, e.g. after the access point was restarted
+void ensureWiFiConnected() {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println(">>> WiFi connection lost!");
+    WiFi.disconnect();
+    connectWiFi();
+  }
+}
+
 void initNtp() {
-  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  configTzTime(timeZone, ntpServer1, ntpServer2);
+  // Wait for the first answer, otherwise the first images are named with the fallback label
+  Serial.print(">>> Waiting for NTP time...");
+  struct tm now;
+  const uint32_t startedMs = millis();
+  while (!getLocalTime(&now, 1000)) {
+    if (millis() - startedMs > NTP_SYNC_TIMEOUT_MS) {
+      Serial.println();
+      Serial.println(">>> No NTP time yet - continuing without it!");
+      return;
+    }
+    Serial.print(".");
+  }
+  Serial.println();
+  Serial.printf(">>> NTP time: %04d-%02d-%02d %02d:%02d:%02d\n",
+    1900 + now.tm_year, 1 + now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec);
 }
 
 void sendPhotoViaHttp(camera_fb_t* frameBuffer, char* timeLabel) {
@@ -222,17 +283,22 @@ void uploadStatus() {
 void parseAndStoreSettings(String jsonString) {
     //S Serial.print(">>> settings = ");
     //S Serial.println(jsonString);
-    settings = parseJson(jsonString);
+    JsonDocument parsedSettings = parseJson(jsonString);
+    if (parsedSettings["error"] || parsedSettings["workflow"].isNull()) {
+      Serial.println(">>> Unusable settings in response - keeping the current ones!");
+      return;
+    }
+    settings = parsedSettings;
     workflowSettings = settings["workflow"];
-    flashLedForPicture = workflowSettings["flashLedForPicture"];
-    flashDurationMs = workflowSettings["flashDurationMs"];
-    blinkOnSuccess = workflowSettings["blinkOnSuccess"];
-    blinkOnFailure = workflowSettings["blinkOnFailure"];
-    if (settings["camera"]) {
-      cameraSettingsChanged = true;
+    flashLedForPicture = workflowSettings["flashLedForPicture"] | false;
+    flashDurationMs = workflowSettings["flashDurationMs"] | 100;
+    blinkOnSuccess = workflowSettings["blinkOnSuccess"] | true;
+    blinkOnFailure = workflowSettings["blinkOnFailure"] | true;
+    // The server sends the camera settings only once after a change, so the flag must not
+    // be reset here - it is cleared in loop() when the settings were applied successfully.
+    if (settings["camera"].is<JsonObjectConst>()) {
       cameraSettings = settings["camera"];
-    } else {
-      cameraSettingsChanged = false;
+      cameraSettingsChanged = true;
     }
 }
 
@@ -248,12 +314,6 @@ JsonDocument parseJson(String jsonString) {
     }
   }
   return jsonDoc;
-}
-
-String lastIpPart(IPAddress ipAddress) {
-  String ipAddressString = ipAddress.toString();
-  int i = ipAddressString.lastIndexOf(".");
-  return ipAddressString.substring(i + 1);
 }
 
 void blinkLedOk() {
@@ -283,9 +343,10 @@ char* fetchtimeLabel() {
   struct tm now;
   if (!getLocalTime(&now)){
     Serial.println(">>> Failed to obtain time!");
-    snprintf(_timeBuffer, sizeof(_timeBuffer) - 1, "no-time");
+    // Uptime based fallback - unique, so that these images do not overwrite each other
+    snprintf(_timeBuffer, sizeof(_timeBuffer), "nt-%09lu", millis());
   } else {
-    snprintf(_timeBuffer, sizeof(_timeBuffer) - 1, "%02d%02d%02d-%02d%02d%02d",
+    snprintf(_timeBuffer, sizeof(_timeBuffer), "%02d%02d%02d-%02d%02d%02d",
     now.tm_year % 100, 1 + now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec);
     //S Serial.printf(">>> Obtainted time: %s\n", _timeBuffer);
   }
