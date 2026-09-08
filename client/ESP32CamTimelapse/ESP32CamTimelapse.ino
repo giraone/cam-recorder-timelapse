@@ -40,6 +40,9 @@ const char* TARGET_URL_IMAGE = "http://" SERVER_HOST ":" SERVER_PORT "/images/%s
 const char* TARGET_URL_STATUS = "http://" SERVER_HOST ":" SERVER_PORT "/status";
 const char* MIME_TYPE_JPEG = "image/jpeg";
 const char* MIME_TYPE_JSON = "application/json";
+// Do not wait too long for the server - the camera should keep its cadence
+const int32_t HTTP_CONNECT_TIMEOUT_MS = 5000;
+const uint16_t HTTP_TIMEOUT_MS = 10000;
 
 //-- NTP --------------------------------------------------------------------------
 
@@ -88,10 +91,17 @@ int uploadStatusErrors = 0;
 const int FLASH_GPIO_NUM = 4;
 int flashDurationMs = 100;
 bool flashLedForPicture = false;
+// Frames to throw away after switching on the flash, see shootAndSend()
+const int FLASH_DISCARD_FRAMES = 2;
 
 //-- Board LED --------------------------------------------------------------------
 
+// The on-board LED of the AI-Thinker ESP32-CAM is active LOW
 const int BOARD_LED = 33;
+const int BOARD_LED_ON = LOW;
+const int BOARD_LED_OFF = HIGH;
+// Keep the blinking short - it blocks the loop and distorts the timelapse cadence
+const int BLINK_DURATION_MS = 60;
 bool blinkOnSuccess = true;
 bool blinkOnFailure = true;
 
@@ -100,8 +110,10 @@ bool blinkOnFailure = true;
 void setup() {
   Serial.begin(115200);
   pinMode(BOARD_LED, OUTPUT);
+  digitalWrite(BOARD_LED, BOARD_LED_OFF); // the pin defaults to LOW, which switches the LED on
   pinMode(FLASH_GPIO_NUM, OUTPUT);
-  
+  digitalWrite(FLASH_GPIO_NUM, LOW);
+
   initWiFi();
   blinkLedOk();
   initNtp();
@@ -109,6 +121,7 @@ void setup() {
 }
 
 void loop() {
+  const uint32_t loopStartedMs = millis();
   ensureWiFiConnected();
 
   workflowSettings["restart"] = false;
@@ -136,8 +149,12 @@ void loop() {
   if (!workflowSettings["pause"]) {
     shootAndSend();
   }
-  const uint32_t delayMs = workflowSettings["delayMs"] | DEFAULT_DELAY_MS;
-  delay(constrain(delayMs, MIN_DELAY_MS, MAX_DELAY_MS));
+  // Subtract the time needed for taking and uploading the photo, so that the interval
+  // between two photos stays even
+  const uint32_t configuredDelayMs = workflowSettings["delayMs"] | DEFAULT_DELAY_MS;
+  const uint32_t delayMs = constrain(configuredDelayMs, MIN_DELAY_MS, MAX_DELAY_MS);
+  const uint32_t elapsedMs = millis() - loopStartedMs;
+  delay(elapsedMs < delayMs ? delayMs - elapsedMs : 0);
 }
 
 void shootAndSend() {
@@ -146,6 +163,9 @@ void shootAndSend() {
     //S Serial.printf(">>> Flash wanted. Using GPIO %d.\n", FLASH_GPIO_NUM);
     digitalWrite(FLASH_GPIO_NUM, HIGH);
     delay(flashDurationMs);
+    // The next buffer may still hold a frame that was captured before the flash was on.
+    // Throw some away, this also gives the exposure control time to adapt to the light.
+    discardFrames(FLASH_DISCARD_FRAMES);
   }
   camera_fb_t* frameBuffer = esp_camera_fb_get();
   if (flashLedForPicture) {
@@ -158,9 +178,20 @@ void shootAndSend() {
   } else {
     imageCounter++;
     //S Serial.printf(">>> Photo %d taken with %d bytes.\n", imageCounter, frameBuffer->len);
+    // sendPhotoViaHttp() already blinks, depending on the result of the upload
     sendPhotoViaHttp(frameBuffer, timeLabel);
     esp_camera_fb_return(frameBuffer);
-    blinkLedOk();
+  }
+}
+
+// Fetch and immediately return frames, so that the next one is really an up to date one
+void discardFrames(int count) {
+  for (int i = 0; i < count; i++) {
+    camera_fb_t* frameBuffer = esp_camera_fb_get();
+    if (!frameBuffer) {
+      return;
+    }
+    esp_camera_fb_return(frameBuffer);
   }
 }
 
@@ -236,15 +267,16 @@ void sendPhotoViaHttp(camera_fb_t* frameBuffer, char* timeLabel) {
   Serial.printf(">>> POST URL = \"%s\" %d\n", urlBuffer, cameraSettings["frameSize"]);
   HTTPClient http;
   http.begin(urlBuffer);
+  http.setConnectTimeout(HTTP_CONNECT_TIMEOUT_MS);
+  http.setTimeout(HTTP_TIMEOUT_MS);
   http.addHeader("Content-Type", MIME_TYPE_JPEG);
   int httpResponseCode = http.POST(frameBuffer->buf, frameBuffer->len);
-  JsonDocument jsonResponse;
-  if (httpResponseCode == 200) {
+  if (isHttpSuccess(httpResponseCode)) {
     parseAndStoreSettings(http.getString());
     blinkLedOk();
   } else {
     uploadImageErrors++;
-    Serial.printf(">>> HTTP Response code = %d\n", httpResponseCode);
+    logHttpError(http, httpResponseCode);
     blinkLedError();
   }
   http.end();
@@ -266,18 +298,34 @@ void uploadStatus() {
   Serial.printf(">>> PUT URL = \"%s\" %s\n", TARGET_URL_STATUS, jsonCharBuffer);
   HTTPClient http;
   http.begin(TARGET_URL_STATUS);
+  http.setConnectTimeout(HTTP_CONNECT_TIMEOUT_MS);
+  http.setTimeout(HTTP_TIMEOUT_MS);
   http.addHeader("Accept", MIME_TYPE_JSON);
   http.addHeader("Content-Type", MIME_TYPE_JSON);
   int httpResponseCode = http.PUT(jsonCharBuffer);
-  if (httpResponseCode == 200) { 
+  if (isHttpSuccess(httpResponseCode)) {
     parseAndStoreSettings(http.getString());
     blinkLedOk();
   } else {
-    Serial.printf(">>> HTTP Response code = %d\n", httpResponseCode);
     uploadStatusErrors++;
+    logHttpError(http, httpResponseCode);
     blinkLedError();
   }
   http.end();
+}
+
+// Every 2xx is a success - the server may answer with 200 or 201
+bool isHttpSuccess(int httpResponseCode) {
+  return httpResponseCode >= 200 && httpResponseCode < 300;
+}
+
+// Log the response code together with the error message of the server, resp. of the client
+void logHttpError(HTTPClient& http, int httpResponseCode) {
+  if (httpResponseCode > 0) {
+    Serial.printf(">>> HTTP response code = %d, body = %s\n", httpResponseCode, http.getString().c_str());
+  } else {
+    Serial.printf(">>> HTTP request failed: %s\n", HTTPClient::errorToString(httpResponseCode).c_str());
+  }
 }
 
 void parseAndStoreSettings(String jsonString) {
@@ -318,21 +366,21 @@ JsonDocument parseJson(String jsonString) {
 
 void blinkLedOk() {
   if (blinkOnSuccess) {
-    blinkLed(1,800);
+    blinkLed(1, BLINK_DURATION_MS);
   }
 }
 
 void blinkLedError() {
   if (blinkOnFailure) {
-    blinkLed(3,300);
+    blinkLed(3, BLINK_DURATION_MS);
   }
 }
 
 void blinkLed(int count, int duration) {
   for (int i = 0; i < count; i++) {
-    digitalWrite(BOARD_LED, HIGH);
+    digitalWrite(BOARD_LED, BOARD_LED_ON);
     delay(duration);
-    digitalWrite(BOARD_LED, LOW);
+    digitalWrite(BOARD_LED, BOARD_LED_OFF);
     delay(duration/2);
   }
 }
