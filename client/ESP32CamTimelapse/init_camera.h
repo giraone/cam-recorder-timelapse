@@ -32,4 +32,5 @@ typedef enum {
     EXT_FRAMESIZE_INVALID   // 22
 } ext_framesize_t;
 
-short initCameraWithSettings(JsonDocument cameraSettings);
+// Passed as a read-only reference into the document - no copy of the settings is made
+short initCameraWithSettings(JsonVariantConst cameraSettings);

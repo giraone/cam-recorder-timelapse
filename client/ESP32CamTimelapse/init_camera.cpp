@@ -71,15 +71,8 @@ gainceiling_t gainceilingFromInt(int value) {
   }
 }
 
-// 0 = camera init failed
-// 1 = camera init was successfully performed
-// 2 = only sensor settings (without init) were successfully changed
-short initCameraWithSettings(JsonDocument cameraSettings) {
-
-  if (cameraSettings.isNull()) {
-    Serial.println(">>> No camera settings available - camera not initialized!");
-    return 0;
-  }
+// De-initialize and initialize the camera driver. Returns false, if the init failed.
+static bool initCamera(int clockFrequencyHz, int frameSize, int jpegQuality) {
 
   static const int8_t PWDN_GPIO_NUM = 32;
   static const int8_t RESET_GPIO_NUM = -1;
@@ -118,14 +111,14 @@ short initCameraWithSettings(JsonDocument cameraSettings) {
 
     // Frequency of XCLK signal, in Hz. Default: 20000000
     // Set to 16MHz on ESP32-S2 or ESP32-S3 to enable EDMA mode
-    .xclk_freq_hz = cameraSettings["clockFrequencyHz"],
+    .xclk_freq_hz = clockFrequencyHz,
     .ledc_timer = LEDC_TIMER_0,
     .ledc_channel = LEDC_CHANNEL_0,
     .pixel_format = PIXFORMAT_JPEG,
     // QVGA|CIF|VGA|SVGA|XGA|SXGA|UXGA
-    .frame_size = framesizeFromInt(cameraSettings["frameSize"]),
+    .frame_size = framesizeFromInt(frameSize),
     // 0 - 63 (smaller is less compression and better)
-    .jpeg_quality = cameraSettings["jpegQuality"],
+    .jpeg_quality = jpegQuality,
     .grab_mode = CAMERA_GRAB_LATEST
   };
 
@@ -145,39 +138,72 @@ short initCameraWithSettings(JsonDocument cameraSettings) {
     }
   }
 
-
-  bool init = (cameraSettings["clockFrequencyHz"] != lastClockFrequencyHz) || 
-              (cameraSettings["frameSize"] != lastFrameSize) || 
-              (cameraSettings["jpegQuality"] != lastJpegQuality);
-
-  short ret = 2;
-  if (init) {
-    ret = 1;
-    if (lastClockFrequencyHz > 0) {
-      const esp_err_t deInitStatus = esp_camera_deinit();
-      if (deInitStatus != ESP_OK) {
-        Serial.printf(">>> Camera not de-initialized: status=0x%x\r\n", deInitStatus);
-      } else {
-        Serial.println(">>> Camera successfully de-initialized.");
-      }
-    }
-    const esp_err_t status = esp_camera_init(&config);
-    if (status != ESP_OK) {
-      Serial.printf(">>> Camera not initialized: status=0x%x\r\n", status);
-      return 0;
+  if (lastClockFrequencyHz > 0) {
+    const esp_err_t deInitStatus = esp_camera_deinit();
+    if (deInitStatus != ESP_OK) {
+      Serial.printf(">>> Camera not de-initialized: status=0x%x\r\n", deInitStatus);
     } else {
-      Serial.println(">>> Camera successfully initialized.");
-      lastClockFrequencyHz = cameraSettings["clockFrequencyHz"];
-      lastFrameSize = cameraSettings["frameSize"];
-      lastJpegQuality = cameraSettings["jpegQuality"]; 
+      Serial.println(">>> Camera successfully de-initialized.");
     }
   }
-  
+  const esp_err_t status = esp_camera_init(&config);
+  if (status != ESP_OK) {
+    Serial.printf(">>> Camera not initialized: status=0x%x\r\n", status);
+    return false;
+  }
+  Serial.println(">>> Camera successfully initialized.");
+  return true;
+}
+
+// 0 = camera init failed
+// 1 = camera init was successfully performed
+// 2 = only sensor settings (without init) were successfully changed
+short initCameraWithSettings(JsonVariantConst cameraSettings) {
+
+  if (cameraSettings.isNull()) {
+    Serial.println(">>> No camera settings available - camera not initialized!");
+    return 0;
+  }
+
+  const int clockFrequencyHz = cameraSettings["clockFrequencyHz"] | 0;
+  const int frameSize = cameraSettings["frameSize"] | 0;
+  const int jpegQuality = cameraSettings["jpegQuality"] | 0;
+
+  // Only a different clock frequency needs a restart of the driver. Frame size and
+  // quality are applied to the running sensor further below.
+  short ret = 2;
+  if (clockFrequencyHz != lastClockFrequencyHz) {
+    ret = 1;
+    if (!initCamera(clockFrequencyHz, frameSize, jpegQuality)) {
+      return 0;
+    }
+    // esp_camera_init() already applied these two
+    lastClockFrequencyHz = clockFrequencyHz;
+    lastFrameSize = frameSize;
+    lastJpegQuality = jpegQuality;
+  }
+
   sensor_t* sensor = esp_camera_sensor_get();
   if (sensor == NULL) {
     // Happens, when the camera was never initialized successfully
     Serial.println(">>> No camera sensor available - settings not applied!");
     return 0;
+  }
+
+  // Frame size and quality can be changed on the running sensor - no re-init needed
+  if (frameSize != lastFrameSize) {
+    if (sensor->set_framesize(sensor, framesizeFromInt(frameSize)) == 0) {
+      lastFrameSize = frameSize;
+    } else {
+      Serial.printf(">>> Frame size %d could not be set!\r\n", frameSize);
+    }
+  }
+  if (jpegQuality != lastJpegQuality) {
+    if (sensor->set_quality(sensor, jpegQuality) == 0) {
+      lastJpegQuality = jpegQuality;
+    } else {
+      Serial.printf(">>> JPEG quality %d could not be set!\r\n", jpegQuality);
+    }
   }
 
   // Brightness - -2,-1,0,1,2

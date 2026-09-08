@@ -63,7 +63,6 @@ const uint32_t DEFAULT_DELAY_MS = 20000;
 const uint32_t MIN_DELAY_MS = 1000;
 const uint32_t MAX_DELAY_MS = 3600000;
 
-JsonDocument settings;
 JsonDocument workflowSettings;
 JsonDocument cameraSettings;
 
@@ -118,6 +117,11 @@ void setup() {
   pinMode(FLASH_GPIO_NUM, OUTPUT);
   digitalWrite(FLASH_GPIO_NUM, LOW);
 
+  // Only used until the first answer of the server arrives
+  workflowSettings["restart"] = false;
+  workflowSettings["pause"] = false;
+  workflowSettings["delayMs"] = DEFAULT_DELAY_MS;
+
   initWiFi();
   blinkLedOk();
   initNtp();
@@ -128,13 +132,12 @@ void loop() {
   const uint32_t loopStartedMs = millis();
   ensureWiFiConnected();
 
-  workflowSettings["restart"] = false;
-  workflowSettings["pause"] = false;
-  workflowSettings["delayMs"] = DEFAULT_DELAY_MS;
+  // Every successful response replaces these completely. If the server cannot be reached,
+  // the last known commands stay in effect - especially a "pause".
   uploadStatus();
 
   if (cameraSettingsChanged && !cameraSettings.isNull()) {
-     short result = initCameraWithSettings(cameraSettings);
+     short result = initCameraWithSettings(cameraSettings.as<JsonVariantConst>());
      if (result == 0) {
         cameraInitErrors++;
      } else {
@@ -332,40 +335,38 @@ void logHttpError(HTTPClient& http, int httpResponseCode) {
   }
 }
 
-void parseAndStoreSettings(String jsonString) {
+void parseAndStoreSettings(const String& jsonString) {
     //S Serial.print(">>> settings = ");
     //S Serial.println(jsonString);
-    JsonDocument parsedSettings = parseJson(jsonString);
-    if (parsedSettings["error"] || parsedSettings["workflow"].isNull()) {
+    JsonDocument parsedSettings;
+    if (!parseJson(jsonString, parsedSettings) || parsedSettings["workflow"].isNull()) {
       Serial.println(">>> Unusable settings in response - keeping the current ones!");
       return;
     }
-    settings = parsedSettings;
-    workflowSettings = settings["workflow"];
+    workflowSettings = parsedSettings["workflow"];
     flashLedForPicture = workflowSettings["flashLedForPicture"] | false;
     flashDurationMs = workflowSettings["flashDurationMs"] | 100;
     blinkOnSuccess = workflowSettings["blinkOnSuccess"] | true;
     blinkOnFailure = workflowSettings["blinkOnFailure"] | true;
     // The server sends the camera settings only once after a change, so the flag must not
     // be reset here - it is cleared in loop() when the settings were applied successfully.
-    if (settings["camera"].is<JsonObjectConst>()) {
-      cameraSettings = settings["camera"];
+    if (parsedSettings["camera"].is<JsonObjectConst>()) {
+      cameraSettings = parsedSettings["camera"];
       cameraSettingsChanged = true;
     }
 }
 
-JsonDocument parseJson(String jsonString) {
-  JsonDocument jsonDoc;
-  if (jsonString.isEmpty()) {) {
-    jsonDoc["error"] = true;
-  } else {
-    DeserializationError error = deserializeJson(jsonDoc, jsonString);
-    if (error) {
-      Serial.println(">>> Parsing JSON input failed!");
-      jsonDoc["error"] = true;
-    }
+// Parse into the given document. Returns false, if the input was empty or not parsable.
+bool parseJson(const String& jsonString, JsonDocument& jsonDoc) {
+  if (jsonString.isEmpty()) {
+    return false;
   }
-  return jsonDoc;
+  DeserializationError error = deserializeJson(jsonDoc, jsonString);
+  if (error) {
+    Serial.printf(">>> Parsing JSON input failed: %s\n", error.c_str());
+    return false;
+  }
+  return true;
 }
 
 void blinkLedOk() {
