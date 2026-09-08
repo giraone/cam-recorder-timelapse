@@ -230,7 +230,7 @@ short initCameraWithSettings(JsonDocument cameraSettings) {
   // Vertical flip image - 0: no, 1: yes 
   sensor->set_vflip(sensor, cameraSettings["verticalFlip"]);
   // Downscale image - 0: no, 1: yes - Wenn eine andere Auflösung als UXGA gewählt ist, dann muss das 1 sein!
-  sensor->set_dcw(sensor, 1);
+  sensor->set_dcw(sensor, cameraSettings["downScaleImage"]);
   // Display Test Color-Bar
   sensor->set_colorbar(sensor, 0);
 

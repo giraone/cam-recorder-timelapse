@@ -76,6 +76,7 @@ public class CameraSettingsForm extends FormLayout {
     Checkbox autoExposureGainControl = new Checkbox("Exposure Gain, when peformed by sensor");
     IntegerField autoExposureGainValue = new IntegerField("Auto Exposure Gain Value");
     IntegerField autoExposureGainCeiling = new IntegerField("Auto Exposure Gain Ceiling");
+    Checkbox downScaleImage = new Checkbox("Downscale image (Check when not UXGA)");
 
     Button save = new Button("Save");
     Button close = new Button("Cancel");
@@ -101,6 +102,7 @@ public class CameraSettingsForm extends FormLayout {
         lensCorrect.setHelperText("Small improvement of quality and brighter images.");
         whitePixelCorrect.setHelperText("Remove white pixels in the image. White pixels occur more often, than block pixels.");
         blackPixelCorrect.setHelperText("Remove black pixels in the image. Black pixels occur not so often, than white pixels.");
+        denoise.setHelperText("Not supported by OV2640");
 
         brightness.setItemLabelGenerator(Enum::name);
         contrast.setItemLabelGenerator(Enum::name);
@@ -142,7 +144,7 @@ public class CameraSettingsForm extends FormLayout {
             new Hr(), new Hr(), new Hr(),
             new Paragraph("Exposure performed by ..."), exposureCtrlSensor, exposureCtrlDsp,
             new Paragraph("Exposure Control, when performed by DSP"), autoExposureLevel, autoExposureValue,
-            autoExposureGainControl, autoExposureGainValue, autoExposureGainCeiling,
+            autoExposureGainControl, autoExposureGainValue, autoExposureGainCeiling, downScaleImage,
             createButtonsLayout());
         formLayout.setResponsiveSteps(
             // Use one column by default

@@ -34,7 +34,7 @@ public class CameraSettings {
     private Level contrast = Level.M;
     private Level sharpness = Level.M;
     private Level saturation = Level.M;
-    private Level denoise = Level.M;
+    private Level denoise = Level.M; // is not supported by the OV2640
     private SpecialEffect specialEffect = SpecialEffect.None;
 
     private boolean autoWhitebalance = true;
@@ -57,6 +57,10 @@ public class CameraSettings {
      * 0=2x, 1=4x, 2=8x, 3=16x, 4=32x, 5=64x, 6=128x
      **/
     private int autoExposureGainCeiling = 2;
+    /**
+     * 0=2x, 1=4x, 2=8x, 3=16x, 4=32x, 5=64x, 6=128x
+     **/
+    private int downScaleImage = 1;
 
     //------------------------------------------------------------------------------------------------------------------
 
@@ -282,6 +286,16 @@ public class CameraSettings {
         this.autoExposureGainCeiling = autoExposureGainCeiling;
     }
 
+    @JsonDeserialize(using = CustomDeserializerBoolean.class)
+    public int getDownScaleImage() {
+        return downScaleImage;
+    }
+
+    @JsonSerialize(using = CustomSerializerBoolean.class)
+    public void setDownScaleImage(int downScaleImage) {
+        this.downScaleImage = downScaleImage;
+    }
+
     @Override
     public String toString() {
         return "CameraSettings{" +
@@ -310,6 +324,7 @@ public class CameraSettings {
             ", autoExposureGainControl=" + autoExposureGainControl +
             ", autoExposureGainValue=" + autoExposureGainValue +
             ", autoExposureGainCeiling=" + autoExposureGainCeiling +
+            ", downScaleImage=" + downScaleImage +
             '}';
     }
 

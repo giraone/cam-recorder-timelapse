@@ -2,7 +2,7 @@
  Continuous loop to fetch camera settings from an image server and send photos taken with these settings to the image server using plain HTTP POST (no multipart).
  - The file name is build using the camera name (derived from IP address) and the current date and time (with a base time fetched from an NTP server)
  - The camera settings are fetch on each restart from the server
- - The server can force a "restartNow" after each upload, so then all new settings are applied
+ - The server can force a "restart" after each upload, so then all new settings are applied
  - The server can force pause/resume of the loop to take photo.
  - If paused, this software will periodically send requests to the server to receive new commands.
  - Besides sending photos, this software can transmit status information of the device to the server, e.g.
@@ -105,6 +105,10 @@ const int BLINK_DURATION_MS = 60;
 bool blinkOnSuccess = true;
 bool blinkOnFailure = true;
 
+//-- Buffer for uptime ------------------------------------------------------------
+
+char _timeBuffer[14];
+
 //---------------------------------------------------------------------------------
 
 void setup() {
@@ -158,7 +162,7 @@ void loop() {
 }
 
 void shootAndSend() {
-  char* timeLabel = fetchtimeLabel();
+  char* timeLabel = fetchTimeLabel();
   if (flashLedForPicture) {
     //S Serial.printf(">>> Flash wanted. Using GPIO %d.\n", FLASH_GPIO_NUM);
     digitalWrite(FLASH_GPIO_NUM, HIGH);
@@ -352,7 +356,7 @@ void parseAndStoreSettings(String jsonString) {
 
 JsonDocument parseJson(String jsonString) {
   JsonDocument jsonDoc;
-  if (jsonString == (String) 0) {
+  if (jsonString.isEmpty()) {) {
     jsonDoc["error"] = true;
   } else {
     DeserializationError error = deserializeJson(jsonDoc, jsonString);
@@ -385,9 +389,8 @@ void blinkLed(int count, int duration) {
   }
 }
 
-char _timeBuffer[14];
 // Return e.g. 240213-074417 (YYMMdd-hhmmss)
-char* fetchtimeLabel() {
+char* fetchTimeLabel() {
   struct tm now;
   if (!getLocalTime(&now)){
     Serial.println(">>> Failed to obtain time!");

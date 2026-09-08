@@ -29,5 +29,6 @@
   "autoExposureValue": 25,
   "autoExposureGainControl": 0,
   "autoExposureGainValue": 25,
-  "autoExposureGainCeiling": 0
+  "autoExposureGainCeiling": 0,
+  "downscaleImage": 1
 }

@@ -61,7 +61,8 @@ The **main loop** consists of
    "autoExposureValue":       0-1023,
    "autoExposureGainControl": 0/1,
    "autoExposureGainValue":   0-30,
-   "autoExposureGainCeiling": 0-6
+   "autoExposureGainCeiling": 0-6,
+   "downscaleImage":          0/1
  }
 }
 ```

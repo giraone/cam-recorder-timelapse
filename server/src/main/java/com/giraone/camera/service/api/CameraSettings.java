@@ -36,7 +36,7 @@ public class CameraSettings {
     private Level contrast = Level.M;
     private Level sharpness = Level.M;
     private Level saturation = Level.M;
-    private Level denoise = Level.M;
+    private Level denoise = Level.M; // is not supported by the OV2640
     private SpecialEffect specialEffect = SpecialEffect.None;
 
     private boolean autoWhitebalance = true;
@@ -59,6 +59,10 @@ public class CameraSettings {
      * 0=2x, 1=4x, 2=8x, 3=16x, 4=32x, 5=64x, 6=128x
      **/
     private int autoExposureGainCeiling = 2;
+    /**
+     * 0: no, 1: yes - if other resolution than UXGA, this must be 1
+     **/
+    private int downScaleImage = 1;
 
     //------------------------------------------------------------------------------------------------------------------
 
