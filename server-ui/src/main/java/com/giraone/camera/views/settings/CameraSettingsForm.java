@@ -131,7 +131,7 @@ public class CameraSettingsForm extends FormLayout {
         formLayout.setMinWidth(98, Unit.PERCENTAGE);
         formLayout.add(
             new Paragraph("Clock"), clockFrequencyHz, new Hr(),
-            new Paragraph("Image Size and Quality"), frameSize, jpegQuality,
+            new Paragraph("Image Size and Quality"), frameSize, jpegQuality, downScaleImage,
             new Hr(), new Hr(), new Hr(),
             new Paragraph("Pixel Correction"), blackPixelCorrect, whitePixelCorrect,
             new Paragraph("Image Correction"), gammaCorrect, lensCorrect,
@@ -144,7 +144,7 @@ public class CameraSettingsForm extends FormLayout {
             new Hr(), new Hr(), new Hr(),
             new Paragraph("Exposure performed by ..."), exposureCtrlSensor, exposureCtrlDsp,
             new Paragraph("Exposure Control, when performed by DSP"), autoExposureLevel, autoExposureValue,
-            autoExposureGainControl, autoExposureGainValue, autoExposureGainCeiling, downScaleImage,
+            autoExposureGainControl, autoExposureGainValue, autoExposureGainCeiling,
             createButtonsLayout());
         formLayout.setResponsiveSteps(
             // Use one column by default

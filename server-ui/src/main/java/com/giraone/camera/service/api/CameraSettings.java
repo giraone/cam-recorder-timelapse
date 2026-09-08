@@ -58,9 +58,9 @@ public class CameraSettings {
      **/
     private int autoExposureGainCeiling = 2;
     /**
-     * 0=2x, 1=4x, 2=8x, 3=16x, 4=32x, 5=64x, 6=128x
+     * if other resolution than UXGA, this must be true
      **/
-    private int downScaleImage = 1;
+    private boolean downScaleImage = true;
 
     //------------------------------------------------------------------------------------------------------------------
 
@@ -287,12 +287,12 @@ public class CameraSettings {
     }
 
     @JsonDeserialize(using = CustomDeserializerBoolean.class)
-    public int getDownScaleImage() {
+    public boolean getDownScaleImage() {
         return downScaleImage;
     }
 
     @JsonSerialize(using = CustomSerializerBoolean.class)
-    public void setDownScaleImage(int downScaleImage) {
+    public void setDownScaleImage(boolean downScaleImage) {
         this.downScaleImage = downScaleImage;
     }
 
