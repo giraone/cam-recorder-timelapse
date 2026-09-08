@@ -15,6 +15,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.icon.Icon;
@@ -131,7 +132,8 @@ public class CameraSettingsForm extends FormLayout {
         formLayout.setMinWidth(98, Unit.PERCENTAGE);
         formLayout.add(
             new Paragraph("Clock"), clockFrequencyHz, new Hr(),
-            new Paragraph("Image Size and Quality"), frameSize, jpegQuality, downScaleImage,
+            new Paragraph("Image Size and Quality"), frameSize, jpegQuality,
+            new Paragraph(""), downScaleImage, new Div(),
             new Hr(), new Hr(), new Hr(),
             new Paragraph("Pixel Correction"), blackPixelCorrect, whitePixelCorrect,
             new Paragraph("Image Correction"), gammaCorrect, lensCorrect,
