@@ -1,5 +1,9 @@
 # Release Notes and List of Changes
 
+## Version 0.0.5 (2026-09-09)
+
+- Support for collecting the ESP32 CPU temperature added
+
 ## Version 0.0.4 (2026-09-09)
 
 - One request type for the camera loop, see [docs/loop-architecture.md](../docs/loop-architecture.md).

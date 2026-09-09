@@ -91,7 +91,7 @@ class CameraStatusViewTest {
     //------------------------------------------------------------------------------------------------------------------
 
     private static CameraStatusRecord record(String timestamp) {
-        return new CameraStatusRecord(LocalDateTime.parse(timestamp), -60, 1, 2, 3, 4, 5, 6);
+        return new CameraStatusRecord(LocalDateTime.parse(timestamp), -60, 50.5f, 1, 2, 3, 4, 5, 6);
     }
 
     private static List<String> headersOf(CameraStatusView view) {

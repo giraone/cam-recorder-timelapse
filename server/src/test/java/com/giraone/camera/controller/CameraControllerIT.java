@@ -106,7 +106,9 @@ class CameraControllerIT {
         assertThat(status.success()).isTrue();
     }
 
-    /** A paused camera posts an empty body, but still passes its status as headers */
+    /**
+     * A paused camera posts an empty body, but still passes its status as headers
+     */
     @Test
     void uploadStatusOnly() {
 
@@ -122,7 +124,7 @@ class CameraControllerIT {
             .accept(MediaType.APPLICATION_JSON)
             .headers(headers -> {
                 headers.setContentLength(0L);
-                addStatusHeaders(headers, cameraName, -10, 8, 2);
+                addStatusHeaders(headers, cameraName, -10, 65.7f, 8, 2);
             })
             .bodyValue(new byte[0])
             .exchange()
@@ -143,14 +145,17 @@ class CameraControllerIT {
         CameraStatusRecord cameraStatusRecord = statusList.getFirst();
         assertThat(cameraStatusRecord).isNotNull();
         assertThat(cameraStatusRecord.rssi()).isEqualTo(-10);
+        assertThat(cameraStatusRecord.cpuTemperature()).isEqualTo(65.7f);
         assertThat(cameraStatusRecord.imageCounter()).isEqualTo(8);
         assertThat(cameraStatusRecord.imageErrors()).isEqualTo(2);
         assertThat(cameraStatusRecord.timestamp()).isNotNull().isAfter(now);
     }
 
-    private static void addStatusHeaders(HttpHeaders headers, String cameraName, int rssi, int imageCounter, int imageErrors) {
+    private static void addStatusHeaders(HttpHeaders headers, String cameraName, int rssi,
+                                         float cpuTemperature, int imageCounter, int imageErrors) {
         headers.set(CameraStatus.HEADER_CAMERA_NAME, cameraName);
         headers.set(CameraStatus.HEADER_RSSI, Integer.toString(rssi));
+        headers.set(CameraStatus.HEADER_CPU_TEMPERATURE, Float.toString(cpuTemperature));
         headers.set(CameraStatus.HEADER_IMAGE_COUNTER, Integer.toString(imageCounter));
         headers.set(CameraStatus.HEADER_IMAGE_ERRORS, Integer.toString(imageErrors));
         headers.set(CameraStatus.HEADER_CAMERA_INIT_COUNTER, "1");
@@ -172,7 +177,7 @@ class CameraControllerIT {
             Settings settings = webTestClient.post()
                 .uri("/images/{file}", FILENAME_IMAGE)
                 .contentType(MediaType.IMAGE_JPEG)
-                .headers(headers -> addStatusHeaders(headers, cameraName, -55, 3, 0))
+                .headers(headers -> addStatusHeaders(headers, cameraName, -55, 50.5f, 3, 0))
                 .body(bodyInserter)
                 .exchange()
                 .expectStatus().isOk()
@@ -193,6 +198,7 @@ class CameraControllerIT {
         List<CameraStatusRecord> statusList = cameraStatusService.get(cameraName);
         assertThat(statusList).hasSize(1);
         assertThat(statusList.getFirst().rssi()).isEqualTo(-55);
+        assertThat(statusList.getFirst().cpuTemperature()).isEqualTo(50.5f);
         assertThat(statusList.getFirst().imageCounter()).isEqualTo(3);
     }
 

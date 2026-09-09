@@ -117,6 +117,7 @@ public class CameraStatusView extends VerticalLayout {
             .setComparator(CameraStatusRecord::timestamp)
             .setHeader("Timestamp").setAutoWidth(true);
         grid.addColumn(CameraStatusRecord::rssi).setHeader("RSSI (dBm)").setAutoWidth(true);
+        grid.addColumn(CameraStatusRecord::cpuTemperature).setHeader("CPU Temperature (°C)").setAutoWidth(true);
         grid.addColumn(CameraStatusRecord::imageCounter).setHeader("Image Counter").setAutoWidth(true);
         grid.addColumn(CameraStatusRecord::imageErrors).setHeader("Image Errors").setAutoWidth(true);
         grid.addColumn(CameraStatusRecord::cameraInitCounter).setHeader("Camera Init Counter").setAutoWidth(true);

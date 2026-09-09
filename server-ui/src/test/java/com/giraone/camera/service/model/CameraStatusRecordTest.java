@@ -62,6 +62,6 @@ class CameraStatusRecordTest {
     }
 
     private static CameraStatusRecord recordAt(LocalDateTime timestamp) {
-        return new CameraStatusRecord(timestamp, -60, 1, 2, 3, 4, 5, 6);
+        return new CameraStatusRecord(timestamp, -60, 50.5f, 1, 2, 3, 4, 5, 6);
     }
 }

@@ -9,6 +9,7 @@ import tools.jackson.databind.annotation.JsonSerialize;
 @JsonSerialize
 public record CameraStatus(String cameraName,
                            int rssi,
+                           float cpuTemperature,
                            int imageCounter,
                            int imageErrors,
                            int cameraInitCounter,
@@ -21,6 +22,7 @@ public record CameraStatus(String cameraName,
     public static final String HEADER_PREFIX = "cam-status-";
     public static final String HEADER_CAMERA_NAME = HEADER_PREFIX + "camera-name";
     public static final String HEADER_RSSI = HEADER_PREFIX + "rssi";
+    public static final String HEADER_CPU_TEMPERATURE = HEADER_PREFIX + "cpu-temperature";
     public static final String HEADER_IMAGE_COUNTER = HEADER_PREFIX + "image-counter";
     public static final String HEADER_IMAGE_ERRORS = HEADER_PREFIX + "image-errors";
     public static final String HEADER_CAMERA_INIT_COUNTER = HEADER_PREFIX + "camera-init-counter";
@@ -43,6 +45,7 @@ public record CameraStatus(String cameraName,
         return new CameraStatus(
             cameraName,
             intHeader(headers, HEADER_RSSI),
+            floatHeader(headers, HEADER_CPU_TEMPERATURE),
             intHeader(headers, HEADER_IMAGE_COUNTER),
             intHeader(headers, HEADER_IMAGE_ERRORS),
             intHeader(headers, HEADER_CAMERA_INIT_COUNTER),
@@ -62,6 +65,19 @@ public record CameraStatus(String cameraName,
             return Integer.parseInt(value.trim());
         } catch (NumberFormatException nfe) {
             return 0;
+        }
+    }
+
+    private static float floatHeader(HttpHeaders headers, String name) {
+
+        final String value = headers.getFirst(name);
+        if (value == null || value.isBlank()) {
+            return 0.0f;
+        }
+        try {
+            return Float.parseFloat(value.trim());
+        } catch (NumberFormatException nfe) {
+            return 0.0f;
         }
     }
 }

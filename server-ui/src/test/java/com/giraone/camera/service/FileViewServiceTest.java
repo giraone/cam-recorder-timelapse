@@ -70,16 +70,16 @@ class FileViewServiceTest {
     void listCameraStatusDecodesAllAttributesOfTheStatusRecords() {
         // arrange
         responseByPath.put("/status/cam-a", """
-            [{"timestamp":"2026-09-06T12:30:45","rssi":-61,"imageCounter":12,"imageErrors":1,
+            [{"timestamp":"2026-09-06T12:30:45","rssi":-61,"cpuTemperature":50.5,"imageCounter":12,"imageErrors":1,
               "cameraInitCounter":2,"cameraInitErrors":3,"uploadImageErrors":4,"uploadStatusErrors":5},
-             {"timestamp":"2026-09-06T12:31:45","rssi":-62,"imageCounter":13,"imageErrors":0,
+             {"timestamp":"2026-09-06T12:31:45","rssi":-62,"cpuTemperature":65.7,"imageCounter":13,"imageErrors":0,
               "cameraInitCounter":0,"cameraInitErrors":0,"uploadImageErrors":0,"uploadStatusErrors":0}]""");
         // act
         List<CameraStatusRecord> result = fileViewService.listCameraStatus("cam-a");
         // assert
         assertThat(result).containsExactly(
-            new CameraStatusRecord(LocalDateTime.parse("2026-09-06T12:30:45"), -61, 12, 1, 2, 3, 4, 5),
-            new CameraStatusRecord(LocalDateTime.parse("2026-09-06T12:31:45"), -62, 13, 0, 0, 0, 0, 0));
+            new CameraStatusRecord(LocalDateTime.parse("2026-09-06T12:30:45"), -61, 50.5f, 12, 1, 2, 3, 4, 5),
+            new CameraStatusRecord(LocalDateTime.parse("2026-09-06T12:31:45"), -62, 65.7f, 13, 0, 0, 0, 0, 0));
     }
 
     @Test

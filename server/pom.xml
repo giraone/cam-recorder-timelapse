@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.giraone.recorder</groupId>
 	<artifactId>cam-recorder</artifactId>
-	<version>0.0.3-SNAPSHOT</version>
+	<version>0.0.5-SNAPSHOT</version>
 	<name>cam-recorder</name>
 	<description>HTTP service for receiving (ESP32) camera images</description>
 	<properties>

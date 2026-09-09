@@ -8,7 +8,8 @@
  - Besides sending photos, this software can transmit status information of the device to the server, e.g.
    - Number of successful photo transmissions
    - Number of unsuccessful photo transmissions
-   - WiFi signal strength (rssi) 
+   - WiFi signal strength (rssi)
+   - CPU temperature
 
  Board: AI Thinker ESP32-CAM
  
@@ -34,7 +35,7 @@
 
 // The arguments are compiled in both cases, so they cannot become outdated unnoticed.
 // With LOG_DEBUG = 0 the compiler removes the call, because the condition is constant.
-#define LOGD(...) do { if (LOG_DEBUG) Serial.printf(__VA_ARGS__); } while (0)
+#define LOG(...) do { if (LOG_DEBUG) Serial.printf(__VA_ARGS__); } while (0)
 
 //-- WIFI -------------------------------------------------------------------------
 
@@ -62,6 +63,18 @@ const char* timeZone = "CET-1CEST,M3.5.0,M10.5.0/3";
 // Give up waiting for the first NTP answer after this time
 const uint32_t NTP_SYNC_TIMEOUT_MS = 15000;
 
+//-- CPU Temperature (for older ESP32 Boards)  ------------------------------------
+
+//Intermal temperature sensor function declaration
+#ifdef __cplusplus
+extern "C" {
+#endif
+uint8_t temprature_sens_read();
+#ifdef __cplusplus
+}
+#endif
+extern uint8_t temprature_sens_read();
+
 //-- Settings ---------------------------------------------------------------------
 
 // Set when new camera settings arrived, cleared only after they were applied successfully
@@ -84,6 +97,8 @@ JsonDocument cameraSettings;
 
 // the WiFi signal strength
 int wifiRssi = 0;
+// the CPU temperature
+float cpuTemperature = 0.0;
 // Will be replaces by c<IP>, where <IP> is the IPv4 address's last part
 char cameraName[5]; 
 // count number of images taken
@@ -189,7 +204,7 @@ void loop() {
 void shootAndSend() {
   char* timeLabel = fetchTimeLabel();
   if (flashLedForPicture) {
-    LOGD(">>> Flash wanted. Using GPIO %d.\n", FLASH_GPIO_NUM);
+    LOG(">>> Flash wanted. Using GPIO %d.\n", FLASH_GPIO_NUM);
     digitalWrite(FLASH_GPIO_NUM, HIGH);
     delay(flashDurationMs);
     // The next buffer may still hold a frame that was captured before the flash was on.
@@ -208,7 +223,7 @@ void shootAndSend() {
     sendToServer(NULL, 0, timeLabel);
   } else {
     imageCounter++;
-    LOGD(">>> Photo %d taken with %u bytes.\n", imageCounter, (unsigned) frameBuffer->len);
+    LOG(">>> Photo %d taken with %u bytes.\n", imageCounter, (unsigned) frameBuffer->len);
     // sendToServer() already blinks, depending on the result of the upload
     sendToServer(frameBuffer->buf, frameBuffer->len, timeLabel);
     esp_camera_fb_return(frameBuffer);
@@ -224,6 +239,12 @@ void discardFrames(int count) {
     }
     esp_camera_fb_return(frameBuffer);
   }
+}
+
+void readCpuTemperature() {
+  // Read the raw internal sensor value and convert to Celsius
+  float rawValue = temprature_sens_read();
+  cpuTemperature = (rawValue - 32) / 1.8;
 }
 
 void initWiFi() {
@@ -250,15 +271,15 @@ void connectWiFi() {
   }
   Serial.println();
   IPAddress ipAddress = WiFi.localIP();
-  LOGD(">>> IP address: %s\n", ipAddress.toString().c_str());
+  LOG(">>> IP address: %s\n", ipAddress.toString().c_str());
 
   // Last octet of the IPv4 address, zero padded, e.g. 192.168.178.87 --> "c087"
   // Recalculated on every connect, because DHCP may hand out a different address
   snprintf(cameraName, sizeof(cameraName), "c%03u", (unsigned) ipAddress[3]);
-  LOGD(">>> Camera Name: %s\n", cameraName);
+  LOG(">>> Camera Name: %s\n", cameraName);
   delay(100);
   wifiRssi = WiFi.RSSI();
-  LOGD(">>> RSSI: %d\n", wifiRssi);
+  LOG(">>> RSSI: %d\n", wifiRssi);
 }
 
 // Reconnect, if the connection was lost, e.g. after the access point was restarted
@@ -327,8 +348,10 @@ void sendToServer(const uint8_t* body, size_t length, const char* timeLabel) {
 // The device status, that used to be the JSON body of the separate status request
 void addStatusHeaders(HTTPClient& http) {
   wifiRssi = WiFi.RSSI();
+  readCpuTemperature();
   http.addHeader("cam-status-camera-name", cameraName);
   http.addHeader("cam-status-rssi", String(wifiRssi));
+  http.addHeader("cam-status-cpu-temperature", String(cpuTemperature));
   http.addHeader("cam-status-image-counter", String(imageCounter));
   http.addHeader("cam-status-image-errors", String(imageErrors));
   http.addHeader("cam-status-camera-init-counter", String(cameraInitCounter));
@@ -353,7 +376,7 @@ void logHttpError(HTTPClient& http, int httpResponseCode) {
 }
 
 void parseAndStoreSettings(const String& jsonString) {
-    LOGD(">>> settings = %s\n", jsonString.c_str());
+    LOG(">>> settings = %s\n", jsonString.c_str());
     JsonDocument parsedSettings;
     if (!parseJson(jsonString, parsedSettings) || parsedSettings["workflow"].isNull()) {
       Serial.println(">>> Unusable settings in response - keeping the current ones!");
@@ -416,7 +439,7 @@ char* fetchTimeLabel() {
   } else {
     snprintf(_timeBuffer, sizeof(_timeBuffer), "%02d%02d%02d-%02d%02d%02d",
     now.tm_year % 100, 1 + now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec);
-    LOGD(">>> Obtained time: %s\n", _timeBuffer);
+    LOG(">>> Obtained time: %s\n", _timeBuffer);
   }
   return _timeBuffer;
 }

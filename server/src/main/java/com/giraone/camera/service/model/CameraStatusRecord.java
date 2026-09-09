@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 @JsonSerialize
 public record CameraStatusRecord(LocalDateTime timestamp,
                                  int rssi,
+                                 float cpuTemperature,
                                  int imageCounter,
                                  int imageErrors,
                                  int cameraInitCounter,

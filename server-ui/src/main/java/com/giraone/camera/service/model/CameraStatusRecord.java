@@ -10,6 +10,7 @@ import java.util.Comparator;
  *
  * @param timestamp          point in time, when the status was received by the server
  * @param rssi               WiFi signal strength of the camera in dBm
+ * @param cpuTemperature     CPU temperature in Celsius
  * @param imageCounter       number of images taken by the camera since its last restart
  * @param imageErrors        number of failed attempts to take an image
  * @param cameraInitCounter  number of camera initializations since the last restart
@@ -19,6 +20,7 @@ import java.util.Comparator;
  */
 public record CameraStatusRecord(LocalDateTime timestamp,
                                  int rssi,
+                                 float cpuTemperature,
                                  int imageCounter,
                                  int imageErrors,
                                  int cameraInitCounter,

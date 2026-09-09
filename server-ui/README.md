@@ -14,7 +14,7 @@
 - [x] Create timelapse videos from images using *ffmpeg*
 - [x] Lazy loading for handling large amounts of image files
 - [x] Offer UI to configure timelapse video creation
-- [x] Display camera status (WiFi strength, number of errors)
+- [x] Display camera status (WiFi strength, CPU temperature, number of errors)
 - [x] Limit display to 100 entries. Show total number in label, e.g. "100 of 1000 - use filter to reduce"
 - [ ] Possibility to define labels for images
 - [ ] Download n images as ZIP
