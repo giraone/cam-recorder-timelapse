@@ -29,6 +29,7 @@ public class CameraStatusService {
         final CameraStatusRecord cameraStatusRecord = new CameraStatusRecord(
             LocalDateTime.now(),
             cameraStatus.rssi(),
+            cameraStatus.cpuTemperature(),
             cameraStatus.imageCounter(),
             cameraStatus.imageErrors(),
             cameraStatus.cameraInitCounter(),
@@ -38,6 +39,10 @@ public class CameraStatusService {
         );
         final List<CameraStatusRecord> statusList = storage.computeIfAbsent(cameraStatus.cameraName(), _ -> new ArrayList<>());
         statusList.addFirst(cameraStatusRecord); // add first to have youngest entry first
+        // store only max. 100 entries
+        if (statusList.size() > 100) {
+            statusList.removeLast();
+        }
     }
 
     public List<CameraStatusRecord> get(String cameraName) {
