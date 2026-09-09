@@ -3,6 +3,7 @@ package com.giraone.camera.controller;
 import com.giraone.camera.service.CameraStatusService;
 import com.giraone.camera.service.FileService;
 import com.giraone.camera.service.FluxUtil;
+import com.giraone.camera.service.api.CameraStatus;
 import com.giraone.camera.service.api.Settings;
 import com.giraone.camera.service.api.Status;
 import com.giraone.camera.service.model.CameraStatusRecord;
@@ -19,6 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.util.ResourceUtils;
@@ -81,7 +83,8 @@ class CameraControllerIT {
         assertThat(settings).isNotNull();
         assertThat(settings.getWorkflow()).isNotNull();
         assertThat(settings.getCamera()).isNotNull();
-        assertThat(settings.getWorkflow().getDelayMs()).isEqualTo(20000);
+        assertThat(settings.getWorkflow().getDelayMsActive()).isEqualTo(20000);
+        assertThat(settings.getWorkflow().getDelayMsPaused()).isEqualTo(60000);
         assertThat(settings.getCamera().getClockFrequencyHz()).isEqualTo(16000000);
     }
 
@@ -103,28 +106,25 @@ class CameraControllerIT {
         assertThat(status.success()).isTrue();
     }
 
+    /** A paused camera posts an empty body, but still passes its status as headers */
     @Test
-    void uploadStatus() {
+    void uploadStatusOnly() {
 
         // arrange
         String cameraName = "camera1";
+        String filename = "camera1-" + UUID.randomUUID() + ".jpg";
         LocalDateTime now = LocalDateTime.now();
         cameraStatusService.reset(cameraName);
         // act
-        Settings settings = webTestClient.put()
-            .uri("/status")
-            .contentType(MediaType.APPLICATION_JSON)
+        Settings settings = webTestClient.post()
+            .uri("/images/{file}", filename)
+            .contentType(MediaType.IMAGE_JPEG)
             .accept(MediaType.APPLICATION_JSON)
-            .bodyValue(Map.of(
-                "rssi", -10,
-                "cameraName", cameraName,
-                "imageCounter", 8,
-                "imageErrors", 2,
-                "cameraInitCounter", 0,
-                "cameraInitErrors", 0,
-                "uploadImageErrors", 0,
-                "uploadStatusErrors", 0
-                ))
+            .headers(headers -> {
+                headers.setContentLength(0L);
+                addStatusHeaders(headers, cameraName, -10, 8, 2);
+            })
+            .bodyValue(new byte[0])
             .exchange()
             .expectStatus().isOk()
             .returnResult(Settings.class)
@@ -134,6 +134,8 @@ class CameraControllerIT {
         assertThat(settings).isNotNull();
         assertThat(settings.getStatus()).isNotNull();
         assertThat(settings.getStatus().success()).isTrue();
+        // assert - no image was stored
+        assertThat(FileService.getFileDirImages().resolve(filename)).doesNotExist();
         // assert - stored data
         List<CameraStatusRecord> statusList = cameraStatusService.get(cameraName);
         assertThat(statusList).isNotNull();
@@ -146,9 +148,22 @@ class CameraControllerIT {
         assertThat(cameraStatusRecord.timestamp()).isNotNull().isAfter(now);
     }
 
+    private static void addStatusHeaders(HttpHeaders headers, String cameraName, int rssi, int imageCounter, int imageErrors) {
+        headers.set(CameraStatus.HEADER_CAMERA_NAME, cameraName);
+        headers.set(CameraStatus.HEADER_RSSI, Integer.toString(rssi));
+        headers.set(CameraStatus.HEADER_IMAGE_COUNTER, Integer.toString(imageCounter));
+        headers.set(CameraStatus.HEADER_IMAGE_ERRORS, Integer.toString(imageErrors));
+        headers.set(CameraStatus.HEADER_CAMERA_INIT_COUNTER, "1");
+        headers.set(CameraStatus.HEADER_CAMERA_INIT_ERRORS, "0");
+        headers.set(CameraStatus.HEADER_UPLOAD_IMAGE_ERRORS, "0");
+        headers.set(CameraStatus.HEADER_UPLOAD_STATUS_ERRORS, "0");
+    }
+
     @Test
     void test1_uploadImageFile() throws IOException {
 
+        String cameraName = "camera2";
+        cameraStatusService.reset(cameraName);
         File file = ResourceUtils.getFile("classpath:testdata/small.jpg");
         assertThat(file).isNotNull();
         try (FileInputStream fileInputStream = new FileInputStream(file)) {
@@ -157,6 +172,7 @@ class CameraControllerIT {
             Settings settings = webTestClient.post()
                 .uri("/images/{file}", FILENAME_IMAGE)
                 .contentType(MediaType.IMAGE_JPEG)
+                .headers(headers -> addStatusHeaders(headers, cameraName, -55, 3, 0))
                 .body(bodyInserter)
                 .exchange()
                 .expectStatus().isOk()
@@ -173,6 +189,11 @@ class CameraControllerIT {
         Path thumbFile = FileService.getThumbDirImages().resolve(FileService.buildThumbnailFileName(FILENAME_IMAGE));
         assertThat(thumbFile).exists();
         assertThat(Files.size(thumbFile)).isGreaterThan(100L);
+        // assert - the status passed with the image upload was stored too
+        List<CameraStatusRecord> statusList = cameraStatusService.get(cameraName);
+        assertThat(statusList).hasSize(1);
+        assertThat(statusList.getFirst().rssi()).isEqualTo(-55);
+        assertThat(statusList.getFirst().imageCounter()).isEqualTo(3);
     }
 
     @Test

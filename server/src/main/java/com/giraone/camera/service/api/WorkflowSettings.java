@@ -7,7 +7,8 @@ public class WorkflowSettings {
 
     private boolean restart = false;
     private boolean pause = false;
-    private int delayMs = 20000;
+    private int delayMsActive = 20000;
+    private int delayMsPaused = 60000;
     private boolean blinkOnSuccess = false;
     private boolean blinkOnFailure = false;
     private boolean flashLedForPicture = false;
@@ -31,12 +32,20 @@ public class WorkflowSettings {
         this.pause = pause;
     }
 
-    public int getDelayMs() {
-        return delayMs;
+    public int getDelayMsActive() {
+        return delayMsActive;
     }
 
-    public void setDelayMs(int delayMs) {
-        this.delayMs = delayMs;
+    public void setDelayMsActive(int delayMsActive) {
+        this.delayMsActive = delayMsActive;
+    }
+
+    public int getDelayMsPaused() {
+        return delayMsPaused;
+    }
+
+    public void setDelayMsPaused(int delayMsPaused) {
+        this.delayMsPaused = delayMsPaused;
     }
 
     public boolean isBlinkOnSuccess() {
@@ -76,7 +85,8 @@ public class WorkflowSettings {
         return "WorkflowSettings{" +
             "restart=" + restart +
             ", pause=" + pause +
-            ", delayMs=" + delayMs +
+            ", delayMsActive=" + delayMsActive +
+            ", delayMsPaused=" + delayMsPaused +
             ", blinkOnSuccess=" + blinkOnSuccess +
             ", blinkOnFailure=" + blinkOnFailure +
             ", flashLedForPicture=" + flashLedForPicture +

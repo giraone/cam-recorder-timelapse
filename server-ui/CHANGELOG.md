@@ -1,5 +1,11 @@
 # Release Notes and List of Changes
 
+## Version 0.0.5 (2026-09-09)
+
+- Workflow settings: the single delay is replaced by two intervals - `delayMsActive` for the time between
+  two images and `delayMsPaused` for the time between two status requests while the camera is paused.
+  The form shows two input fields accordingly.
+
 ## Version 0.0.4 (2026-09-06)
 
 - New view "Camera Status" (route `camera-status`), reachable from the drawer menu. It shows one table per

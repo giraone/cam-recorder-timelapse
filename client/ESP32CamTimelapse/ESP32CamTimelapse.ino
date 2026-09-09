@@ -27,6 +27,15 @@
 // Credentials and server address - not in git, copy "secrets.h.example" to "secrets.h"
 #include "secrets.h"
 
+//-- Logging ----------------------------------------------------------------------
+
+// Set to 1 for the detailed output on the serial monitor
+#define LOG_DEBUG 0
+
+// The arguments are compiled in both cases, so they cannot become outdated unnoticed.
+// With LOG_DEBUG = 0 the compiler removes the call, because the condition is constant.
+#define LOGD(...) do { if (LOG_DEBUG) Serial.printf(__VA_ARGS__); } while (0)
+
 //-- WIFI -------------------------------------------------------------------------
 
 const char* SSID = WIFI_SSID;
@@ -36,8 +45,8 @@ const uint32_t WIFI_CONNECT_TIMEOUT_MS = 30000;
 
 //-- HTTP -------------------------------------------------------------------------
 
-const char* TARGET_URL_IMAGE = "http://" SERVER_HOST ":" SERVER_PORT "/images/%s-%s.jpg";     // the 2 parameters are: cameraName, timeLabel
-const char* TARGET_URL_STATUS = "http://" SERVER_HOST ":" SERVER_PORT "/status";
+// The only endpoint used by the camera. The 2 parameters are: cameraName, timeLabel
+const char* TARGET_URL_IMAGE = "http://" SERVER_HOST ":" SERVER_PORT "/images/%s-%s.jpg";
 const char* MIME_TYPE_JPEG = "image/jpeg";
 const char* MIME_TYPE_JSON = "application/json";
 // Do not wait too long for the server - the camera should keep its cadence
@@ -58,8 +67,10 @@ const uint32_t NTP_SYNC_TIMEOUT_MS = 15000;
 // Set when new camera settings arrived, cleared only after they were applied successfully
 bool cameraSettingsChanged = true;
 
-// Fallback and guard rails for the loop delay, used when the server sends nothing usable
-const uint32_t DEFAULT_DELAY_MS = 20000;
+// Fallback and guard rails for the loop delay, used when the server sends nothing usable.
+// Active = interval between two images, paused = interval between two status requests.
+const uint32_t DEFAULT_DELAY_ACTIVE_MS = 20000;
+const uint32_t DEFAULT_DELAY_PAUSED_MS = 60000;
 const uint32_t MIN_DELAY_MS = 1000;
 const uint32_t MAX_DELAY_MS = 3600000;
 
@@ -67,6 +78,9 @@ JsonDocument workflowSettings;
 JsonDocument cameraSettings;
 
 //-- Status attributes ------------------------------------------------------------
+
+// All values below are read and written exclusively from loop() resp. setup(), i.e. from
+// the Arduino main task. If a second task is ever added, they have to be protected.
 
 // the WiFi signal strength
 int wifiRssi = 0;
@@ -120,7 +134,8 @@ void setup() {
   // Only used until the first answer of the server arrives
   workflowSettings["restart"] = false;
   workflowSettings["pause"] = false;
-  workflowSettings["delayMs"] = DEFAULT_DELAY_MS;
+  workflowSettings["delayMsActive"] = DEFAULT_DELAY_ACTIVE_MS;
+  workflowSettings["delayMsPaused"] = DEFAULT_DELAY_PAUSED_MS;
 
   initWiFi();
   blinkLedOk();
@@ -132,10 +147,7 @@ void loop() {
   const uint32_t loopStartedMs = millis();
   ensureWiFiConnected();
 
-  // Every successful response replaces these completely. If the server cannot be reached,
-  // the last known commands stay in effect - especially a "pause".
-  uploadStatus();
-
+  // Camera settings that arrived with the response of the previous cycle
   if (cameraSettingsChanged && !cameraSettings.isNull()) {
      short result = initCameraWithSettings(cameraSettings.as<JsonVariantConst>());
      if (result == 0) {
@@ -149,16 +161,26 @@ void loop() {
      }
   }
 
-  if (workflowSettings["restart"]) {
+  // Exactly one request per cycle: with an image when active, with an empty body when
+  // paused. Both carry the status headers and both receive the settings as the answer.
+  if (workflowSettings["pause"] | false) {
+    sendToServer(NULL, 0, fetchTimeLabel());
+  } else {
+    shootAndSend();
+  }
+
+  if (workflowSettings["restart"] | false) {
       Serial.println(">>> Command for restarting received!");
       ESP.restart();
   }
-  if (!workflowSettings["pause"]) {
-    shootAndSend();
-  }
+
+  // The pause flag of the answer just received decides the interval, so that leaving the
+  // paused mode takes effect immediately and not only after one long interval.
+  const uint32_t configuredDelayMs = (workflowSettings["pause"] | false)
+    ? (workflowSettings["delayMsPaused"] | DEFAULT_DELAY_PAUSED_MS)
+    : (workflowSettings["delayMsActive"] | DEFAULT_DELAY_ACTIVE_MS);
   // Subtract the time needed for taking and uploading the photo, so that the interval
   // between two photos stays even
-  const uint32_t configuredDelayMs = workflowSettings["delayMs"] | DEFAULT_DELAY_MS;
   const uint32_t delayMs = constrain(configuredDelayMs, MIN_DELAY_MS, MAX_DELAY_MS);
   const uint32_t elapsedMs = millis() - loopStartedMs;
   delay(elapsedMs < delayMs ? delayMs - elapsedMs : 0);
@@ -167,7 +189,7 @@ void loop() {
 void shootAndSend() {
   char* timeLabel = fetchTimeLabel();
   if (flashLedForPicture) {
-    //S Serial.printf(">>> Flash wanted. Using GPIO %d.\n", FLASH_GPIO_NUM);
+    LOGD(">>> Flash wanted. Using GPIO %d.\n", FLASH_GPIO_NUM);
     digitalWrite(FLASH_GPIO_NUM, HIGH);
     delay(flashDurationMs);
     // The next buffer may still hold a frame that was captured before the flash was on.
@@ -182,11 +204,13 @@ void shootAndSend() {
     imageErrors++;
     Serial.println(">>> No photo taken!");
     blinkLedError();
+    // Send the status anyway, otherwise a broken camera would never receive commands again
+    sendToServer(NULL, 0, timeLabel);
   } else {
     imageCounter++;
-    //S Serial.printf(">>> Photo %d taken with %d bytes.\n", imageCounter, frameBuffer->len);
-    // sendPhotoViaHttp() already blinks, depending on the result of the upload
-    sendPhotoViaHttp(frameBuffer, timeLabel);
+    LOGD(">>> Photo %d taken with %u bytes.\n", imageCounter, (unsigned) frameBuffer->len);
+    // sendToServer() already blinks, depending on the result of the upload
+    sendToServer(frameBuffer->buf, frameBuffer->len, timeLabel);
     esp_camera_fb_return(frameBuffer);
   }
 }
@@ -226,18 +250,15 @@ void connectWiFi() {
   }
   Serial.println();
   IPAddress ipAddress = WiFi.localIP();
-  //S Serial.print(">>> IP address: ");
-  //S Serial.println(ipAddress);
+  LOGD(">>> IP address: %s\n", ipAddress.toString().c_str());
 
   // Last octet of the IPv4 address, zero padded, e.g. 192.168.178.87 --> "c087"
   // Recalculated on every connect, because DHCP may hand out a different address
   snprintf(cameraName, sizeof(cameraName), "c%03u", (unsigned) ipAddress[3]);
-  //S Serial.print(">>> Camera Name: ");
-  //S Serial.println(cameraName);
+  LOGD(">>> Camera Name: %s\n", cameraName);
   delay(100);
   wifiRssi = WiFi.RSSI();
-  //S Serial.print(">>> RSSI: ");
-  //S Serial.println(wifiRssi);
+  LOGD(">>> RSSI: %d\n", wifiRssi);
 }
 
 // Reconnect, if the connection was lost, e.g. after the access point was restarted
@@ -268,58 +289,54 @@ void initNtp() {
     1900 + now.tm_year, 1 + now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec);
 }
 
-void sendPhotoViaHttp(camera_fb_t* frameBuffer, char* timeLabel) {
+// The one and only request of a cycle. The status is always passed as headers, the body
+// holds the image - or is empty, when there is nothing to upload (paused, no photo).
+// The answer are the settings in both cases.
+void sendToServer(const uint8_t* body, size_t length, const char* timeLabel) {
   char urlBuffer[128];
   snprintf(urlBuffer, sizeof(urlBuffer), TARGET_URL_IMAGE, cameraName, timeLabel);
-  Serial.printf(">>> POST URL = \"%s\" %d\n", urlBuffer, cameraSettings["frameSize"]);
+  Serial.printf(">>> POST URL = \"%s\" with %u bytes\n", urlBuffer, (unsigned) length);
   HTTPClient http;
   http.begin(urlBuffer);
   http.setConnectTimeout(HTTP_CONNECT_TIMEOUT_MS);
   http.setTimeout(HTTP_TIMEOUT_MS);
   http.addHeader("Content-Type", MIME_TYPE_JPEG);
-  int httpResponseCode = http.POST(frameBuffer->buf, frameBuffer->len);
+  http.addHeader("Accept", MIME_TYPE_JSON);
+  if (length == 0) {
+    // HTTPClient adds this header only for a non-empty payload, but the server uses it
+    // to distinguish an image upload from a status-only request
+    http.addHeader("Content-Length", "0");
+  }
+  addStatusHeaders(http);
+  int httpResponseCode = http.POST((uint8_t*) body, length);
   if (isHttpSuccess(httpResponseCode)) {
     parseAndStoreSettings(http.getString());
     blinkLedOk();
   } else {
-    uploadImageErrors++;
+    if (length > 0) {
+      uploadImageErrors++;
+    } else {
+      uploadStatusErrors++;
+    }
     logHttpError(http, httpResponseCode);
     blinkLedError();
   }
   http.end();
 }
 
-void uploadStatus() {
+// The device status, that used to be the JSON body of the separate status request
+void addStatusHeaders(HTTPClient& http) {
   wifiRssi = WiFi.RSSI();
-  JsonDocument data;
-  data["rssi"] = wifiRssi;
-  data["cameraName"] = cameraName;
-  data["imageCounter"] = imageCounter;
-  data["imageErrors"] = imageErrors;
-  data["cameraInitCounter"] = cameraInitCounter;
-  data["cameraInitErrors"] = cameraInitErrors;
-  data["uploadImageErrors"] = uploadImageErrors;
-  data["uploadStatusErrors"] = uploadStatusErrors;
-  char jsonCharBuffer[256];
-  serializeJson(data, jsonCharBuffer);
-  Serial.printf(">>> PUT URL = \"%s\" %s\n", TARGET_URL_STATUS, jsonCharBuffer);
-  HTTPClient http;
-  http.begin(TARGET_URL_STATUS);
-  http.setConnectTimeout(HTTP_CONNECT_TIMEOUT_MS);
-  http.setTimeout(HTTP_TIMEOUT_MS);
-  http.addHeader("Accept", MIME_TYPE_JSON);
-  http.addHeader("Content-Type", MIME_TYPE_JSON);
-  int httpResponseCode = http.PUT(jsonCharBuffer);
-  if (isHttpSuccess(httpResponseCode)) {
-    parseAndStoreSettings(http.getString());
-    blinkLedOk();
-  } else {
-    uploadStatusErrors++;
-    logHttpError(http, httpResponseCode);
-    blinkLedError();
-  }
-  http.end();
+  http.addHeader("cam-status-camera-name", cameraName);
+  http.addHeader("cam-status-rssi", String(wifiRssi));
+  http.addHeader("cam-status-image-counter", String(imageCounter));
+  http.addHeader("cam-status-image-errors", String(imageErrors));
+  http.addHeader("cam-status-camera-init-counter", String(cameraInitCounter));
+  http.addHeader("cam-status-camera-init-errors", String(cameraInitErrors));
+  http.addHeader("cam-status-upload-image-errors", String(uploadImageErrors));
+  http.addHeader("cam-status-upload-status-errors", String(uploadStatusErrors));
 }
+
 
 // Every 2xx is a success - the server may answer with 200 or 201
 bool isHttpSuccess(int httpResponseCode) {
@@ -336,8 +353,7 @@ void logHttpError(HTTPClient& http, int httpResponseCode) {
 }
 
 void parseAndStoreSettings(const String& jsonString) {
-    //S Serial.print(">>> settings = ");
-    //S Serial.println(jsonString);
+    LOGD(">>> settings = %s\n", jsonString.c_str());
     JsonDocument parsedSettings;
     if (!parseJson(jsonString, parsedSettings) || parsedSettings["workflow"].isNull()) {
       Serial.println(">>> Unusable settings in response - keeping the current ones!");
@@ -400,7 +416,7 @@ char* fetchTimeLabel() {
   } else {
     snprintf(_timeBuffer, sizeof(_timeBuffer), "%02d%02d%02d-%02d%02d%02d",
     now.tm_year % 100, 1 + now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec);
-    //S Serial.printf(">>> Obtainted time: %s\n", _timeBuffer);
+    LOGD(">>> Obtained time: %s\n", _timeBuffer);
   }
   return _timeBuffer;
 }

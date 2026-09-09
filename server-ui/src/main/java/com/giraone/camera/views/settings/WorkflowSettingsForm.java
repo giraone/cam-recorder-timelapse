@@ -43,7 +43,8 @@ public class WorkflowSettingsForm extends FormLayout {
 
     Checkbox restart = new Checkbox("Restart");
     Checkbox pause = new Checkbox("Pause");
-    IntegerField delayMs = new IntegerField("Delay (ms) till next action (min ~ 5000 on SXGA)");
+    IntegerField delayMsActive = new IntegerField("Delay (ms) between two images (min ~ 5000 on SXGA)");
+    IntegerField delayMsPaused = new IntegerField("Delay (ms) between two status requests while paused");
 
     Checkbox blinkOnSuccess = new Checkbox("Blink on success");
     Checkbox blinkOnFailure = new Checkbox("Blink on failure");
@@ -67,11 +68,17 @@ public class WorkflowSettingsForm extends FormLayout {
 
         restart.setHelperText("Restart after next action.");
         pause.setHelperText("Device/camera will be paused after next action.");
-        delayMs.setMin(100);
-        delayMs.setMax(3_600_000);
-        Div secondsSuffix = new Div();
-        secondsSuffix.setText("ms");
-        delayMs.setSuffixComponent(secondsSuffix);
+        delayMsActive.setMin(100);
+        delayMsActive.setMax(3_600_000);
+        Div activeSuffix = new Div();
+        activeSuffix.setText("ms");
+        delayMsActive.setSuffixComponent(activeSuffix);
+
+        delayMsPaused.setMin(100);
+        delayMsPaused.setMax(3_600_000);
+        Div pausedSuffix = new Div();
+        pausedSuffix.setText("ms");
+        delayMsPaused.setSuffixComponent(pausedSuffix);
 
         flashDurationMs.setMin(1);
         flashDurationMs.setMax(3600);
@@ -83,7 +90,7 @@ public class WorkflowSettingsForm extends FormLayout {
         formLayout.setMinWidth(98, Unit.PERCENTAGE);
         formLayout.add(
             new Paragraph("Actions"), restart, pause,
-            new Paragraph("Delay"), delayMs, new Paragraph(""),
+            new Paragraph("Delay"), delayMsActive, delayMsPaused,
             new Paragraph("LED"), blinkOnSuccess, blinkOnFailure,
             new Paragraph("Flash"), flashLedForPicture, flashDurationMs,
             createButtonsLayout());

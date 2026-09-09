@@ -11,17 +11,20 @@ When the ESP32Cam starts, it
 - fetches the correct time via NTP
 - and enters the **main loop**
 
-The **main loop** consists of
-- passing the *device status* (WiFi signal strength, number of camera errors, number of image upload errors) via HTTP POST
-  to the *image server* and receiving back the *workflow and camera settings*
-  - *workflow settings* are e.g. delay time till next photo, going into paused mode, indicator for using the led as a flash, restarting the device, ...
+The **main loop** performs exactly **one HTTP POST per cycle**, which consists of
+- applying *camera settings*, that arrived with the answer of the previous cycle, by re-initializing the camera
+- taking a photo — or nothing, if the device is paused
+- posting it to the *image server*, with the *device status* (WiFi signal strength, number of camera errors,
+  number of image upload errors) in the `cam-status-*` HTTP headers. When paused, the same request is sent
+  with an empty body, so the device still reports its status and still receives commands.
+- receiving back the *workflow and camera settings* as the answer
+  - *workflow settings* are e.g. the delay time till the next photo, going into paused mode, indicator for using the led as a flash, restarting the device, ...
   - *cameras settings* are a larger amount of properties like image size, JPEG quality, exposure levels, white balance, ... 
-- initializing the camera with the received settings and taking the first photo using these settings
-- uploading the photo to the image server and receiving back again the settings, when they have been changed
-- applying the received delay time till the next action
-- if the settings were changed, the ESP32Cam applies them by re-initializing the camera and will take and upload the next photo
-- if the workflow setting had indicated going into the pause mode, the ESP32Cam will only upload its status without taking a photo
-  and receives again new setting, that may indicate to leave to paused mode now
+- restarting the device, if the answer asked for it
+- waiting until the next cycle — `delayMsActive` when taking photos, `delayMsPaused` while paused
+
+The loop, the HTTP contract and the diagrams are described in
+[docs/loop-architecture.md](docs/loop-architecture.md).
 
 ## Workflow and cameras settings 
 
@@ -30,7 +33,8 @@ The **main loop** consists of
  "workflow": {
    "restart":                 false/true,
    "pause":                   false/true,
-   "delayMs":                 10 - 3600000,
+   "delayMsActive":           10 - 3600000,
+   "delayMsPaused":           10 - 3600000,
    "blinkOnSuccess":          false/true,
    "blinkOnFailure":          false/true,
    "flashLedForPicture":      false/true,

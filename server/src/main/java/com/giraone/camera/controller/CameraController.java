@@ -15,6 +15,7 @@ import com.giraone.camera.service.video.model.TimelapseResult;
 import com.giraone.camera.util.ObjectMapperBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -102,16 +103,6 @@ public class CameraController {
     }
 
     @SuppressWarnings("unused")
-    @PutMapping("status")
-    ResponseEntity<Settings> uploadStatus(@RequestBody CameraStatus cameraStatus) {
-        LOGGER.info("Camera status = {}", cameraStatus);
-        final Settings settingsToReturn = new Settings(currentSettings.getStatus(), currentSettings.getWorkflow(), null);
-        updateSettings(settingsToReturn, cameraStatus.cameraInitCounter());
-        cameraStatusService.store(cameraStatus);
-        return ResponseEntity.ok(settingsToReturn);
-    }
-
-    @SuppressWarnings("unused")
     @GetMapping("cameras")
     ResponseEntity<Set<String>> getCameras() {
         LOGGER.info("getCameras");
@@ -127,17 +118,40 @@ public class CameraController {
 
     //-- IMAGES --------------------------------------------------------------------------------------------------------
 
+    /**
+     * The one and only request of the camera loop, see docs/loop-architecture.md.
+     * The camera status is passed as "cam-status-*" headers on every call. The body holds
+     * the image - or is empty, when the camera is paused or could not take a photo. The
+     * answer are the current settings in both cases.
+     */
     @SuppressWarnings("unused")
     @PostMapping(value = "images/{filename}", consumes = {MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE})
     Mono<ResponseEntity<Settings>> uploadImage(@PathVariable String filename,
                                                @RequestBody Flux<ByteBuffer> content,
+                                               @RequestHeader HttpHeaders headers,
                                                @RequestHeader("Content-Length") Optional<String> contentLengthString) {
 
         final Settings settingsToReturn = new Settings(currentSettings.getStatus(), currentSettings.getWorkflow(), null);
         final long contentLength = contentLengthString.orElse("-1").transform(Long::parseLong);
+        final CameraStatus cameraStatus = CameraStatus.fromHeaders(headers);
+        if (cameraStatus != null) {
+            LOGGER.info("Camera status = {}", cameraStatus);
+            cameraStatusService.store(cameraStatus);
+        }
+        // Without a status header we do not know the init counter - 1 means "do not force"
+        final int cameraInitCounter = cameraStatus != null ? cameraStatus.cameraInitCounter() : 1;
+
+        // Only an explicit "Content-Length: 0" means "no image". A missing header (-1),
+        // e.g. on a chunked upload, is treated as an image as before.
+        if (contentLength == 0) {
+            // Status only: nothing to store, the camera just wants to fetch the commands
+            LOGGER.info("Status only request of \"{}\" - no image stored.", filename);
+            updateSettings(settingsToReturn, cameraInitCounter);
+            return Mono.just(ResponseEntity.ok(settingsToReturn));
+        }
         return fileService.storeFile(FileService.Media.IMAGES, filename, content, contentLength)
             .map(fileInfo -> {
-                updateSettings(settingsToReturn, 1);
+                updateSettings(settingsToReturn, cameraInitCounter);
                 return ResponseEntity.ok(settingsToReturn);
             })
             .onErrorResume(IllegalArgumentException.class, iae -> Mono.just(ResponseEntity.badRequest()

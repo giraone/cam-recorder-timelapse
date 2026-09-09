@@ -215,6 +215,8 @@ short initCameraWithSettings(JsonVariantConst cameraSettings) {
   // Saturation - -2,-1,0,1,2
   sensor->set_saturation(sensor, cameraSettings["saturation"]);
   // Denoise - -2,-1,0,1,2
+  // Has no effect on the OV2640 of this board - the driver returns -1 and changes nothing.
+  // The call is kept, because an OV3660/OV5640 board does support it.
   sensor->set_denoise(sensor, cameraSettings["denoise"]);
 
   // Special color effects - 0=None|1=Negative|2=Grayscale|3=Red Tint|4=Green Tint|5=Blue Int|6=Sepia
@@ -256,8 +258,12 @@ short initCameraWithSettings(JsonVariantConst cameraSettings) {
   // Vertical flip image - 0: no, 1: yes 
   sensor->set_vflip(sensor, cameraSettings["verticalFlip"]);
   // Downscale image - 0: no, 1: yes - Wenn eine andere Auflösung als UXGA gewählt ist, dann muss das 1 sein!
-  sensor->set_dcw(sensor, cameraSettings["downScaleImage"]);
-  // Display Test Color-Bar
+  // Default 1, because a missing value would switch the downscaling off and thereby
+  // break every resolution except UXGA
+  sensor->set_dcw(sensor, cameraSettings["downScaleImage"] | 1);
+  // Display Test Color-Bar - deliberately NOT configurable from the server: the test
+  // pattern replaces the real image and would spoil the timelapse if left switched on.
+  // For diagnosing a camera that delivers garbage, set this to 1 temporarily.
   sensor->set_colorbar(sensor, 0);
 
   Serial.println(">>> Camera settings successfully changed.");
