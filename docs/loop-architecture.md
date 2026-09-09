@@ -1,6 +1,6 @@
 # Loop architecture of the ESP32-CAM client
 
-Plan for the two changes of [task-005](../client/_tasks/task-005.md):
+Plan for the two changes:
 
 1. **One request type** — the camera status travels as HTTP headers on the image POST, the separate
    `PUT /status` disappears.
@@ -19,8 +19,7 @@ Every iteration of `loop()` sends **two** requests when the camera is active:
 | 2 | `POST /images/<name>.jpg` with the JPEG | deliver the image | `Settings` JSON |
 
 Both responses carry the same `Settings` object, so the second one is a duplicate of the first. At the
-default interval of 20 s that is 8 640 requests per day instead of 4 320 — finding **D11** of
-[task-003-result.md](../client/_tasks/task-003-result.md).
+default interval of 20 s that is 8640 requests per day instead of 4320.
 
 When the camera is paused, only request 1 is sent, at the same `delayMs` as in active mode. A camera that
 should idle at one poll per 10 minutes therefore keeps polling every 20 s.
