@@ -11,7 +11,7 @@
 
   <properties>
     <java.version>25</java.version>
-    <vaadin.version>25.2.6</vaadin.version>
+    <vaadin.version>25.3.4</vaadin.version>
     <line-awesome.version>2.1.0</line-awesome.version>
     <maven-versions-plugin.version>2.21.0</maven-versions-plugin.version>
   </properties>
@@ -19,7 +19,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>4.1.1</version>
+    <version>4.1.2</version>
   </parent>
 
   <repositories>
@@ -58,9 +58,7 @@
     </pluginRepository>
     <pluginRepository>
       <id>vaadin-prereleases</id>
-      <url>
-        https://maven.vaadin.com/vaadin-prereleases/
-      </url>
+      <url>https://maven.vaadin.com/vaadin-prereleases/</url>
     </pluginRepository>
   </pluginRepositories>
 
@@ -108,6 +106,7 @@
       <artifactId>vaadin-dev</artifactId>
       <optional>true</optional>
     </dependency>
+
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-devtools</artifactId>
@@ -199,6 +198,13 @@
                 <phase>compile</phase>
               </execution>
             </executions>
+            <configuration>
+              <!-- To always force an optimized production bundle build set this configuration to 'true' -->
+              <!-- To possibly use the pre-compiled production bundle remove or set to 'false' -->
+              <forceProductionBuild>true</forceProductionBuild>
+              <!-- To have reproducible build by running 'npm ci' -->
+              <ciBuild>true</ciBuild>
+            </configuration>
           </plugin>
         </plugins>
       </build>

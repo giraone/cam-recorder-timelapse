@@ -1,5 +1,9 @@
 # Release Notes and List of Changes
 
+## Version 0.0.6 (2026-11-01)
+
+- Upgrade to Spring Boot 4.1.2, Vaadin 25.3.4
+
 ## Version 0.0.5 (2026-09-09)
 
 - Workflow settings: the single delay is replaced by two intervals - `delayMsActive` for the time between

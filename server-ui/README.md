@@ -4,6 +4,7 @@
 
 - `mvn -DskipTests package`
 - `mvn -P production -DskipTests package`
+- `mvn clean package -Dvaadin.force.production.build=true`
 - `java -jar target/cam-recorder-ui.jar`
 
 ## Implemented and planned features

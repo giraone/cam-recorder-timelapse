@@ -1,5 +1,9 @@
 # Release Notes and List of Changes
 
+## Version 0.0.6 (2026-11-01)
+
+- Upgrade to Spring Boot 4.1.2, imaging-kit 2.2.0
+
 ## Version 0.0.5 (2026-09-09)
 
 - Support for collecting the ESP32 CPU temperature added
