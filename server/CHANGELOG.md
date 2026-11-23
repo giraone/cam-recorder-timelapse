@@ -1,5 +1,9 @@
 # Release Notes and List of Changes
 
+## Version 0.0.7 (2026-11-23)
+
+- Upgrade to Spring Boot 4.2.0, imaging-kit 2.3.0
+
 ## Version 0.0.6 (2026-11-01)
 
 - Upgrade to Spring Boot 4.1.2, imaging-kit 2.2.0
